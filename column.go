@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/yunionio/log"
 	"github.com/yunionio/pkg/gotypes"
-	"github.com/yunionio/pkg/log"
 	"github.com/yunionio/pkg/util/regutils"
 	"github.com/yunionio/pkg/utils"
 )
