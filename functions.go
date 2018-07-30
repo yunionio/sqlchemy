@@ -52,3 +52,8 @@ func SUM(name string, field IQueryField) IQueryField {
 	ff := NewFunctionField(name, "SUM(%s)", field)
 	return &ff
 }
+
+func DISTINCT(name string, field IQueryField) IQueryField {
+	ff := NewFunctionField(name, "DISTINCT(%s)", field)
+	return &ff
+}
