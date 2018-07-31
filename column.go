@@ -588,16 +588,16 @@ func NewDateTimeColumn(name string, tagmap map[string]string) SDateTimeColumn {
 	return dtc
 }
 
-type CompondColumn struct {
+type CompoundColumn struct {
 	STextColumn
 }
 
-func (c *CompondColumn) DefinitionString() string {
+func (c *CompoundColumn) DefinitionString() string {
 	buf := definitionBuffer(c)
 	return buf.String()
 }
 
-func (c *CompondColumn) IsZero(val interface{}) bool {
+func (c *CompoundColumn) IsZero(val interface{}) bool {
 	if val == nil {
 		return true
 	}
@@ -606,7 +606,7 @@ func (c *CompondColumn) IsZero(val interface{}) bool {
 	return json.IsZero()
 }
 
-func (c *CompondColumn) ConvertFromValue(val interface{}) interface{} {
+func (c *CompoundColumn) ConvertFromValue(val interface{}) interface{} {
 	bVal, ok := val.(gotypes.ISerializable)
 	if ok && bVal != nil {
 		return bVal.String()
@@ -615,8 +615,8 @@ func (c *CompondColumn) ConvertFromValue(val interface{}) interface{} {
 	}
 }
 
-func NewCompondColumn(name string, tagmap map[string]string) CompondColumn {
-	dtc := CompondColumn{NewTextColumn(name, tagmap)}
+func NewCompoundColumn(name string, tagmap map[string]string) CompoundColumn {
+	dtc := CompoundColumn{NewTextColumn(name, tagmap)}
 	return dtc
 }
 
