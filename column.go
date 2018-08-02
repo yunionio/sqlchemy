@@ -481,6 +481,8 @@ type STextColumn struct {
 }
 
 func (c *STextColumn) IsSupportDefault() bool {
+	// https://stackoverflow.com/questions/3466872/why-cant-a-text-column-have-a-default-value-in-mysql
+	// MySQL does not support default for TEXT/BLOB
 	if c.sqlType == "VARCHAR" {
 		return true
 	} else {
