@@ -25,6 +25,7 @@ func (t *STableSpec) Insert(dt interface{}) error {
 	names := make([]string, 0)
 	format := make([]string, 0)
 	values := make([]interface{}, 0)
+
 	fields := reflectutils.FetchStructFieldNameValueInterfaces(dataValue)
 	for _, c := range t.columns {
 		isAutoInc := false
@@ -58,15 +59,27 @@ func (t *STableSpec) Insert(dt interface{}) error {
 			} else {
 				return fmt.Errorf("fail to insert for null primary key `%s`", k)
 			}
+		} else if ! c.IsSupportDefault() && len(c.Default()) > 0 && ov != nil && c.IsZero(ov) { // empty text value
+			val := c.ConvertFromString(c.Default())
+			values = append(values, val)
+			names = append(names, fmt.Sprintf("`%s`", k))
+			format = append(format, "?")
+			// set value
+			if ! reflectutils.SetStructFieldValue(dataValue, k, reflect.ValueOf(val)) {
+				log.Warningf("SQL Insert: fail to set default value %s", val)
+			}
 		}
 	}
+
 	insertSql := fmt.Sprintf("INSERT INTO `%s` (%s) VALUES(%s)",
 		t.name,
 		strings.Join(names, ", "),
 		strings.Join(format, ", "))
+
 	if DEBUG_SQLCHEMY {
 		log.Debugf("%s values: %s", insertSql, values)
 	}
+
 	results, err := _db.Exec(insertSql, values...)
 	if err != nil {
 		return err

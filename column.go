@@ -18,6 +18,7 @@ type IColumnSpec interface {
 	Name() string
 	ColType() string
 	Default() string
+	IsSupportDefault() bool
 	IsNullable() bool
 	IsPrimary() bool
 	IsKeyIndex() bool
@@ -65,6 +66,10 @@ func (c *SBaseColumn) ColType() string {
 
 func (c *SBaseColumn) Default() string {
 	return c.defaultString
+}
+
+func (c *SBaseColumn) IsSupportDefault() bool {
+	return true
 }
 
 func (c *SBaseColumn) IsNullable() bool {
@@ -146,7 +151,7 @@ func definitionBuffer(c IColumnSpec) bytes.Buffer {
 	}
 
 	def := c.Default()
-	if len(def) > 0 {
+	if len(def) > 0 && c.IsSupportDefault() {
 		def = c.ConvertFromString(def)
 		buf.WriteString(" DEFAULT ")
 		if c.IsText() {
@@ -473,6 +478,14 @@ func NewDecimalColumn(name string, tagmap map[string]string) SDecimalColumn {
 type STextColumn struct {
 	SBaseWidthColumn
 	Charset string
+}
+
+func (c *STextColumn) IsSupportDefault() bool {
+	if c.sqlType == "VARCHAR" {
+		return true
+	} else {
+		return false
+	}
 }
 
 func (c *STextColumn) ColType() string {
