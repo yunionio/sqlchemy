@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/yunionio/log"
-	"github.com/yunionio/pkg/gotypes"
 	"github.com/yunionio/pkg/util/reflectutils"
 )
 
@@ -64,10 +63,6 @@ func (t *STableSpec) Insert(dt interface{}) error {
 			values = append(values, val)
 			names = append(names, fmt.Sprintf("`%s`", k))
 			format = append(format, "?")
-			// set value
-			if ! reflectutils.SetStructFieldValue(dataValue, k, reflect.ValueOf(val)) {
-				log.Warningf("SQL Insert: fail to set default value %s", val)
-			}
 		}
 	}
 
@@ -91,6 +86,8 @@ func (t *STableSpec) Insert(dt interface{}) error {
 	if affectCnt != 1 {
 		return fmt.Errorf("Insert affected cnt %d != 1", affectCnt)
 	}
+
+	/*
 	if len(autoIncField) > 0 {
 		lastId, err := results.LastInsertId()
 		if err == nil {
@@ -100,5 +97,32 @@ func (t *STableSpec) Insert(dt interface{}) error {
 			}
 		}
 	}
+	*/
+
+	// query the value, so default value can be feedback into the object
+	// fields = reflectutils.FetchStructFieldNameValueInterfaces(dataValue)
+	q := t.Query()
+	for _, c := range t.columns {
+		if c.IsPrimary() {
+			nc, ok := c.(*SIntegerColumn)
+			if ok && nc.IsAutoIncrement {
+				lastId, err := results.LastInsertId()
+				if err != nil {
+					log.Errorf("Fail to fetch lastInsertId %s", err)
+					return err
+				} else {
+					q = q.Equals(c.Name(), lastId)
+				}
+			} else {
+				q = q.Equals(c.Name(), fields[c.Name()])
+			}
+		}
+	}
+	err = q.First(dt)
+	if err != nil {
+		log.Errorf("query after insert failed %s", err)
+		return err
+	}
+	
 	return nil
 }
