@@ -10,6 +10,10 @@ import (
 )
 
 func (t *STableSpec) Insert(dt interface{}) error {
+	return t.insert(dt, false)
+}
+
+func (t *STableSpec) insert(dt interface{}, debug bool) error {
 	beforeInsertFunc := reflect.ValueOf(dt).MethodByName("BeforeInsert")
 	if beforeInsertFunc.IsValid() && !beforeInsertFunc.IsNil() {
 		beforeInsertFunc.Call([]reflect.Value{})
@@ -71,7 +75,7 @@ func (t *STableSpec) Insert(dt interface{}) error {
 		strings.Join(names, ", "),
 		strings.Join(format, ", "))
 
-	if DEBUG_SQLCHEMY {
+	if DEBUG_SQLCHEMY || debug {
 		log.Debugf("%s values: %s", insertSql, values)
 	}
 
