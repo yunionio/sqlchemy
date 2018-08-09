@@ -25,7 +25,7 @@ func getStringValue(dat interface{}) string {
 	case gotypes.IntType, gotypes.Int8Type, gotypes.Int16Type, gotypes.Int32Type, gotypes.Int64Type:
 		return fmt.Sprintf("%d", value.Int())
 	case gotypes.UintType, gotypes.Uint8Type, gotypes.Uint16Type, gotypes.Uint32Type, gotypes.Uint64Type:
-		return fmt.Sprintf("%u", value.Uint())
+		return fmt.Sprintf("%d", value.Uint())
 	case gotypes.Float32Type, gotypes.Float64Type:
 		return fmt.Sprintf("%f", value.Float())
 	case gotypes.StringType:
@@ -134,7 +134,7 @@ func setValueBySQLString(value reflect.Value, val string) error {
 			}
 			value.Set(reflect.ValueOf(is))
 		} else {
-			return fmt.Errorf("!!!Unsupported type: %s", value.Type)
+			return fmt.Errorf("not supported type: %s", value.Type().Name())
 		}
 	}
 	return nil
