@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/yunionio/log"
-	"github.com/yunionio/pkg/gotypes"
-	"github.com/yunionio/pkg/util/reflectutils"
+	"yunion.io/x/log"
+	"yunion.io/x/pkg/gotypes"
+	"yunion.io/x/pkg/util/reflectutils"
 )
 
 func (ts *STableSpec) GetUpdateColumnValue(dataType reflect.Type, dataValue reflect.Value, cv map[string]interface{}, fields map[string]interface{}) error {

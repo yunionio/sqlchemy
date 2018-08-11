@@ -1,7 +1,7 @@
 package sqlchemy
 
 import (
-	"github.com/yunionio/log"
+	"yunion.io/x/log"
 )
 
 var (
