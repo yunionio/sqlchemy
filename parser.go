@@ -84,7 +84,7 @@ func structField2ColumnSpec(field *reflect.StructField) IColumnSpec {
 		col := NewJSONColumn(fieldname, tagmap)
 		return &col*/
 	default:
-		if gotypes.IsSerializable(field.Type) {
+		if field.Type.Implements(gotypes.ISerializableType) {
 			col := NewCompoundColumn(fieldname, tagmap)
 			return &col
 		}
