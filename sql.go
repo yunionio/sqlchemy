@@ -3,7 +3,7 @@ package sqlchemy
 import (
 	"database/sql"
 
-	"github.com/yunionio/log"
+	"yunion.io/x/log"
 )
 
 var _db *sql.DB

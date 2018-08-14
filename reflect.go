@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/yunionio/jsonutils"
-	"github.com/yunionio/log"
-	"github.com/yunionio/pkg/gotypes"
-	"github.com/yunionio/pkg/tristate"
-	"github.com/yunionio/pkg/util/timeutils"
+	"yunion.io/x/jsonutils"
+	"yunion.io/x/log"
+	"yunion.io/x/pkg/gotypes"
+	"yunion.io/x/pkg/tristate"
+	"yunion.io/x/pkg/util/timeutils"
 )
 
 func getStringValue(dat interface{}) string {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/yunionio/pkg/util/reflectutils"
+	"yunion.io/x/pkg/util/reflectutils"
 )
 
 type ICondition interface {

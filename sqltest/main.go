@@ -8,11 +8,11 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/yunionio/jsonutils"
-	"github.com/yunionio/log"
-	"github.com/yunionio/pkg/gotypes"
-	"github.com/yunionio/pkg/util/timeutils"
-	"github.com/yunionio/sqlchemy"
+	"yunion.io/x/jsonutils"
+	"yunion.io/x/log"
+	"yunion.io/x/pkg/gotypes"
+	"yunion.io/x/pkg/util/timeutils"
+	"yunion.io/x/sqlchemy"
 )
 
 func uuid4() string {
