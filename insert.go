@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/yunionio/log"
-	"github.com/yunionio/pkg/util/reflectutils"
+	"yunion.io/x/log"
+	"yunion.io/x/pkg/util/reflectutils"
 )
 
 func (t *STableSpec) Insert(dt interface{}) error {

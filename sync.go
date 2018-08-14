@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yunionio/log"
-	"github.com/yunionio/pkg/utils"
+	"yunion.io/x/log"
+	"yunion.io/x/pkg/utils"
 )
 
 type SSqlColumnInfo struct {
