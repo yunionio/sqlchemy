@@ -1,7 +1,6 @@
 package sqlchemy
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -13,7 +12,6 @@ func insertSqlPrep(v interface{}) (string, []interface{}, error) {
 	vv := vvvalue.Interface()
 	vvFields := reflectutils.FetchStructFieldNameValueInterfaces(vvvalue)
 	ts := NewTableSpecFromStruct(vv, "vv")
-	fmt.Printf("%d", len(ts.columns))
 	sql, vals, err := ts.insertSqlPrep(vvFields)
 	return sql, vals, err
 }
