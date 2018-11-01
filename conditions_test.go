@@ -1,6 +1,8 @@
 package sqlchemy
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestConditions(t *testing.T) {
 	field := &SRawQueryField{"name"}
@@ -18,4 +20,38 @@ func TestConditions(t *testing.T) {
 	t.Logf("%s %s", cond7.WhereClause(), cond7.Variables())
 	cond8 := AND(cond5, cond7)
 	t.Logf("%s %s", cond8.WhereClause(), cond8.Variables())
+}
+
+func Test_likeEscape(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test Like escape",
+			args: args{
+				"test%%%",
+			},
+			want: "test\\%\\%\\%",
+		},
+		{
+			name: "test Like escape2",
+			args: args{
+				"test_%_%",
+			},
+			want: "test\\_\\%\\_\\%",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := likeEscape(tt.args.s); got != tt.want {
+				println(len(got), len(tt.want))
+				t.Errorf("likeEscape() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
