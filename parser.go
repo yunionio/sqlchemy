@@ -100,6 +100,9 @@ func struct2TableSpec(st reflect.Type, table *STableSpec) {
 		} else {
 			column := structField2ColumnSpec(&f)
 			if column != nil {
+				if column.IsIndex() {
+					table.AddIndex(column.IsUnique(), column.Name())
+				}
 				table.columns = append(table.columns, column)
 			}
 		}
