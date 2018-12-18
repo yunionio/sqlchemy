@@ -48,3 +48,18 @@ func TestInsertMultiAutoIncrement(t *testing.T) {
 	}{})
 	t.Errorf("should panic but it continues: err: %s", err)
 }
+
+func TestInsertWithPointerValue(t *testing.T) {
+	sql, vals, err := insertSqlPrep(&struct {
+		RowId int `auto_increment:true`
+		ColT1 *int
+		ColT2 int
+		ColT3 string
+		ColT4 *string
+	}{})
+	if err != nil {
+		t.Errorf("prepare sql failed: %s", err)
+		return
+	}
+	t.Logf("%s values: %v", sql, vals)
+}
