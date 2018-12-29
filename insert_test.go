@@ -10,7 +10,7 @@ import (
 func insertSqlPrep(v interface{}) (string, []interface{}, error) {
 	vvvalue := reflect.ValueOf(v).Elem()
 	vv := vvvalue.Interface()
-	vvFields := reflectutils.FetchStructFieldNameValueInterfaces(vvvalue)
+	vvFields := reflectutils.FetchStructFieldValueSet(vvvalue)
 	ts := NewTableSpecFromStruct(vv, "vv")
 	sql, vals, err := ts.insertSqlPrep(vvFields)
 	return sql, vals, err
