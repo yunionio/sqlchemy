@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"yunion.io/x/log"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
 	"yunion.io/x/pkg/util/regutils"
@@ -295,6 +296,10 @@ func (c *SBooleanColumn) IsZero(val interface{}) bool {
 
 func NewBooleanColumn(name string, tagmap map[string]string) SBooleanColumn {
 	bc := SBooleanColumn{SBaseWidthColumn: NewBaseWidthColumn(name, "TINYINT", tagmap)}
+	if !bc.IsPointer() && len(bc.Default()) > 0 && bc.ConvertFromString(bc.Default()) == "1" {
+		log.Warningf("Non-pointer boolean type should not set default value: %s(%s)", name, tagmap)
+		bc.defaultString = ""
+	}
 	return bc
 }
 

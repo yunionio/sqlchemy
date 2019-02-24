@@ -189,7 +189,7 @@ func diffIndexes2(exists []STableIndex, defs []STableIndex) (diff []STableIndex)
 				break
 			}
 		}
-		if ! findDef {
+		if !findDef {
 			diff = append(diff, exists[i])
 		}
 	}
