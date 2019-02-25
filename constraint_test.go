@@ -1,6 +1,8 @@
 package sqlchemy
 
-import ("testing")
+import (
+	"testing"
+)
 
 const tableDef = `CREATE TABLE ` + "`" + `image_properties` + "`" + ` (
   ` + "`" + `id` + "`" + ` varchar(128) CHARACTER SET ascii NOT NULL,
