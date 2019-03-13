@@ -2,6 +2,7 @@ package sqlchemy
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -83,7 +84,7 @@ func (s *SStringField) Name() string {
 }
 
 func (s *SStringField) Reference() string {
-	return fmt.Sprintf(`"%s"`, s.strConst)
+	return strconv.Quote(s.strConst)
 }
 
 func (s *SStringField) Label(label string) IQueryField {
