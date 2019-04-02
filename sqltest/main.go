@@ -211,4 +211,28 @@ func main() {
 			fmt.Println("dt4 ", jsonutils.Marshal(v))
 		}
 	}
+
+	qId1 := t1.Query(t1.Field("id"))
+	t3 := ticketSpec.Instance()
+	qId2 := t3.Query(t3.Field("id"))
+
+	union, err := sqlchemy.Union(qId1, qId2)
+	if err != nil {
+		log.Errorf("fail to union %s", err)
+	} else {
+		q := union.Limit(20).Offset(10).Desc("id").SubQuery().Query()
+		fmt.Println(q.String())
+
+		type sID struct {
+			Id string
+		}
+		idList := make([]sID, 0)
+		err := q.All(&idList)
+		if err != nil {
+			log.Errorf("fail to query idList %s", err)
+		} else {
+			log.Infof("Test: %s", jsonutils.Marshal(idList))
+		}
+	}
+
 }
