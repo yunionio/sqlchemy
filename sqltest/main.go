@@ -216,10 +216,8 @@ func main() {
 	t3 := ticketSpec.Instance()
 	qId2 := t3.Query(t3.Field("id"))
 
-	union, err := sqlchemy.Union(qId1, qId2)
-	if err != nil {
-		log.Errorf("fail to union %s", err)
-	} else {
+	{
+		union := sqlchemy.Union(qId1, qId2)
 		q := union.Limit(20).Offset(10).Desc("id").SubQuery().Query()
 		fmt.Println(q.String())
 
