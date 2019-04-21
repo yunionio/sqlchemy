@@ -143,9 +143,9 @@ func main() {
 	}
 	fmt.Println(dt2)
 
-	count := q.Count()
+	count, _ := q.Count()
 	fmt.Println("Count: ", count)
-	count = q2.Count()
+	count, _ = q2.Count()
 	fmt.Println("Count: ", count)
 
 	q = t1.Query().Desc(t1.Field("created_at")).IsNotEmpty("info").IsNotNull("compond").Limit(10)

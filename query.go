@@ -384,7 +384,7 @@ func (tq *SQuery) Rows() (*sql.Rows, error) {
 	return _db.Query(sqlstr, vars...)
 }
 
-func (tq *SQuery) Count() int {
+func (tq *SQuery) Count() (int, error) {
 	cq := SQuery{fields: []IQueryField{COUNT("count")},
 		from:    tq.from,
 		joins:   tq.joins,
@@ -395,9 +395,9 @@ func (tq *SQuery) Count() int {
 	err := cq.Row().Scan(&count)
 	if err != nil {
 		log.Errorf("SQuery count %s failed: %s", cq.String(), err)
-		return -1
+		return -1, err
 	} else {
-		return count
+		return count, nil
 	}
 }
 
