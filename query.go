@@ -384,7 +384,12 @@ func (tq *SQuery) Rows() (*sql.Rows, error) {
 	return _db.Query(sqlstr, vars...)
 }
 
-func (tq *SQuery) Count() (int, error) {
+func (tq *SQuery) Count() int {
+	cnt, _ := tq.CountWithError()
+	return cnt
+}
+
+func (tq *SQuery) CountWithError() (int, error) {
 	cq := SQuery{fields: []IQueryField{COUNT("count")},
 		from:    tq.from,
 		joins:   tq.joins,
