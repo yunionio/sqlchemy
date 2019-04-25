@@ -277,8 +277,10 @@ func queryString(tq *SQuery) string {
 		buf.WriteString(string(join.jointype))
 		buf.WriteByte(' ')
 		buf.WriteString(fmt.Sprintf("%s AS `%s`", join.from.Expression(), join.from.Alias()))
-		buf.WriteString(" ON ")
-		buf.WriteString(join.condition.WhereClause())
+		if join.condition != nil {
+			buf.WriteString(" ON ")
+			buf.WriteString(join.condition.WhereClause())
+		}
 	}
 	if tq.where != nil {
 		buf.WriteString(" WHERE ")
@@ -312,14 +314,23 @@ func queryString(tq *SQuery) string {
 }
 
 func (tq *SQuery) Join(from IQuerySource, on ICondition) *SQuery {
+	if from == nil {
+		return tq
+	}
 	return tq._join(from, on, INNERJOIN)
 }
 
 func (tq *SQuery) LeftJoin(from IQuerySource, on ICondition) *SQuery {
+	if from == nil {
+		return tq
+	}
 	return tq._join(from, on, LEFTJOIN)
 }
 
 func (tq *SQuery) RightJoin(from IQuerySource, on ICondition) *SQuery {
+	if from == nil {
+		return tq
+	}
 	return tq._join(from, on, RIGHTJOIN)
 }
 
@@ -346,8 +357,10 @@ func (tq *SQuery) Variables() []interface{} {
 	for _, join := range tq.joins {
 		fromvars = join.from.Variables()
 		vars = append(vars, fromvars...)
-		fromvars = join.condition.Variables()
-		vars = append(vars, fromvars...)
+		if join.condition != nil {
+			fromvars = join.condition.Variables()
+			vars = append(vars, fromvars...)
+		}
 	}
 	if tq.where != nil {
 		fromvars = tq.where.Variables()

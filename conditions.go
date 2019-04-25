@@ -66,6 +66,9 @@ func (c *SOrConditions) WhereClause() string {
 func AND(cond ...ICondition) ICondition {
 	conds := make([]ICondition, 0)
 	for _, c := range cond {
+		if c == nil {
+			continue
+		}
 		andCond, ok := c.(*SAndConditions)
 		if ok {
 			conds = append(conds, andCond.conditions...)
@@ -73,6 +76,11 @@ func AND(cond ...ICondition) ICondition {
 			conds = append(conds, c)
 		}
 	}
+
+	if len(conds) == 0 {
+		return nil
+	}
+
 	cc := SAndConditions{SCompoundConditions{conditions: conds}}
 	return &cc
 }
@@ -80,6 +88,9 @@ func AND(cond ...ICondition) ICondition {
 func OR(cond ...ICondition) ICondition {
 	conds := make([]ICondition, 0)
 	for _, c := range cond {
+		if c == nil {
+			continue
+		}
 		orCond, ok := c.(*SOrConditions)
 		if ok {
 			conds = append(conds, orCond.conditions...)
@@ -87,6 +98,11 @@ func OR(cond ...ICondition) ICondition {
 			conds = append(conds, c)
 		}
 	}
+
+	if len(conds) == 0 {
+		return nil
+	}
+
 	cc := SOrConditions{SCompoundConditions{conditions: conds}}
 	return &cc
 }
@@ -104,6 +120,9 @@ func (c *SNotCondition) Variables() []interface{} {
 }
 
 func NOT(cond ICondition) ICondition {
+	if cond == nil {
+		return nil
+	}
 	cc := SNotCondition{condition: cond}
 	return &cc
 }
@@ -129,6 +148,9 @@ func (c *SIsNullCondition) WhereClause() string {
 }
 
 func IsNull(f IQueryField) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SIsNullCondition{NewSingleCondition(f)}
 	return &c
 }
@@ -142,6 +164,9 @@ func (c *SIsNotNullCondition) WhereClause() string {
 }
 
 func IsNotNull(f IQueryField) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SIsNotNullCondition{NewSingleCondition(f)}
 	return &c
 }
@@ -155,6 +180,9 @@ func (c *SIsEmptyCondition) WhereClause() string {
 }
 
 func IsEmpty(f IQueryField) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SIsEmptyCondition{NewSingleCondition(f)}
 	return &c
 }
@@ -168,6 +196,9 @@ func (c *SIsNullOrEmptyCondition) WhereClause() string {
 }
 
 func IsNullOrEmpty(f IQueryField) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SIsNullOrEmptyCondition{NewSingleCondition(f)}
 	return &c
 }
@@ -181,6 +212,9 @@ func (c *SIsNotEmptyCondition) WhereClause() string {
 }
 
 func IsNotEmpty(f IQueryField) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SIsNotEmptyCondition{NewSingleCondition(f)}
 	return &c
 }
@@ -194,6 +228,9 @@ func (c *SIsTrueCondition) WhereClause() string {
 }
 
 func IsTrue(f IQueryField) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SIsTrueCondition{NewSingleCondition(f)}
 	return &c
 }
@@ -207,6 +244,9 @@ func (c *SIsFalseCondition) WhereClause() string {
 }
 
 func IsFalse(f IQueryField) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SIsFalseCondition{NewSingleCondition(f)}
 	return &c
 }
@@ -305,11 +345,17 @@ func (t *SInCondition) WhereClause() string {
 }
 
 func In(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SInCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
 func NotIn(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	return NOT(In(f, v))
 }
 
@@ -333,23 +379,35 @@ func (t *SLikeCondition) WhereClause() string {
 }
 
 func Like(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SLikeCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
 func Contains(f IQueryField, v string) ICondition {
+	if f == nil {
+		return nil
+	}
 	v = likeEscape(v)
 	nv := fmt.Sprintf("%%%s%%", v)
 	return Like(f, nv)
 }
 
 func Startswith(f IQueryField, v string) ICondition {
+	if f == nil {
+		return nil
+	}
 	v = likeEscape(v)
 	nv := fmt.Sprintf("%s%%", v)
 	return Like(f, nv)
 }
 
 func Endswith(f IQueryField, v string) ICondition {
+	if f == nil {
+		return nil
+	}
 	v = likeEscape(v)
 	nv := fmt.Sprintf("%%%s", v)
 	return Like(f, nv)
@@ -364,6 +422,9 @@ func (t *SEqualsCondition) WhereClause() string {
 }
 
 func Equals(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SEqualsCondition{NewTupleCondition(f, v)}
 	return &c
 }
@@ -377,6 +438,9 @@ func (t *SNotEqualsCondition) WhereClause() string {
 }
 
 func NotEquals(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SNotEqualsCondition{NewTupleCondition(f, v)}
 	return &c
 }
@@ -390,6 +454,9 @@ func (t *SGreatEqualCondition) WhereClause() string {
 }
 
 func GE(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SGreatEqualCondition{NewTupleCondition(f, v)}
 	return &c
 }
@@ -403,6 +470,9 @@ func (t *SGreatThanCondition) WhereClause() string {
 }
 
 func GT(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SGreatThanCondition{NewTupleCondition(f, v)}
 	return &c
 }
@@ -416,6 +486,9 @@ func (t *SLessEqualCondition) WhereClause() string {
 }
 
 func LE(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SLessEqualCondition{NewTupleCondition(f, v)}
 	return &c
 }
@@ -429,6 +502,9 @@ func (t *SLessThanCondition) WhereClause() string {
 }
 
 func LT(f IQueryField, v interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SLessThanCondition{NewTupleCondition(f, v)}
 	return &c
 }
@@ -462,6 +538,9 @@ func (t *SBetweenCondition) WhereClause() string {
 }
 
 func Between(f IQueryField, r1, r2 interface{}) ICondition {
+	if f == nil {
+		return nil
+	}
 	c := SBetweenCondition{NewTripleCondition(f, r1, r2)}
 	return &c
 }
