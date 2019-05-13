@@ -606,22 +606,20 @@ func NewStringColumn(name string, sqltype string, tagmap map[string]string) SStr
 	return sc
 }*/
 
-type SDateTimeColumn struct {
+type STimeTypeColumn struct {
 	SBaseColumn
-	IsCreatedAt bool
-	IsUpdatedAt bool
 }
 
-func (c *SDateTimeColumn) IsText() bool {
+func (c *STimeTypeColumn) IsText() bool {
 	return true
 }
 
-func (c *SDateTimeColumn) DefinitionString() string {
+func (c *STimeTypeColumn) DefinitionString() string {
 	buf := definitionBuffer(c)
 	return buf.String()
 }
 
-func (c *SDateTimeColumn) IsZero(val interface{}) bool {
+func (c *STimeTypeColumn) IsZero(val interface{}) bool {
 	if c.isPointer {
 		bVal := val.(*time.Time)
 		return bVal == nil
@@ -629,7 +627,19 @@ func (c *SDateTimeColumn) IsZero(val interface{}) bool {
 		bVal := val.(time.Time)
 		return bVal.IsZero()
 	}
+}
 
+func NewTimeTypeColumn(name string, typeStr string, tagmap map[string]string, isPointer bool) STimeTypeColumn {
+	dc := STimeTypeColumn{
+		NewBaseColumn(name, typeStr, tagmap, isPointer),
+	}
+	return dc
+}
+
+type SDateTimeColumn struct {
+	STimeTypeColumn
+	IsCreatedAt bool
+	IsUpdatedAt bool
 }
 
 func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SDateTimeColumn {
@@ -644,7 +654,7 @@ func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SD
 		updatedAt = utils.ToBool(v)
 	}
 	dtc := SDateTimeColumn{
-		NewBaseColumn(name, "DATETIME", tagmap, isPointer),
+		NewTimeTypeColumn(name, "DATETIME", tagmap, isPointer),
 		createdAt, updatedAt,
 	}
 	return dtc

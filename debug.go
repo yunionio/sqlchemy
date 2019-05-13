@@ -21,7 +21,11 @@ func (sqf *SSubQuery) DebugQuery() {
 }
 
 func (t *STableSpec) DebugInsert(dt interface{}) error {
-	return t.insert(dt, true)
+	return t.insert(dt, false, true)
+}
+
+func (t *STableSpec) DebugInsertOrUpdate(dt interface{}) error {
+	return t.insert(dt, true, true)
 }
 
 func (ts *STableSpec) DebugUpdateFields(dt interface{}, fields map[string]interface{}) error {
