@@ -218,7 +218,7 @@ func main() {
 
 	{
 		union := sqlchemy.Union(qId1, qId2)
-		q := union.Limit(20).Offset(10).Desc("id").SubQuery().Query()
+		q := union.Limit(20).Offset(10).Query()
 		fmt.Println(q.String())
 
 		type sID struct {
