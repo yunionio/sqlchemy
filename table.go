@@ -75,7 +75,7 @@ func (ts *STableSpec) CreateSQL() string {
 	if len(indexes) > 0 {
 		cols = append(cols, indexes...)
 	}
-	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n%s\n) ENGINE=InnoDB DEFAULT CHARSET=utf8", ts.name, strings.Join(cols, ",\n"))
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (\n%s\n) ENGINE=InnoDB DEFAULT CHARSET=utf8", ts.name, strings.Join(cols, ",\n"))
 }
 
 func (ts *STableSpec) Instance() *STable {
