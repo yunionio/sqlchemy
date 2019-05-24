@@ -74,18 +74,25 @@ type SQueryJoin struct {
 	condition ICondition
 }
 
+type sQuery struct {
+	rawSql      string
+	fields      []IQueryField
+	distinct    bool
+	from        IQuerySource
+	joins       []SQueryJoin
+	groupBy     []IQueryField
+	orderBy     []SQueryOrder
+	having      ICondition
+	filterConds []ICondition
+	limit       int
+	offset      int
+}
+
 type SQuery struct {
-	rawSql   string
-	fields   []IQueryField
-	distinct bool
-	from     IQuerySource
-	joins    []SQueryJoin
-	where    ICondition
-	groupBy  []IQueryField
-	orderBy  []SQueryOrder
-	having   ICondition
-	limit    int
-	offset   int
+	*sQuery
+
+	// record is query has new condition
+	lastConds ICondition
 }
 
 type SSubQuery struct {
@@ -164,7 +171,7 @@ func DoQuery(from IQuerySource, f ...IQueryField) *SQuery {
 	if len(f) == 0 {
 		f = from.Fields()
 	}
-	tq := SQuery{fields: f, from: from}
+	tq := SQuery{sQuery: &sQuery{fields: f, from: from}}
 	return &tq
 }
 
@@ -294,10 +301,13 @@ func queryString(tq *SQuery) string {
 		buf.WriteString(" ON ")
 		buf.WriteString(join.condition.WhereClause())
 	}
-	if tq.where != nil {
+
+	if len(tq.filterConds) > 0 {
+		var cond = AND(tq.filterConds...)
 		buf.WriteString(" WHERE ")
-		buf.WriteString(tq.where.WhereClause())
+		buf.WriteString(cond.WhereClause())
 	}
+
 	if tq.groupBy != nil && len(tq.groupBy) > 0 {
 		buf.WriteString(" GROUP BY ")
 		for i, f := range tq.groupBy {
@@ -306,6 +316,10 @@ func queryString(tq *SQuery) string {
 			}
 			buf.WriteString(f.Reference())
 		}
+	}
+	if tq.having != nil {
+		buf.WriteString(" HAVING ")
+		buf.WriteString(tq.having.WhereClause())
 	}
 	if tq.orderBy != nil && len(tq.orderBy) > 0 {
 		buf.WriteString(" ORDER BY ")
@@ -363,8 +377,9 @@ func (tq *SQuery) Variables() []interface{} {
 		fromvars = join.condition.Variables()
 		vars = append(vars, fromvars...)
 	}
-	if tq.where != nil {
-		fromvars = tq.where.Variables()
+	if len(tq.filterConds) > 0 {
+		cond := AND(tq.filterConds...)
+		fromvars = cond.Variables()
 		vars = append(vars, fromvars...)
 	}
 	return vars
@@ -404,12 +419,14 @@ func (tq *SQuery) Count() int {
 }
 
 func (tq *SQuery) CountWithError() (int, error) {
-	cq := SQuery{fields: []IQueryField{COUNT("count")},
-		from:    tq.from,
-		joins:   tq.joins,
-		where:   tq.where,
-		groupBy: tq.groupBy,
-		having:  tq.having}
+	cq := SQuery{sQuery: &sQuery{
+		fields:      []IQueryField{COUNT("count")},
+		from:        tq.from,
+		joins:       tq.joins,
+		groupBy:     tq.groupBy,
+		having:      tq.having,
+		filterConds: tq.filterConds,
+	}}
 	var count int = 0
 	err := cq.Row().Scan(&count)
 	if err != nil {

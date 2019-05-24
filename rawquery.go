@@ -40,6 +40,6 @@ func NewRawQuery(sqlStr string, fields ...string) *SQuery {
 		rqf := SRawQueryField{name: f}
 		qfs[i] = &rqf
 	}
-	q := SQuery{rawSql: sqlStr, fields: qfs}
+	q := SQuery{sQuery: &sQuery{rawSql: sqlStr, fields: qfs}}
 	return &q
 }
