@@ -38,18 +38,26 @@ type IQuery interface {
 }
 
 type IQuerySource interface {
-	// string in select ... from ...
+	// string in select ... from (expresson here)
 	Expression() string
+	// alias in select ... from (express) as alias
 	Alias() string
+	// variables in statement
 	Variables() []interface{}
+	// reference to a field by name, optionally giving an alias name
 	Field(id string, alias ...string) IQueryField
+	// return all the fields that this source provides
 	Fields() []IQueryField
 }
 
 type IQueryField interface {
+	// the string after select
 	Expression() string
+	// the name of thie field
 	Name() string
+	// the string in where clause
 	Reference() string
+	// give this field an alias name
 	Label(label string) IQueryField
 }
 
@@ -126,7 +134,7 @@ func (sqf *SSubQueryField) Name() string {
 }
 
 func (sqf *SSubQueryField) Reference() string {
-	return fmt.Sprintf("%s.%s", sqf.query.alias, sqf.Name())
+	return fmt.Sprintf("`%s`.`%s`", sqf.query.alias, sqf.Name())
 }
 
 func (sqf *SSubQueryField) Label(label string) IQueryField {
@@ -198,8 +206,9 @@ func DoQuery(from IQuerySource, f ...IQueryField) *SQuery {
 	return &tq
 }
 
-func (q *SQuery) AppendField(f ...IQueryField) {
+func (q *SQuery) AppendField(f ...IQueryField) *SQuery {
 	q.fields = append(q.fields, f...)
+	return q
 }
 
 func (table *SSubQuery) Query(f ...IQueryField) *SQuery {

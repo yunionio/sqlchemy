@@ -17,15 +17,18 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-plus/uuid"
+
 	"reflect"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/golang-plus/uuid"
 
 	"yunion.io/x/jsonutils"
 	"yunion.io/x/log"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/util/timeutils"
+
 	"yunion.io/x/sqlchemy"
 )
 
