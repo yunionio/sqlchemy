@@ -457,21 +457,28 @@ func (tq *SQuery) Count() int {
 	return cnt
 }
 
+func (tq *SQuery) countQuery() *SQuery {
+	tq2 := *tq
+	tq2.limit = 0
+	tq2.offset = 0
+	cq := &SQuery{
+		fields: []IQueryField{
+			COUNT("count"),
+		},
+		from: tq2.SubQuery(),
+	}
+	return cq
+}
+
 func (tq *SQuery) CountWithError() (int, error) {
-	cq := SQuery{fields: []IQueryField{COUNT("count")},
-		from:    tq.from,
-		joins:   tq.joins,
-		where:   tq.where,
-		groupBy: tq.groupBy,
-		having:  tq.having}
-	var count int = 0
+	cq := tq.countQuery()
+	count := 0
 	err := cq.Row().Scan(&count)
-	if err != nil {
-		log.Errorf("SQuery count %s failed: %s", cq.String(), err)
-		return -1, err
-	} else {
+	if err == nil {
 		return count, nil
 	}
+	log.Errorf("SQuery count %s failed: %s", cq.String(), err)
+	return -1, err
 }
 
 func (tq *SQuery) Field(name string) IQueryField {
