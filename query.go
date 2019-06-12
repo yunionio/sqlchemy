@@ -483,8 +483,8 @@ func (tq *SQuery) CountWithError() (int, error) {
 
 func (tq *SQuery) Field(name string) IQueryField {
 	f := tq.findField(name)
-	if f == nil {
-		log.Errorf("cannot find field %s for query", name)
+	if DEBUG_SQLCHEMY && f == nil {
+		log.Debugf("cannot find field %s for query", name)
 	}
 	return f
 }
