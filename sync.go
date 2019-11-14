@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"yunion.io/x/log"
+	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/utils"
 )
 
@@ -159,7 +160,9 @@ func (ts *STableSpec) fetchIndexesAndConstraints() ([]STableIndex, []STableConst
 	var name, defStr string
 	err := row.Scan(&name, &defStr)
 	if err != nil {
-		log.Errorf("fetch create table info fail %s", err)
+		if isMysqlError(err, mysqlErrorTableNotExist) {
+			err = ErrTableNotExists
+		}
 		return nil, nil, err
 	}
 	indexes := parseIndexes(defStr)
@@ -235,7 +238,9 @@ func diffIndexes(exists []STableIndex, defs []STableIndex) (added []STableIndex,
 func (ts *STableSpec) DropForeignKeySQL() []string {
 	_, constraints, err := ts.fetchIndexesAndConstraints()
 	if err != nil {
-		log.Errorf("fetchIndexesAndConstraints fail %s", err)
+		if errors.Cause(err) != ErrTableNotExists {
+			log.Errorf("fetchIndexesAndConstraints fail %s", err)
+		}
 		return nil
 	}
 
@@ -260,7 +265,9 @@ func (ts *STableSpec) SyncSQL() []string {
 
 	indexes, _, err := ts.fetchIndexesAndConstraints()
 	if err != nil {
-		log.Errorf("fetchIndexesAndConstraints fail %s", err)
+		if errors.Cause(err) != ErrTableNotExists {
+			log.Errorf("fetchIndexesAndConstraints fail %s", err)
+		}
 		return nil
 	}
 
