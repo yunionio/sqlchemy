@@ -201,11 +201,21 @@ func main() {
 
 	_, err = tablespec.Update(&dt3, func() error {
 		dt3.Name = "New name 4"
+		dt3.Age = 10
 		dt3.Compond = &SCompondStruct{Id: "998822333", Age: 80}
 		return nil
 	})
 	if err != nil {
 		log.Errorf("update fail %s", err)
+	}
+
+	dt3.Age = 1
+	target := TestTable{}
+	err = tablespec.Increment(dt3, &target)
+	if err != nil {
+		log.Errorf("incremental faild %s", err)
+	} else {
+		log.Infof("Increment: %d %d", target.Age, dt3.Age)
 	}
 
 	q = t1.Query().Equals("id", dt3.Id)
