@@ -34,6 +34,7 @@ type IColumnSpec interface {
 	Default() string
 	IsSupportDefault() bool
 	IsNullable() bool
+	SetNullable(on bool)
 	IsPrimary() bool
 	IsUnique() bool
 	IsIndex() bool
@@ -95,6 +96,10 @@ func (c *SBaseColumn) IsSupportDefault() bool {
 
 func (c *SBaseColumn) IsNullable() bool {
 	return c.isNullable
+}
+
+func (c *SBaseColumn) SetNullable(on bool) {
+	c.isNullable = on
 }
 
 func (c *SBaseColumn) IsPrimary() bool {
