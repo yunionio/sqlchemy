@@ -172,7 +172,13 @@ func definitionBuffer(c IColumnSpec) bytes.Buffer {
 	}
 
 	def := c.Default()
-	if len(def) > 0 && c.IsSupportDefault() {
+	defOk := c.IsSupportDefault()
+	if def != "" {
+		if !defOk {
+			panic(fmt.Errorf("column %q type %q does not support having default value: %q",
+				c.Name(), c.ColType(), def,
+			))
+		}
 		def = c.ConvertFromString(def)
 		buf.WriteString(" DEFAULT ")
 		if c.IsText() {
