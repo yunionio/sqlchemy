@@ -15,6 +15,7 @@
 package sqlchemy
 
 import (
+	"fmt"
 	"reflect"
 
 	"yunion.io/x/pkg/gotypes"
@@ -111,9 +112,16 @@ func getFiledTypeCol(fieldType reflect.Type, fieldname string, tagmap map[string
 
 func struct2TableSpec(sv reflect.Value, table *STableSpec) {
 	fields := reflectutils.FetchStructFieldValueSet(sv)
+	autoIncCnt := 0
 	for i := 0; i < len(fields); i += 1 {
 		column := structField2ColumnSpec(&fields[i])
 		if column != nil {
+			if intC, ok := column.(*SIntegerColumn); ok && intC.IsAutoIncrement {
+				autoIncCnt += 1
+				if autoIncCnt > 1 {
+					panic(fmt.Sprintf("Table %s contains multiple autoincremental columns!!", table.name))
+				}
+			}
 			if column.IsIndex() {
 				table.AddIndex(column.IsUnique(), column.Name())
 			}
