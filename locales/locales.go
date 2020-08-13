@@ -43,81 +43,38 @@ func init() {
 }
 
 var messageKeyToIndex = map[string]int{
-	"Cannot find JSONDict key": 30,
-	"Illformat":                31,
-	"No data to update":        0,
-	"NotSupportedError":        8,
-	"TableNotExists":           9,
-	"do not known how to deserialize json into this interface type": 26,
-	"duplicate entry":                 1,
-	"empty primary keys":              3,
-	"empty query":                     2,
-	"fail to insert object":           10,
-	"input needs pointer input":       5,
-	"input needs slice or array":      6,
-	"invalid 4 byte rune":             23,
-	"invalid char":                    21,
-	"invalid hex":                     22,
-	"key not found":                   17,
-	"map key must be string":          27,
-	"missing input field":             28,
-	"nil input field":                 29,
-	"not a valid JSONArray":           12,
-	"not a valid JSONDict":            11,
-	"not a valid boolean":             15,
-	"not a valid float":               14,
-	"not a valid number":              13,
-	"not a valid string":              16,
-	"out of index range":              20,
-	"out of key range":                19,
-	"read only input":                 7,
-	"unexpected row count":            4,
-	"unmarshal array length mismatch": 25,
-	"unmarshal type mismatch":         24,
-	"unsupported operation":           18,
+	"No data to update":          0,
+	"NotSupportedError":          8,
+	"TableNotExists":             9,
+	"duplicate entry":            1,
+	"empty primary keys":         3,
+	"empty query":                2,
+	"input needs pointer input":  5,
+	"input needs slice or array": 6,
+	"read only input":            7,
+	"unexpected row count":       4,
 }
 
-var en_USIndex = []uint32{ // 33 elements
-	// Entry 0 - 1F
+var en_USIndex = []uint32{ // 11 elements
 	0x00000000, 0x00000012, 0x00000022, 0x0000002e,
 	0x00000041, 0x00000056, 0x00000070, 0x0000008b,
-	0x0000009b, 0x000000ad, 0x000000bc, 0x000000d2,
-	0x000000e7, 0x000000fd, 0x00000110, 0x00000122,
-	0x00000136, 0x00000149, 0x00000157, 0x0000016d,
-	0x0000017e, 0x00000191, 0x0000019e, 0x000001aa,
-	0x000001be, 0x000001d6, 0x000001f6, 0x00000234,
-	0x0000024b, 0x0000025f, 0x0000026f, 0x00000288,
-	// Entry 20 - 3F
-	0x00000292,
-} // Size: 156 bytes
+	0x0000009b, 0x000000ad, 0x000000bc,
+} // Size: 68 bytes
 
-const en_USData string = "" + // Size: 658 bytes
+const en_USData string = "" + // Size: 188 bytes
 	"\x02No data to update\x02duplicate entry\x02empty query\x02empty primary" +
 	" keys\x02unexpected row count\x02input needs pointer input\x02input need" +
 	"s slice or array\x02read only input\x02NotSupportedError\x02TableNotExis" +
-	"ts\x02fail to insert object\x02not a valid JSONDict\x02not a valid JSONA" +
-	"rray\x02not a valid number\x02not a valid float\x02not a valid boolean" +
-	"\x02not a valid string\x02key not found\x02unsupported operation\x02out " +
-	"of key range\x02out of index range\x02invalid char\x02invalid hex\x02inv" +
-	"alid 4 byte rune\x02unmarshal type mismatch\x02unmarshal array length mi" +
-	"smatch\x02do not known how to deserialize json into this interface type" +
-	"\x02map key must be string\x02missing input field\x02nil input field\x02" +
-	"Cannot find JSONDict key\x02Illformat"
+	"ts"
 
-var zh_CNIndex = []uint32{ // 33 elements
-	// Entry 0 - 1F
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	// Entry 20 - 3F
-	0x00000000,
-} // Size: 156 bytes
+var zh_CNIndex = []uint32{ // 11 elements
+	0x00000000, 0x0000001c, 0x00000029, 0x00000033,
+	0x00000043, 0x00000059, 0x00000072, 0x00000095,
+	0x000000a8, 0x000000b2, 0x000000bf,
+} // Size: 68 bytes
 
-const zh_CNData string = ""
+const zh_CNData string = "" + // Size: 191 bytes
+	"\x02没有需要UPDATE的数据\x02重复条目\x02空查询\x02未指定主键\x02行数不符合预期\x02输入应为指针类型\x02输入应为" +
+	"slice或者array类型\x02输入参数只读\x02不支持\x02表不存在"
 
-// Total table size 970 bytes (0KiB); checksum: A9D0BAAE
+	// Total table size 515 bytes (0KiB); checksum: 11D0C27C
