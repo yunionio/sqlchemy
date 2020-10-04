@@ -76,13 +76,13 @@ type TestTable struct {
 	Gender    string               `width:"10" charset:"ascii"`
 	Age       uint8                `default:"18"`
 	Info      jsonutils.JSONObject `nullable:"false"`
-	Compond   *SCompondStruct      `width:1024`
+	Compond   *SCompondStruct      `width:"1024"`
 	CreatedAt time.Time            `nullable:"false" created_at:"true"`
 	UpdatedAt time.Time            `nullable:"false" updated_at:"true"`
 	Version   int                  `default:"0" nullable:"false" auto_version:"true"`
 	DeletedAt time.Time            ``
 	Deleted   bool                 `nullable:"false" default:"false"`
-	Notes     string               `default:"default notes"`
+	Notes     string               `width:"32" default:"default notes"`
 }
 
 type Ticket struct {
@@ -117,12 +117,15 @@ func main() {
 	defer sqlchemy.CloseDB()
 
 	tablespec := sqlchemy.NewTableSpecFromStruct(TestTable{}, "testtable")
+	tablespec.Sync()
 	tablespec.CheckSync()
 
 	agespec := sqlchemy.NewTableSpecFromStruct(AgentTable{}, "age_tbl")
+	agespec.Sync()
 	agespec.CheckSync()
 
 	ticketSpec := sqlchemy.NewTableSpecFromStruct(Ticket{}, "ticket_tbl")
+	ticketSpec.Sync()
 	ticketSpec.CheckSync()
 
 	t1 := tablespec.Instance()
