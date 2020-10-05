@@ -45,7 +45,8 @@ func decodeSqlTypeString(typeStr string) []string {
 	if len(matches) >= 3 {
 		return matches[1:]
 	} else {
-		return []string{typeStr}
+		parts := strings.Split(typeStr, " ")
+		return []string{parts[0]}
 	}
 }
 
@@ -97,6 +98,13 @@ func (info *SSqlColumnInfo) toColumnSpec() IColumnSpec {
 		unsigned := false
 		if strings.HasSuffix(info.Type, " unsigned") {
 			unsigned = true
+		}
+		if _, ok := tagmap[TAG_WIDTH]; !ok {
+			if unsigned {
+				tagmap[TAG_WIDTH] = uintWidthString(typeStr)
+			} else {
+				tagmap[TAG_WIDTH] = intWidthString(typeStr)
+			}
 		}
 		c := NewIntegerColumn(info.Field, typeStr, unsigned, tagmap, false)
 		return &c

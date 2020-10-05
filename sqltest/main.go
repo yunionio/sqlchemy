@@ -213,7 +213,7 @@ func main() {
 	}
 
 	dt3.Age = 1
-	target := TestTable{}
+	target := TestTable{Id: dt3.Id}
 	err = tablespec.Increment(dt3, &target)
 	if err != nil {
 		log.Errorf("incremental faild %s", err)
