@@ -416,12 +416,13 @@ func (ts *STableSpec) Sync() error {
 	return nil
 }
 
-func (ts *STableSpec) CheckSync() {
+func (ts *STableSpec) CheckSync() error {
 	sqls := ts.SyncSQL()
 	if len(sqls) > 0 {
 		for _, sql := range sqls {
 			fmt.Println(sql)
 		}
-		log.Fatalf("DB table %q not in sync", ts.name)
+		return fmt.Errorf("DB table %q not in sync", ts.name)
 	}
+	return nil
 }
