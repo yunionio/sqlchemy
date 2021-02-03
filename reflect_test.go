@@ -89,3 +89,29 @@ func Test_setValueBySQLString(t *testing.T) {
 		}
 	})
 }
+
+func TestGetQuoteStringValue(t *testing.T) {
+	cases := []struct {
+		in   interface{}
+		want string
+	}{
+		{
+			in:   0,
+			want: "0",
+		},
+		{
+			in:   "abc",
+			want: "\"abc\"",
+		},
+		{
+			in:   "123\"34",
+			want: "\"123\\\"34\"",
+		},
+	}
+	for _, c := range cases {
+		got := getQuoteStringValue(c.in)
+		if got != c.want {
+			t.Errorf("want %s got %s for %s", c.want, got, c.in)
+		}
+	}
+}

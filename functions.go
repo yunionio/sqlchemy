@@ -137,6 +137,38 @@ func REPLACE(name string, field IQueryField, old string, new string) IQueryField
 	return NewFunctionField(name, fmt.Sprintf(`REPLACE(%s, "%s", "%s")`, "%s", old, new), field)
 }
 
+type SConstField struct {
+	constVar interface{}
+	alias    string
+}
+
+func (s *SConstField) Expression() string {
+	return fmt.Sprintf("%s AS `%s`", s.Reference(), s.Name())
+}
+
+func (s *SConstField) Name() string {
+	return s.alias
+}
+
+func (s *SConstField) Reference() string {
+	return getQuoteStringValue(s.constVar)
+}
+
+func (s *SConstField) Label(label string) IQueryField {
+	if len(label) > 0 {
+		s.alias = label
+	}
+	return s
+}
+
+func (s *SConstField) Variables() []interface{} {
+	return nil
+}
+
+func NewConstField(variable interface{}) *SConstField {
+	return &SConstField{constVar: variable}
+}
+
 type SStringField struct {
 	strConst string
 	alias    string
