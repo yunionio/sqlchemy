@@ -24,6 +24,7 @@ import (
 
 type IFunction interface {
 	expression() string
+	variables() []interface{}
 }
 
 type SFunctionFieldBase struct {
@@ -65,6 +66,10 @@ func (ff *SFunctionFieldBase) Label(label string) IQueryField {
 	return ff
 }
 
+func (ff *SFunctionFieldBase) Variables() []interface{} {
+	return ff.variables()
+}
+
 type SExprFunction struct {
 	fields   []IQueryField
 	function string
@@ -76,6 +81,15 @@ func (ff *SExprFunction) expression() string {
 		fieldRefs = append(fieldRefs, f.Reference())
 	}
 	return fmt.Sprintf(ff.function, fieldRefs...)
+}
+
+func (ff *SExprFunction) variables() []interface{} {
+	vars := make([]interface{}, 0)
+	for _, f := range ff.fields {
+		fromVars := f.Variables()
+		vars = append(vars, fromVars...)
+	}
+	return vars
 }
 
 func NewFunctionField(name string, funcexp string, fields ...IQueryField) IQueryField {
@@ -145,6 +159,10 @@ func (s *SStringField) Label(label string) IQueryField {
 		s.alias = label
 	}
 	return s
+}
+
+func (s *SStringField) Variables() []interface{} {
+	return nil
 }
 
 func NewStringField(name string) *SStringField {
