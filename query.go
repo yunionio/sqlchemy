@@ -463,7 +463,7 @@ func (tq *SQuery) Row() *sql.Row {
 	sqlstr := tq.String()
 	vars := tq.Variables()
 	if DEBUG_SQLCHEMY {
-		log.Debugf("SQuery %s with vars: %s", sqlstr, vars)
+		sqlDebug(sqlstr, vars)
 	}
 	return _db.QueryRow(sqlstr, vars...)
 }
@@ -472,7 +472,7 @@ func (tq *SQuery) Rows() (*sql.Rows, error) {
 	sqlstr := tq.String()
 	vars := tq.Variables()
 	if DEBUG_SQLCHEMY {
-		log.Debugf("SQuery %s with vars: %s", sqlstr, vars)
+		sqlDebug(sqlstr, vars)
 	}
 	return _db.Query(sqlstr, vars...)
 }

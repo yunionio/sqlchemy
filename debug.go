@@ -15,6 +15,10 @@
 package sqlchemy
 
 import (
+	"fmt"
+	"strings"
+	"time"
+
 	"yunion.io/x/log"
 )
 
@@ -22,16 +26,30 @@ var (
 	DEBUG_SQLCHEMY = false
 )
 
+func sqlDebug(sqlstr string, variables []interface{}) {
+	for _, v := range variables {
+		switch v.(type) {
+		case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+			sqlstr = strings.Replace(sqlstr, "?", fmt.Sprintf(`%v`, v), 1)
+		case string, time.Time:
+			sqlstr = strings.Replace(sqlstr, "?", fmt.Sprintf(`"%s"`, v), 1)
+		default:
+			sqlstr = strings.Replace(sqlstr, "?", fmt.Sprintf(`"%v"`, v), 1)
+		}
+	}
+	log.Debugln("SQuery ", sqlstr)
+}
+
 func (tq *SQuery) DebugQuery() {
 	sqlstr := tq.String()
 	vars := tq.Variables()
-	log.Debugf("SQuery %s with vars: %s", sqlstr, vars)
+	sqlDebug(sqlstr, vars)
 }
 
 func (sqf *SSubQuery) DebugQuery() {
 	sqlstr := sqf.Expression()
 	vars := sqf.query.Variables()
-	log.Debugf("SQuery %s with vars: %s", sqlstr, vars)
+	sqlDebug(sqlstr, vars)
 }
 
 func (t *STableSpec) DebugInsert(dt interface{}) error {
