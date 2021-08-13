@@ -23,48 +23,80 @@ import (
 	"yunion.io/x/pkg/utils"
 )
 
+// interface represents a table
 type ITableSpec interface {
+	// perform an insert operation that insert one record at a time
 	Insert(dt interface{}) error
+
+	// perform an insert or update operation that insert a new record to update the record with current value
 	InsertOrUpdate(dt interface{}) error
+
+	// perform an update operation
 	Update(dt interface{}, onUpdate func() error) (UpdateDiffs, error)
+
+	// a special update that do an atomic incremetal update of the numeric fields
 	Increment(diff, target interface{}) error
+
+	// a special update that do an atomic decremental update of the numeric fields
 	Decrement(diff, target interface{}) error
 
+	// returns the data type corresponding to the table
 	DataType() reflect.Type
+
+	// returns the column definition of a spcific column
 	ColumnSpec(name string) IColumnSpec
+
+	// name of the table
 	Name() string
+
+	// the array of columns definitions
 	Columns() []IColumnSpec
+
+	// the array of columns of primary keys
 	PrimaryColumns() []IColumnSpec
+
+	// expression of the table
 	Expression() string
 
+	// an instance of the table
 	Instance() *STable
 
+	// drop foreignkey
 	DropForeignKeySQL() []string
+
+	// add index to table
 	AddIndex(unique bool, cols ...string) bool
 
+	// force synchronize the data definiton and model defintion of the table
 	SyncSQL() []string
+
+	// query a struct
 	Fetch(dt interface{}) error
 }
 
+// table specification
 type STableSpec struct {
 	structType reflect.Type
 	name       string
 	columns    []IColumnSpec
-	indexes    []STableIndex
-	contraints []STableConstraint
+	indexes    []sTableIndex
+	contraints []sTableConstraint
 }
 
+// an instance of table for query, system will automatically give a alias to this table
 type STable struct {
 	spec  ITableSpec
 	alias string
 }
 
+// represents a field in a table, implements IQueryField
 type STableField struct {
 	table *STable
 	spec  IColumnSpec
 	alias string
 }
 
+// generate STableSpec based on the information of a struct model
 func NewTableSpecFromStruct(s interface{}, name string) *STableSpec {
 	val := reflect.Indirect(reflect.ValueOf(s))
 	st := val.Type()
@@ -80,14 +112,17 @@ func NewTableSpecFromStruct(s interface{}, name string) *STableSpec {
 	return table
 }
 
+// Name implementation of STableSpec for ITableSpec
 func (ts *STableSpec) Name() string {
 	return ts.name
 }
 
+// Expression implementation of STableSpec for ITableSpec
 func (ts *STableSpec) Expression() string {
 	return fmt.Sprintf("`%s`", ts.name)
 }
 
+// make a clone of a table, so we may create a new table of the same schema
 func (ts *STableSpec) Clone(name string, autoIncOffset int64) *STableSpec {
 	newCols := make([]IColumnSpec, len(ts.columns))
 	for i := range newCols {
@@ -109,10 +144,12 @@ func (ts *STableSpec) Clone(name string, autoIncOffset int64) *STableSpec {
 	}
 }
 
+// Columns implementation of STableSpec for ITableSpec
 func (ts *STableSpec) Columns() []IColumnSpec {
 	return ts.columns
 }
 
+// PrimaryColumns implementation of STableSpec for ITableSpec
 func (ts *STableSpec) PrimaryColumns() []IColumnSpec {
 	ret := make([]IColumnSpec, 0)
 	for i := range ts.columns {
@@ -123,10 +160,12 @@ func (ts *STableSpec) PrimaryColumns() []IColumnSpec {
 	return ret
 }
 
+// DataType implementation of STableSpec for ITableSpec
 func (ts *STableSpec) DataType() reflect.Type {
 	return ts.structType
 }
 
+// returns the SQL for creating this table
 func (ts *STableSpec) CreateSQL() string {
 	cols := make([]string, 0)
 	primaries := make([]string, 0)
@@ -153,15 +192,18 @@ func (ts *STableSpec) CreateSQL() string {
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (\n%s\n) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci%s", ts.name, strings.Join(cols, ",\n"), autoInc)
 }
 
+// return an new table instance from an ITableSpec
 func NewTableInstance(ts ITableSpec) *STable {
 	table := STable{spec: ts, alias: getTableAliasName()}
 	return &table
 }
 
+// return an new table instance from an instance of STableSpec
 func (ts *STableSpec) Instance() *STable {
 	return NewTableInstance(ts)
 }
 
+// ColumnSpec implementation of STableSpec for ITableSpec
 func (ts *STableSpec) ColumnSpec(name string) IColumnSpec {
 	for _, c := range ts.Columns() {
 		if c.Name() == name {
@@ -171,6 +213,7 @@ func (ts *STableSpec) ColumnSpec(name string) IColumnSpec {
 	return nil
 }
 
+// Field implementation of STableSpec for IQuerySource
 func (tbl *STable) Field(name string, alias ...string) IQueryField {
 	// name = reflectutils.StructFieldName(name)
 	name = utils.CamelSplit(name, "_")
@@ -186,6 +229,7 @@ func (tbl *STable) Field(name string, alias ...string) IQueryField {
 	return &col
 }
 
+// Fields implementation of STable for IQuerySource
 func (tbl *STable) Fields() []IQueryField {
 	ret := make([]IQueryField, 0)
 	for _, c := range tbl.spec.Columns() {
@@ -194,6 +238,7 @@ func (tbl *STable) Fields() []IQueryField {
 	return ret
 }
 
+// Expression implementation of STableField for IQueryField
 func (c *STableField) Expression() string {
 	if len(c.alias) > 0 {
 		return fmt.Sprintf("`%s`.`%s` as `%s`", c.table.Alias(), c.spec.Name(), c.alias)
@@ -202,6 +247,7 @@ func (c *STableField) Expression() string {
 	}
 }
 
+// Name implementation of STableField for IQueryField
 func (c *STableField) Name() string {
 	if len(c.alias) > 0 {
 		return c.alias
@@ -210,10 +256,12 @@ func (c *STableField) Name() string {
 	}
 }
 
+// Reference implementation of STableField for IQueryField
 func (c *STableField) Reference() string {
 	return fmt.Sprintf("`%s`.`%s`", c.table.Alias(), c.Name())
 }
 
+// Label implementation of STableField for IQueryField
 func (c *STableField) Label(label string) IQueryField {
 	if len(label) > 0 && label != c.spec.Name() {
 		c.alias = label
@@ -221,6 +269,7 @@ func (c *STableField) Label(label string) IQueryField {
 	return c
 }
 
+// Variables implementation of STableField for IQueryField
 func (c *STableField) Variables() []interface{} {
 	return nil
 }

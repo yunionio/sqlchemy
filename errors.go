@@ -21,18 +21,34 @@ import (
 )
 
 const (
-	ErrNoDataToUpdate   = errors.Error("No data to update")
-	ErrDuplicateEntry   = errors.Error("duplicate entry")
-	ErrEmptyQuery       = errors.Error("empty query")
-	ErrEmptyPrimaryKey  = errors.Error("empty primary keys")
+	// Error constant: no data to update
+	ErrNoDataToUpdate = errors.Error("No data to update")
+
+	// Error constant: duplicate entry
+	ErrDuplicateEntry = errors.Error("duplicate entry")
+
+	// Error constant: empty query
+	ErrEmptyQuery = errors.Error("empty query")
+
+	// Error constant: no primary key
+	ErrEmptyPrimaryKey = errors.Error("empty primary keys")
+
+	// Error constant: the number of rows impacted by modification unexpected
 	ErrUnexpectRowCount = errors.Error("unexpected row count")
 
+	// Error constant: input should be a pointer
 	ErrNeedsPointer = errors.Error("input needs pointer input")
-	ErrNeedsArray   = errors.Error("input needs slice or array")
-	ErrReadOnly     = errors.Error("read only input")
 
+	// Error constant: input should be an Array or Slice
+	ErrNeedsArray = errors.Error("input needs slice or array")
+
+	// Error constant: database is read-only
+	ErrReadOnly = errors.Error("read only input")
+
+	// Error constant: method not supported yet
 	ErrNotSupported = errors.ErrNotSupported
 
+	// Errir constant: table not exists
 	ErrTableNotExists = errors.Error("TableNotExists")
 )
 

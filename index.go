@@ -19,13 +19,13 @@ import (
 	"strings"
 )
 
-type STableIndex struct {
+type sTableIndex struct {
 	name     string
 	columns  []string
 	isUnique bool
 }
 
-type TColumnNames []string
+/*type TColumnNames []string
 
 func (cols TColumnNames) Len() int {
 	return len(cols)
@@ -41,9 +41,9 @@ func (cols TColumnNames) Less(i, j int) bool {
 	} else {
 		return false
 	}
-}
+}*/
 
-func (index *STableIndex) IsIdentical(cols ...string) bool {
+func (index *sTableIndex) IsIdentical(cols ...string) bool {
 	if len(index.columns) != len(cols) {
 		return false
 	}
@@ -55,7 +55,7 @@ func (index *STableIndex) IsIdentical(cols ...string) bool {
 	return true
 }
 
-func (index *STableIndex) QuotedColumns() []string {
+func (index *sTableIndex) QuotedColumns() []string {
 	ret := make([]string, len(index.columns))
 	for i := 0; i < len(ret); i += 1 {
 		ret[i] = fmt.Sprintf("`%s`", index.columns[i])
@@ -70,7 +70,7 @@ func (ts *STableSpec) AddIndex(unique bool, cols ...string) bool {
 		}
 	}
 	name := fmt.Sprintf("ix_%s_%s", ts.name, strings.Join(cols, "_"))
-	idx := STableIndex{name: name, columns: cols, isUnique: unique}
+	idx := sTableIndex{name: name, columns: cols, isUnique: unique}
 	ts.indexes = append(ts.indexes, idx)
 	return true
 }

@@ -25,6 +25,7 @@ import (
 	"yunion.io/x/pkg/util/reflectutils"
 )
 
+// perform a insert operation, the value of the record is store in dt
 func (t *STableSpec) Insert(dt interface{}) error {
 	return t.insert(dt, false, false)
 }
