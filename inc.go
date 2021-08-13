@@ -26,10 +26,16 @@ import (
 	"yunion.io/x/pkg/util/reflectutils"
 )
 
+// perform an incremental update on a record, the primary key of the record is specified in diff,
+// the numeric fields of this record will be added by the value of the corresponding field in diff
+// if target is given as a pointer to a variable, the result will be stored in the target
+// if target is not given, the updated result will be stored in diff
 func (t *STableSpec) Increment(diff interface{}, target interface{}) error {
 	return t.incrementInternal(diff, "+", target)
 }
 
+// similart to Increment methods, the difference is that this method will decrease the numeric fields
+// with the value of diff
 func (t *STableSpec) Decrement(diff interface{}, target interface{}) error {
 	return t.incrementInternal(diff, "-", target)
 }

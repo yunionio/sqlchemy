@@ -23,12 +23,14 @@ import (
 	"yunion.io/x/pkg/errors"
 )
 
+// field of a union
 type SUnionQueryField struct {
 	union *SUnion
 	name  string
 	alias string
 }
 
+// Expression implementation of SUnionQueryField for IQueryField
 func (sqf *SUnionQueryField) Expression() string {
 	if len(sqf.alias) > 0 {
 		return fmt.Sprintf("`%s`.`%s` as `%s`", sqf.union.Alias(), sqf.name, sqf.alias)
@@ -37,6 +39,7 @@ func (sqf *SUnionQueryField) Expression() string {
 	}
 }
 
+// Name implementation of SUnionQueryField for IQueryField
 func (sqf *SUnionQueryField) Name() string {
 	if len(sqf.alias) > 0 {
 		return sqf.alias
@@ -45,10 +48,12 @@ func (sqf *SUnionQueryField) Name() string {
 	}
 }
 
+// Reference implementation of SUnionQueryField for IQueryField
 func (sqf *SUnionQueryField) Reference() string {
 	return fmt.Sprintf("`%s`.`%s`", sqf.union.Alias(), sqf.Name())
 }
 
+// Label implementation of SUnionQueryField for IQueryField
 func (sqf *SUnionQueryField) Label(label string) IQueryField {
 	if len(label) > 0 && label != sqf.name {
 		sqf.alias = label
@@ -56,23 +61,27 @@ func (sqf *SUnionQueryField) Label(label string) IQueryField {
 	return sqf
 }
 
+// Variables implementation of SUnionQueryField for IQueryField
 func (sqf *SUnionQueryField) Variables() []interface{} {
 	return nil
 }
 
+// struct to store state of a Union query, which implementation the interface of IQuerySource
 type SUnion struct {
 	alias   string
 	queries []IQuery
 	fields  []IQueryField
-	orderBy []SQueryOrder
+	orderBy []sQueryOrder
 	limit   int
 	offset  int
 }
 
+// Alias implementation of SUnion for IQuerySource
 func (uq *SUnion) Alias() string {
 	return uq.alias
 }
 
+// Expression implementation of SUnion for IQuerySource
 func (uq *SUnion) Expression() string {
 	var buf strings.Builder
 	buf.WriteByte('(')
@@ -122,20 +131,24 @@ func (tq *SUnion) Desc(fields ...interface{}) *SUnion {
 }
 */
 
+// union query limit
 func (uq *SUnion) Limit(limit int) *SUnion {
 	uq.limit = limit
 	return uq
 }
 
+// union query offset
 func (uq *SUnion) Offset(offset int) *SUnion {
 	uq.offset = offset
 	return uq
 }
 
+// Fields implementation of SUnion for IQuerySource
 func (uq *SUnion) Fields() []IQueryField {
 	return uq.fields
 }
 
+// Field implementation of SUnion for IQuerySource
 func (uq *SUnion) Field(name string, alias ...string) IQueryField {
 	for i := range uq.fields {
 		if name == uq.fields[i].Name() {
@@ -148,6 +161,7 @@ func (uq *SUnion) Field(name string, alias ...string) IQueryField {
 	return nil
 }
 
+// Variables implementation of SUnion for IQuerySource
 func (uq *SUnion) Variables() []interface{} {
 	ret := make([]interface{}, 0)
 	for i := range uq.queries {
@@ -165,6 +179,7 @@ func Union(query ...IQuery) *SUnion {
 	return u
 }
 
+// construct union query of several Queries
 func UnionWithError(query ...IQuery) (*SUnion, error) {
 	if len(query) == 0 {
 		return nil, errors.Wrap(sql.ErrNoRows, "empty union query")
@@ -202,6 +217,7 @@ func UnionWithError(query ...IQuery) (*SUnion, error) {
 	return uq, nil
 }
 
+// returns a SQuery of a SUnion
 func (uq *SUnion) Query(f ...IQueryField) *SQuery {
 	return DoQuery(uq, f...)
 }

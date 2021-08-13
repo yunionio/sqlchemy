@@ -28,10 +28,10 @@ func TestDecodeSqlTypeString(t *testing.T) {
 
 func TestToColumnSpec(t *testing.T) {
 	cases := []struct {
-		info SSqlColumnInfo
+		info sSqlColumnInfo
 	}{
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "created_at",
 				Type:      "datetime",
 				Collation: "NULL",
@@ -41,7 +41,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "updated_at",
 				Type:      "datetime",
 				Collation: "NULL",
@@ -51,7 +51,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "update_version",
 				Type:      "int(11)",
 				Collation: "NULL",
@@ -61,7 +61,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "update_version",
 				Type:      "int unsigned",
 				Collation: "NULL",
@@ -71,7 +71,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "update_version",
 				Type:      "int(10) unsigned",
 				Collation: "NULL",
@@ -81,7 +81,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "id",
 				Type:      "varchar(128)",
 				Collation: "ascii_general_ci",
@@ -91,7 +91,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "name",
 				Type:      "varchar(128)",
 				Collation: "utf8_general_ci",
@@ -101,7 +101,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "cmtbound",
 				Type:      "float",
 				Collation: "NULL",
@@ -111,7 +111,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "is_sys_disk_store",
 				Type:      "tinyint(1)",
 				Collation: "NULL",
@@ -121,7 +121,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "is_sys_disk_store",
 				Type:      "tinyint unsigned",
 				Collation: "NULL",
@@ -131,7 +131,7 @@ func TestToColumnSpec(t *testing.T) {
 			},
 		},
 		{
-			info: SSqlColumnInfo{
+			info: sSqlColumnInfo{
 				Field:     "is_sys_disk_store",
 				Type:      "tinyint(3) unsigned",
 				Collation: "NULL",

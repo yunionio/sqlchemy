@@ -23,6 +23,7 @@ import (
 )
 
 var (
+	// global constant that indicates turn on SQL debug
 	DEBUG_SQLCHEMY = false
 )
 
@@ -40,26 +41,31 @@ func sqlDebug(sqlstr string, variables []interface{}) {
 	log.Debugln("SQuery ", sqlstr)
 }
 
+// show the full query string for debug
 func (tq *SQuery) DebugQuery() {
 	sqlstr := tq.String()
 	vars := tq.Variables()
 	sqlDebug(sqlstr, vars)
 }
 
+// show the full query string for a subquery for debug
 func (sqf *SSubQuery) DebugQuery() {
 	sqlstr := sqf.Expression()
 	vars := sqf.query.Variables()
 	sqlDebug(sqlstr, vars)
 }
 
+// do insert with debug mode on
 func (t *STableSpec) DebugInsert(dt interface{}) error {
 	return t.insert(dt, false, true)
 }
 
+// do insertOrUpdate with debug mode on
 func (t *STableSpec) DebugInsertOrUpdate(dt interface{}) error {
 	return t.insert(dt, true, true)
 }
 
+// do update with debug mode on
 func (ts *STableSpec) DebugUpdateFields(dt interface{}, fields map[string]interface{}) error {
 	return ts.updateFields(dt, fields, true)
 }

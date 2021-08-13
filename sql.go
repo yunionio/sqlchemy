@@ -22,14 +22,17 @@ import (
 
 var _db *sql.DB
 
+// set DB instance
 func SetDB(db *sql.DB) {
 	_db = db
 }
 
+// get DB instance
 func GetDB() *sql.DB {
 	return _db
 }
 
+// close DB connection
 func CloseDB() {
 	_db.Close()
 	_db = nil
@@ -39,6 +42,7 @@ type tableName struct {
 	Name string
 }
 
+// get all tables' name in database
 func GetTables() []string {
 	tables := make([]tableName, 0)
 	q := NewRawQuery("SHOW TABLES", "name")
@@ -54,6 +58,7 @@ func GetTables() []string {
 	return ret
 }
 
+// execute a raw SQL query
 func Exec(sql string, args ...interface{}) (sql.Result, error) {
 	return _db.Exec(sql, args...)
 }

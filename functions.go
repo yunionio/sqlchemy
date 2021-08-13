@@ -22,16 +22,19 @@ import (
 	"yunion.io/x/log"
 )
 
+// Interface for a SQL embedded function, such as MIN, MAX, NOW, etc.
 type IFunction interface {
 	expression() string
 	variables() []interface{}
 }
 
+// a query field that is the result of a SQL embeded function, e.g. COUNT(*) as count
 type SFunctionFieldBase struct {
 	IFunction
 	alias string
 }
 
+// Reference implementation of SFunctionFieldBase for IQueryField
 func (ff *SFunctionFieldBase) Reference() string {
 	if len(ff.alias) == 0 {
 		log.Warningf("reference a function field without alias! %s", ff.expression())
@@ -41,6 +44,7 @@ func (ff *SFunctionFieldBase) Reference() string {
 	}
 }
 
+// Expression implementation of SFunctionFieldBase for IQueryField
 func (ff *SFunctionFieldBase) Expression() string {
 	if len(ff.alias) > 0 {
 		// add alias
@@ -51,6 +55,7 @@ func (ff *SFunctionFieldBase) Expression() string {
 	}
 }
 
+// Name implementation of SFunctionFieldBase for IQueryField
 func (ff *SFunctionFieldBase) Name() string {
 	if len(ff.alias) > 0 {
 		return ff.alias
@@ -59,6 +64,7 @@ func (ff *SFunctionFieldBase) Name() string {
 	}
 }
 
+// Label implementation of SFunctionFieldBase for IQueryField
 func (ff *SFunctionFieldBase) Label(label string) IQueryField {
 	if len(label) > 0 && label != ff.alias {
 		ff.alias = label
@@ -66,16 +72,17 @@ func (ff *SFunctionFieldBase) Label(label string) IQueryField {
 	return ff
 }
 
+// Variables implementation of SFunctionFieldBase for IQueryField
 func (ff *SFunctionFieldBase) Variables() []interface{} {
 	return ff.variables()
 }
 
-type SExprFunction struct {
+type sExprFunction struct {
 	fields   []IQueryField
 	function string
 }
 
-func (ff *SExprFunction) expression() string {
+func (ff *sExprFunction) expression() string {
 	fieldRefs := make([]interface{}, 0)
 	for _, f := range ff.fields {
 		fieldRefs = append(fieldRefs, f.Reference())
@@ -83,7 +90,7 @@ func (ff *SExprFunction) expression() string {
 	return fmt.Sprintf(ff.function, fieldRefs...)
 }
 
-func (ff *SExprFunction) variables() []interface{} {
+func (ff *sExprFunction) variables() []interface{} {
 	vars := make([]interface{}, 0)
 	for _, f := range ff.fields {
 		fromVars := f.Variables()
@@ -92,8 +99,9 @@ func (ff *SExprFunction) variables() []interface{} {
 	return vars
 }
 
+// return an instance of query field by calling a SQL embedded function
 func NewFunctionField(name string, funcexp string, fields ...IQueryField) IQueryField {
-	funcBase := &SExprFunction{
+	funcBase := &sExprFunction{
 		fields:   fields,
 		function: funcexp,
 	}
@@ -103,6 +111,7 @@ func NewFunctionField(name string, funcexp string, fields ...IQueryField) IQuery
 	}
 }
 
+// function COUNT
 func COUNT(name string, field ...IQueryField) IQueryField {
 	var expr string
 	if len(field) == 0 {
@@ -113,47 +122,58 @@ func COUNT(name string, field ...IQueryField) IQueryField {
 	return NewFunctionField(name, expr, field...)
 }
 
+// fucntion MAX
 func MAX(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "MAX(%s)", field)
 }
 
+// function MIN
 func MIN(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "MIN(%s)", field)
 }
 
+// function SUM
 func SUM(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "SUM(%s)", field)
 }
 
+// function DISTINCT
 func DISTINCT(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "DISTINCT(%s)", field)
 }
 
+// function GROUP_CONCAT
 func GROUP_CONCAT(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "GROUP_CONCAT(%s)", field)
 }
 
+// function REPLACE
 func REPLACE(name string, field IQueryField, old string, new string) IQueryField {
 	return NewFunctionField(name, fmt.Sprintf(`REPLACE(%s, "%s", "%s")`, "%s", old, new), field)
 }
 
+// a query field of a constant
 type SConstField struct {
 	constVar interface{}
 	alias    string
 }
 
+// Expression implementation of SConstField for IQueryField
 func (s *SConstField) Expression() string {
 	return fmt.Sprintf("%s AS `%s`", s.Reference(), s.Name())
 }
 
+// Name implementation of SConstField for IQueryField
 func (s *SConstField) Name() string {
 	return s.alias
 }
 
+// Reference implementation of SConstField for IQueryField
 func (s *SConstField) Reference() string {
 	return getQuoteStringValue(s.constVar)
 }
 
+// Label implementation of SConstField for IQueryField
 func (s *SConstField) Label(label string) IQueryField {
 	if len(label) > 0 {
 		s.alias = label
@@ -161,31 +181,38 @@ func (s *SConstField) Label(label string) IQueryField {
 	return s
 }
 
+// Variables implementation of SConstField for IQueryField
 func (s *SConstField) Variables() []interface{} {
 	return nil
 }
 
+// return an instance of SConstField
 func NewConstField(variable interface{}) *SConstField {
 	return &SConstField{constVar: variable}
 }
 
+// a query field of a string constant
 type SStringField struct {
 	strConst string
 	alias    string
 }
 
+// Expression implementation of SStringField for IQueryField
 func (s *SStringField) Expression() string {
 	return fmt.Sprintf("%s AS `%s`", s.Reference(), s.Name())
 }
 
+// Name implementation of SStringField for IQueryField
 func (s *SStringField) Name() string {
 	return s.alias
 }
 
+// Reference implementation of SStringField for IQueryField
 func (s *SStringField) Reference() string {
 	return strconv.Quote(s.strConst)
 }
 
+// Label implementation of SStringField for IQueryField
 func (s *SStringField) Label(label string) IQueryField {
 	if len(label) > 0 {
 		s.alias = label
@@ -193,14 +220,17 @@ func (s *SStringField) Label(label string) IQueryField {
 	return s
 }
 
+// Variables implementation of SStringField for IQueryField
 func (s *SStringField) Variables() []interface{} {
 	return nil
 }
 
+// return an instance of SStringField
 func NewStringField(name string) *SStringField {
 	return &SStringField{strConst: name}
 }
 
+// function CONCAT
 func CONCAT(name string, fields ...IQueryField) IQueryField {
 	params := []string{}
 	for i := 0; i < len(fields); i++ {
@@ -209,6 +239,7 @@ func CONCAT(name string, fields ...IQueryField) IQueryField {
 	return NewFunctionField(name, `CONCAT(`+strings.Join(params, ",")+`)`, fields...)
 }
 
+// function SUBSTR
 func SubStr(name string, field IQueryField, pos, length int) IQueryField {
 	var rightStr string
 	if length <= 0 {
@@ -219,20 +250,24 @@ func SubStr(name string, field IQueryField, pos, length int) IQueryField {
 	return NewFunctionField(name, `SUBSTR(%s, `+rightStr, field)
 }
 
+// do binary & operation on a field
 func OR_Val(name string, field IQueryField, v interface{}) IQueryField {
 	rightStr := fmt.Sprintf("|%v", v)
 	return NewFunctionField(name, "%s"+rightStr, field)
 }
 
+// do binary | operation on a field
 func AND_Val(name string, field IQueryField, v interface{}) IQueryField {
 	rightStr := fmt.Sprintf("&%v", v)
 	return NewFunctionField(name, "%s"+rightStr, field)
 }
 
+// function INET_ATON
 func INET_ATON(field IQueryField) IQueryField {
 	return NewFunctionField("", `INET_ATON(%s)`, field)
 }
 
+// function TimestampAdd
 func TimestampAdd(name string, field IQueryField, offsetSeconds int) IQueryField {
 	return NewFunctionField(name, `TIMESTAMPADD(SECOND, `+fmt.Sprintf("%d", offsetSeconds)+`, %s)`, field)
 }

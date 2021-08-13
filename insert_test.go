@@ -32,7 +32,7 @@ func insertSqlPrep(v interface{}) (string, []interface{}, error) {
 
 func TestInsertAutoIncrement(t *testing.T) {
 	sql, vals, err := insertSqlPrep(&struct {
-		RowId int `auto_increment:true`
+		RowId int `auto_increment:"true"`
 	}{})
 	if err != nil {
 		t.Errorf("prepare sql failed: %s", err)
@@ -57,15 +57,15 @@ func TestInsertMultiAutoIncrement(t *testing.T) {
 		}
 	}()
 	_, _, err := insertSqlPrep(&struct {
-		RowId  int `auto_increment:true`
-		RowId2 int `auto_increment:true`
+		RowId  int `auto_increment:"true"`
+		RowId2 int `auto_increment:"true"`
 	}{})
 	t.Errorf("should panic but it continues: err: %s", err)
 }
 
 func TestInsertWithPointerValue(t *testing.T) {
 	sql, vals, err := insertSqlPrep(&struct {
-		RowId int `auto_increment:true`
+		RowId int `auto_increment:"true"`
 		ColT1 *int
 		ColT2 int
 		ColT3 string
