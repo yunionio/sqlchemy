@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '1.14'
-          
+      
       - name: Run coverage
         run: |
           echo $GITHUB_WORKSPACE
@@ -38,4 +38,7 @@ jobs:
           GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go get
           GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go test -race -coverprofile=coverage.out -covermode=atomic
           dir
-          bash <(curl -s https://codecov.io/bash)
+          cp ./coverage.out $GITHUB_WORKSPACE
+      
+      - name: Upload coverage to Codecov
+        run: bash <(curl -s https://codecov.io/bash)
