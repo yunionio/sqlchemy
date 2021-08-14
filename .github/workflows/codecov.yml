@@ -31,6 +31,7 @@ jobs:
           
       - name: Run coverage
         run: |
+          echo $GITHUB_WORKSPACE
           mkdir -p $GITHUB_WORKSPACE/go/yunion/x
           mv $GITHUB_WORKSPACE/sqlchemy $$GITHUB_WORKSPACE/go/yunion/x
           cd $$GITHUB_WORKSPACE/go/yunion/x/sqlchemy
