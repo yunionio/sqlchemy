@@ -33,7 +33,7 @@ jobs:
         run: |
           echo $GITHUB_WORKSPACE
           mkdir -p $(dirname $GITHUB_WORKSPACE)/go/yunion/x
-          mv $GITHUB_WORKSPACE $(dirname $$GITHUB_WORKSPACE)/go/yunion/x
+          mv $GITHUB_WORKSPACE $(dirname $GITHUB_WORKSPACE)/go/yunion/x
           cd $(dirname $GITHUB_WORKSPACE)/go/yunion/x/sqlchemy
           GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go test -race -coverprofile=coverage.out -covermode=atomic
       
