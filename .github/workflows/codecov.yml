@@ -30,7 +30,11 @@ jobs:
           go-version: '1.14'
           
       - name: Run coverage
-        run: mkdir -p $GOPATH/yunion/x && mv sqlchemy $GOPATH/yunion/x && cd $GOPATH/yunion/x/sqlchemy && GO111MODULE=off go test -race -coverprofile=coverage.out -covermode=atomic
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/go/yunion/x
+          mv $GITHUB_WORKSPACE/sqlchemy $$GITHUB_WORKSPACE/go/yunion/x
+          cd $$GITHUB_WORKSPACE/go/yunion/x/sqlchemy
+          GOPATH=$$GITHUB_WORKSPACE/go GO111MODULE=off go test -race -coverprofile=coverage.out -covermode=atomic
       
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash)
