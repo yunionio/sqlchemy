@@ -14,7 +14,7 @@
 
 package sqlchemy
 
-// a struct represents a field of a raw SQL query
+// SRawQueryField is a struct represents a field of a raw SQL query
 // a raw query is a query that not follow standard SELECT ... FROM ... pattern
 // e.g. show tables
 // the struct implements IQueryField interface
@@ -47,7 +47,7 @@ func (rqf *SRawQueryField) Variables() []interface{} {
 	return nil
 }
 
-// Create an instance of SQuery with raw SQL query. e.g. show tables
+// NewRawQuery returns an instance of SQuery with raw SQL query. e.g. show tables
 func NewRawQuery(sqlStr string, fields ...string) *SQuery {
 	qfs := make([]IQueryField, len(fields))
 	for i, f := range fields {

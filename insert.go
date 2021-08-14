@@ -25,12 +25,12 @@ import (
 	"yunion.io/x/pkg/util/reflectutils"
 )
 
-// perform a insert operation, the value of the record is store in dt
+// Insert perform a insert operation, the value of the record is store in dt
 func (t *STableSpec) Insert(dt interface{}) error {
 	return t.insert(dt, false, false)
 }
 
-//
+// InsertOrUpdate perform a insert or update operation, the value of the record is string in dt
 // MySQL: INSERT INTO ... ON DUPLICATE KEY UPDATE ...
 // works only for the cases that all values of primary keys are determeted before insert
 func (t *STableSpec) InsertOrUpdate(dt interface{}) error {

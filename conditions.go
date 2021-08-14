@@ -21,7 +21,7 @@ import (
 	"yunion.io/x/pkg/util/reflectutils"
 )
 
-// the interface represents a condition for SQL query
+// ICondition is the interface representing a condition for SQL query
 // e.g. WHERE a1 = b1 is a condition of equal
 // the condition support nested condition, with AND, OR and NOT boolean operators
 type ICondition interface {
@@ -29,7 +29,7 @@ type ICondition interface {
 	Variables() []interface{}
 }
 
-// a Compound condition represents AND or OR boolean operation
+// SCompoundConditions is a Compound condition represents AND or OR boolean operation
 // Compound condition also follows the ICondition interface
 type SCompoundConditions struct {
 	conditions []ICondition
@@ -67,7 +67,7 @@ func (c *SCompoundConditions) Variables() []interface{} {
 	return vars
 }
 
-// the AND condition, which is a SCompoundConditions
+// SAndConditions represents the AND condition, which is a SCompoundConditions
 type SAndConditions struct {
 	SCompoundConditions
 }
@@ -77,7 +77,7 @@ func (c *SAndConditions) WhereClause() string {
 	return compoundWhereClause(&c.SCompoundConditions, SQL_OP_AND)
 }
 
-// the OR condition, which is a SCompoundConditions
+// SOrConditions represents the OR condition, which is a SCompoundConditions
 type SOrConditions struct {
 	SCompoundConditions
 }
@@ -117,7 +117,7 @@ func OR(cond ...ICondition) ICondition {
 	return &cc
 }
 
-// the NOT condition, which is a boolean operator
+// SNotCondition represents the NOT condition, which is a boolean operator
 type SNotCondition struct {
 	condition ICondition
 }
@@ -138,7 +138,7 @@ func NOT(cond ICondition) ICondition {
 	return &cc
 }
 
-// a kind of condition that composed of one query field
+// SSingleCondition represents a kind of condition that composed of one query field
 type SSingleCondition struct {
 	field IQueryField
 }
@@ -148,12 +148,12 @@ func (c *SSingleCondition) Variables() []interface{} {
 	return []interface{}{}
 }
 
-// returns an instance of SSingleCondition
+// NewSingleCondition returns an instance of SSingleCondition
 func NewSingleCondition(field IQueryField) SSingleCondition {
 	return SSingleCondition{field: field}
 }
 
-// a condition represents a comparison with null, e.g. a is null
+// SIsNullCondition is a condition representing a comparison with null, e.g. a is null
 type SIsNullCondition struct {
 	SSingleCondition
 }
@@ -169,7 +169,7 @@ func IsNull(f IQueryField) ICondition {
 	return &c
 }
 
-// a condition represents a comparison with not null, e.g. a is not null
+// SIsNotNullCondition is a condition represents a comparison with not null, e.g. a is not null
 type SIsNotNullCondition struct {
 	SSingleCondition
 }
@@ -185,7 +185,7 @@ func IsNotNull(f IQueryField) ICondition {
 	return &c
 }
 
-// a condition represents the empty status of a field
+// SIsEmptyCondition is a condition representing the empty status of a field
 type SIsEmptyCondition struct {
 	SSingleCondition
 }
@@ -201,7 +201,7 @@ func IsEmpty(f IQueryField) ICondition {
 	return &c
 }
 
-// a condition that justifies a field is null or empty
+// SIsNullOrEmptyCondition is a condition that justifies a field is null or empty
 type SIsNullOrEmptyCondition struct {
 	SSingleCondition
 }
@@ -211,13 +211,13 @@ func (c *SIsNullOrEmptyCondition) WhereClause() string {
 	return fmt.Sprintf("%s IS NULL OR LENGTH(%s) = 0", c.field.Reference(), c.field.Reference())
 }
 
-// method IsNullOrEmpty justifies a field is null or empty, e.g. a is null or length(a) == 0
+// IsNullOrEmpty is the ethod justifies a field is null or empty, e.g. a is null or length(a) == 0
 func IsNullOrEmpty(f IQueryField) ICondition {
 	c := SIsNullOrEmptyCondition{NewSingleCondition(f)}
 	return &c
 }
 
-// a condition that represents a field is not empty
+// SIsNotEmptyCondition represents a condition that represents a field is not empty
 type SIsNotEmptyCondition struct {
 	SSingleCondition
 }
@@ -227,13 +227,13 @@ func (c *SIsNotEmptyCondition) WhereClause() string {
 	return fmt.Sprintf("%s IS NOT NULL AND LENGTH(%s) > 0", c.field.Reference(), c.field.Reference())
 }
 
-// IsNotEmpty method that justifies a field is not empty
+// IsNotEmpty method justifies a field is not empty
 func IsNotEmpty(f IQueryField) ICondition {
 	c := SIsNotEmptyCondition{NewSingleCondition(f)}
 	return &c
 }
 
-// IsTrue condition represents a boolean field (TINYINT) is true, e.g. a == 1
+// SIsTrueCondition represents a boolean field (TINYINT) is true, e.g. a == 1
 type SIsTrueCondition struct {
 	SSingleCondition
 }
@@ -249,7 +249,7 @@ func IsTrue(f IQueryField) ICondition {
 	return &c
 }
 
-// IsFalse condition that represents a boolean is false
+// SIsFalseCondition represents a boolean is false
 type SIsFalseCondition struct {
 	SSingleCondition
 }
@@ -259,13 +259,13 @@ func (c *SIsFalseCondition) WhereClause() string {
 	return fmt.Sprintf("%s = 0", c.field.Reference())
 }
 
-// IsFalse method that justifies a boolean is false
+// IsFalse method justifies a boolean is false
 func IsFalse(f IQueryField) ICondition {
 	c := SIsFalseCondition{NewSingleCondition(f)}
 	return &c
 }
 
-// NoLaterThan condition that coompares a DATETIME field with current time and ensure the field is no later than now, e.g. a <= NOW()
+// SNoLaterThanCondition coompares a DATETIME field with current time and ensure the field is no later than now, e.g. a <= NOW()
 type SNoLaterThanCondition struct {
 	SSingleCondition
 }
@@ -281,7 +281,7 @@ func NoLaterThan(f IQueryField) ICondition {
 	return &c
 }
 
-// NotEarlierThan compares a field with current time and ensure the field is no earlier than NOW, e.g. a >= NOW()
+// SNoEarlierThanCondition compares a field with current time and ensure the field is no earlier than NOW, e.g. a >= NOW()
 type SNoEarlierThanCondition struct {
 	SSingleCondition
 }
@@ -291,13 +291,13 @@ func (c *SNoEarlierThanCondition) WhereClause() string {
 	return fmt.Sprintf("%s >= NOW()", c.field.Reference())
 }
 
-// NoEarlierThan method that justifies a field is no earlier than current time
+// NoEarlierThan justifies a field is no earlier than current time
 func NoEarlierThan(f IQueryField) ICondition {
 	c := SNoEarlierThanCondition{NewSingleCondition(f)}
 	return &c
 }
 
-// a condition composed of two fields
+// STupleCondition is a base condition that composed of two fields
 type STupleCondition struct {
 	left  IQueryField
 	right interface{}
@@ -361,7 +361,7 @@ func varConditionVariables(v interface{}) []interface{} {
 	}
 }
 
-// return an instance of tuple condition
+// NewTupleCondition returns an instance of tuple condition
 func NewTupleCondition(l IQueryField, r interface{}) STupleCondition {
 	return STupleCondition{left: l, right: r}
 }
@@ -371,7 +371,7 @@ func (t *STupleCondition) Variables() []interface{} {
 	return varConditionVariables(t.right)
 }
 
-// In condition that represents a IN operation
+// SInCondition represents a IN operation in SQL query
 type SInCondition struct {
 	STupleCondition
 	op string
@@ -408,7 +408,7 @@ func NotIn(f IQueryField, v interface{}) ICondition {
 	return &c
 }
 
-// a LIKE condition that represents LIKE operation
+// SLikeCondition represents LIKE operation in a SQL query
 type SLikeCondition struct {
 	STupleCondition
 }
@@ -429,13 +429,13 @@ func (t *SLikeCondition) WhereClause() string {
 	return tupleConditionWhereClause(&t.STupleCondition, SQL_OP_LIKE)
 }
 
-// SQL LIKE operation
+// Like SQL operator
 func Like(f IQueryField, v string) ICondition {
 	c := SLikeCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
-// ContainsAny condition, where is a OR combination of serveral Contains conditions
+// ContainsAny is a OR combination of serveral Contains conditions
 func ContainsAny(f IQueryField, v []string) ICondition {
 	conds := make([]ICondition, len(v))
 	for i := range v {
@@ -444,28 +444,28 @@ func ContainsAny(f IQueryField, v []string) ICondition {
 	return OR(conds...)
 }
 
-// contains condition, which is a shortcut of LIKE condition, that represents the condtion that a field contains a substring
+// Contains method is a shortcut of LIKE method, Contains represents the condtion that a field contains a substring
 func Contains(f IQueryField, v string) ICondition {
 	v = likeEscape(v)
 	nv := fmt.Sprintf("%%%s%%", v)
 	return Like(f, nv)
 }
 
-// startswith condition, which is a shortcut of LIKE condition, that represents the condition that field starts with a substring
+// Startswith method is a shortcut of LIKE method, Startswith represents the condition that field starts with a substring
 func Startswith(f IQueryField, v string) ICondition {
 	v = likeEscape(v)
 	nv := fmt.Sprintf("%s%%", v)
 	return Like(f, nv)
 }
 
-// endswith condition, which is a shortcut of LIKE condition, that represents that condition that field endswith a substring
+// Endswith method is a shortcut of LIKE condition, Endswith represents that condition that field endswith a substring
 func Endswith(f IQueryField, v string) ICondition {
 	v = likeEscape(v)
 	nv := fmt.Sprintf("%%%s", v)
 	return Like(f, nv)
 }
 
-// equals operation, which represents equal operation between two fields
+// SEqualsCondition represents equal operation between two fields
 type SEqualsCondition struct {
 	STupleCondition
 }
@@ -475,13 +475,13 @@ func (t *SEqualsCondition) WhereClause() string {
 	return tupleConditionWhereClause(&t.STupleCondition, SQL_OP_EQUAL)
 }
 
-// Equals condition that represents equal of two fields
+// Equals method represents equal of two fields
 func Equals(f IQueryField, v interface{}) ICondition {
 	c := SEqualsCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
-// opposite of equal condition
+// SNotEqualsCondition is the opposite of equal condition
 type SNotEqualsCondition struct {
 	STupleCondition
 }
@@ -491,13 +491,13 @@ func (t *SNotEqualsCondition) WhereClause() string {
 	return tupleConditionWhereClause(&t.STupleCondition, SQL_OP_NOTEQUAL)
 }
 
-// NotEquals condition that represents not equal of two fields
+// NotEquals method represents not equal of two fields
 func NotEquals(f IQueryField, v interface{}) ICondition {
 	c := SNotEqualsCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
-// >= operation on two fields
+// SGreatEqualCondition represents >= operation on two fields
 type SGreatEqualCondition struct {
 	STupleCondition
 }
@@ -507,13 +507,13 @@ func (t *SGreatEqualCondition) WhereClause() string {
 	return tupleConditionWhereClause(&t.STupleCondition, SQL_OP_GE)
 }
 
-// conditon represetns operation of Greate Than Or Equal to, e.g. a >= b
+// GE method represetns operation of Greate Than Or Equal to, e.g. a >= b
 func GE(f IQueryField, v interface{}) ICondition {
 	c := SGreatEqualCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
-// > operation on two fields
+// SGreatThanCondition represetns > operation on two fields
 type SGreatThanCondition struct {
 	STupleCondition
 }
@@ -523,13 +523,13 @@ func (t *SGreatThanCondition) WhereClause() string {
 	return tupleConditionWhereClause(&t.STupleCondition, SQL_OP_GT)
 }
 
-// condition represents operation of Great Than, e.g. a > b
+// GT method represents operation of Great Than, e.g. a > b
 func GT(f IQueryField, v interface{}) ICondition {
 	c := SGreatThanCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
-// <= operation on two fields
+// SLessEqualCondition represents <= operation on two fields
 type SLessEqualCondition struct {
 	STupleCondition
 }
@@ -539,13 +539,13 @@ func (t *SLessEqualCondition) WhereClause() string {
 	return tupleConditionWhereClause(&t.STupleCondition, SQL_OP_LE)
 }
 
-// condition represents operation of Less Than Or Equal to, e.q. a <= b
+// LE method represents operation of Less Than Or Equal to, e.q. a <= b
 func LE(f IQueryField, v interface{}) ICondition {
 	c := SLessEqualCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
-// < operation on two fields
+// SLessThanCondition represents < operation on two fields
 type SLessThanCondition struct {
 	STupleCondition
 }
@@ -555,13 +555,13 @@ func (t *SLessThanCondition) WhereClause() string {
 	return tupleConditionWhereClause(&t.STupleCondition, SQL_OP_LT)
 }
 
-// condition represents operation of Less Than, e.g. a < b
+// LT method represents operation of Less Than, e.g. a < b
 func LT(f IQueryField, v interface{}) ICondition {
 	c := SLessThanCondition{NewTupleCondition(f, v)}
 	return &c
 }
 
-// a base condition that composed of THREE fields
+// STripleCondition represents a base condition that composed of THREE fields
 type STripleCondition struct {
 	STupleCondition
 	right2 interface{}
@@ -577,13 +577,13 @@ func (t *STripleCondition) Variables() []interface{} {
 	return ret
 }
 
-// return an instance of STripleCondition
+// NewTripleCondition return an instance of STripleCondition
 func NewTripleCondition(l IQueryField, r interface{}, r2 interface{}) STripleCondition {
 	return STripleCondition{STupleCondition: NewTupleCondition(l, r),
 		right2: r2}
 }
 
-// between operation, e.g. c between a and b
+// SBetweenCondition represents BETWEEN operator, e.g. c between a and b
 type SBetweenCondition struct {
 	STripleCondition
 }
@@ -594,13 +594,13 @@ func (t *SBetweenCondition) WhereClause() string {
 	return fmt.Sprintf("%s AND %s", ret, varConditionWhereClause(t.right2))
 }
 
-// SQL BETWEEN operation
+// Between SQL operator
 func Between(f IQueryField, r1, r2 interface{}) ICondition {
 	c := SBetweenCondition{NewTripleCondition(f, r1, r2)}
 	return &c
 }
 
-// a dummy condition represents always true condition
+// STrueCondition represents a dummy condition that is always true
 type STrueCondition struct{}
 
 // WhereClause implementation of STrueCondition for ICondition
@@ -613,7 +613,7 @@ func (t *STrueCondition) Variables() []interface{} {
 	return nil
 }
 
-// a dummy condition represents always false condition
+// SFalseCondition is a dummy condition that is always false
 type SFalseCondition struct{}
 
 // WhereClause implementation of SFalseCondition for ICondition

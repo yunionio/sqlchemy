@@ -24,7 +24,7 @@ import (
 	"yunion.io/x/pkg/util/reflectutils"
 )
 
-// fetch the values of a struct whose primary key values have been set
+// Fetch method fetches the values of a struct whose primary key values have been set
 // input is a pointer to the model to be populated
 func (ts *STableSpec) Fetch(dt interface{}) error {
 	q := ts.Query()
@@ -39,7 +39,7 @@ func (ts *STableSpec) Fetch(dt interface{}) error {
 	return q.First(dt)
 }
 
-// fetch the values of an array of structs whose primary key values have been set
+// FetchAll method fetches the values of an array of structs whose primary key values have been set
 // input is a pointer to the array of models to be populated
 func (ts *STableSpec) FetchAll(dest interface{}) error {
 	arrayType := reflect.TypeOf(dest).Elem()

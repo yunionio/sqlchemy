@@ -23,13 +23,13 @@ type sCaseFieldBranch struct {
 	thenField     IQueryField
 }
 
-// function of case when branch
+// SCaseFunction represents function of case ... when ... branch
 type SCaseFunction struct {
 	branches  []sCaseFieldBranch
 	elseField IQueryField
 }
 
-// create a field with SQL function
+// NewFunction creates a field with SQL function
 // for example: SUM(count) as total
 func NewFunction(ifunc IFunction, name string) IQueryField {
 	return &SFunctionFieldBase{
@@ -38,13 +38,13 @@ func NewFunction(ifunc IFunction, name string) IQueryField {
 	}
 }
 
-// else clause for case when function
+// Else adds else clause for case when function
 func (cf *SCaseFunction) Else(field IQueryField) *SCaseFunction {
 	cf.elseField = field
 	return cf
 }
 
-// when clause for case when function
+// When adds when clause for case when function
 func (cf *SCaseFunction) When(when ICondition, then IQueryField) *SCaseFunction {
 	cf.branches = append(cf.branches, sCaseFieldBranch{
 		whenCondition: when,
@@ -53,7 +53,7 @@ func (cf *SCaseFunction) When(when ICondition, then IQueryField) *SCaseFunction 
 	return cf
 }
 
-// create a case... when...else... representation instance
+// NewCase creates a case... when...else... representation instance
 func NewCase() *SCaseFunction {
 	return &SCaseFunction{}
 }

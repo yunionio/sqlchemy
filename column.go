@@ -28,82 +28,82 @@ import (
 	"yunion.io/x/pkg/utils"
 )
 
-// interface represents a column of a table
+// IColumnSpec is an interface that represents a column of a table
 type IColumnSpec interface {
-	// name of the column
+	// Name returns the name of the column
 	Name() string
 
-	// type of the column, e.g. INTEGER, VARCHAR
+	// ColType returns type of the column, e.g. INTEGER, VARCHAR
 	ColType() string
 
-	// default value of the column, represents in string
+	// Default returns default value of the column, represents in string
 	Default() string
 
-	// is this column given a default value
+	// IsSupportDefault returns whether this column supports being given a default value
 	IsSupportDefault() bool
 
-	// is this column nullable
+	// IsNullable returns whether this column is nullable
 	IsNullable() bool
 
-	// set this column as nullable
+	// SetNullable sets this column as nullable
 	SetNullable(on bool)
 
-	// is this column part of the primary key
+	// IsPrimary returns whether this column is part of the primary keys
 	IsPrimary() bool
 
-	// is value of this column unique for each row
+	// IsUnique returns whether the value of this column unique for each row
 	IsUnique() bool
 
-	// is this column indexable, if it is true, a index of this column will be automatically created
+	// IsIndex returns whether this column is indexable, if it is true, a index of this column will be automatically created
 	IsIndex() bool
 
-	// some extra column attribute definitions, not covered by the standard definiton
+	// ExtraDefs returns some extra column attribute definitions, not covered by the standard definiton
 	ExtraDefs() string
 
-	// return the SQL presentation of this column
+	// DefinitionString return the SQL presentation of this column
 	DefinitionString() string
 
-	// is this column is actually a text, such a Datetime column is actually a text
+	// IsText returns whether this column is actually a text, such a Datetime column is actually a text
 	IsText() bool
 
-	// is this column is searchable, e.g. a integer column is not searchable, but a text field is searchable
+	// IsSearchable returns whether this column is searchable, e.g. a integer column is not searchable, but a text field is searchable
 	IsSearchable() bool
 
-	// is this column is an ASCII type text, if true, the column should be compared with a UTF8 string
+	// IsAscii returns whether this column is an ASCII type text, if true, the column should be compared with a UTF8 string
 	IsAscii() bool
 
-	// is this column a numeric type column, e.g. integer or float
+	// IsNumeric returns whether this column is a numeric type column, e.g. integer or float
 	IsNumeric() bool
 
-	// this method returns the SQL representation of a value in string format for this column
+	// ConvertFromString returns the SQL representation of a value in string format for this column
 	ConvertFromString(str string) string
 
 	// ConvertToString(str string) string
 
-	// this method returns the SQL representation of a value for this column
+	// ConvertFromValue returns the SQL representation of a value for this column
 	ConvertFromValue(val interface{}) interface{}
 
 	// ConvertToValue(str interface{}) interface{}
 
-	// this method is used to determine a value is the zero value for this column
+	// IsZero is used to determine a value is the zero value for this column
 	IsZero(val interface{}) bool
 
-	// if this column allow a zero value
+	// AllowZero returns whether this column allow a zero value
 	AllowZero() bool
 
 	// IsEqual(v1, v2 interface{}) bool
 
-	// returns the field tags for this column, which is in the struct definiton
+	// Tags returns the field tags for this column, which is in the struct definiton
 	Tags() map[string]string
 
-	// is this column is a pointer type definition, e.g. *int, *bool
+	// IsPointer returns whether this column is a pointer type definition, e.g. *int, *bool
 	IsPointer() bool
 
-	// set the default value in the format of string for this column
+	// SetDefault sets the default value in the format of string for this column
 	SetDefault(defStr string)
 }
 
-// the base structure represents a column
+// SBaseColumn is the base structure represents a column
 type SBaseColumn struct {
 	name          string
 	dbName        string
@@ -271,7 +271,7 @@ func definitionBuffer(c IColumnSpec) bytes.Buffer {
 	return buf
 }
 
-// returns an instance of SBaseColumn
+// NewBaseColumn returns an instance of SBaseColumn
 func NewBaseColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SBaseColumn {
 	var val string
 	var ok bool
@@ -328,7 +328,7 @@ func NewBaseColumn(name string, sqltype string, tagmap map[string]string, isPoin
 	}
 }
 
-// represents a type of column that with width attribute, such as VARCHAR(20), INT(10)
+// SBaseWidthColumn represents a type of column that with width attribute, such as VARCHAR(20), INT(10)
 type SBaseWidthColumn struct {
 	SBaseColumn
 	width int
@@ -343,7 +343,7 @@ func (c *SBaseWidthColumn) ColType() string {
 	}
 }
 
-// return an instance of SBaseWidthColumn
+// NewBaseWidthColumn return an instance of SBaseWidthColumn
 func NewBaseWidthColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SBaseWidthColumn {
 	width := 0
 	tagmap, v, ok := utils.TagPop(tagmap, TAG_WIDTH)
@@ -357,7 +357,7 @@ func NewBaseWidthColumn(name string, sqltype string, tagmap map[string]string, i
 	return wc
 }
 
-// represents a boolean type column, which is a int(1) for mysql, with value of true or false
+// SBooleanColumn represents a boolean type column, which is a int(1) for mysql, with value of true or false
 type SBooleanColumn struct {
 	SBaseWidthColumn
 }
@@ -410,7 +410,7 @@ func (c *SBooleanColumn) IsZero(val interface{}) bool {
 	}
 }
 
-// return an instance of SBooleanColumn
+// NewBooleanColumn return an instance of SBooleanColumn
 func NewBooleanColumn(name string, tagmap map[string]string, isPointer bool) SBooleanColumn {
 	bc := SBooleanColumn{SBaseWidthColumn: NewBaseWidthColumn(name, "TINYINT", tagmap, isPointer)}
 	if !bc.IsPointer() && len(bc.Default()) > 0 && bc.ConvertFromString(bc.Default()) == "1" {
@@ -420,11 +420,12 @@ func NewBooleanColumn(name string, tagmap map[string]string, isPointer bool) SBo
 	return bc
 }
 
-// represents a tristate type column, with value of true, false or none
+// STristateColumn represents a tristate type column, with value of true, false or none
 type STristateColumn struct {
 	SBaseWidthColumn
 }
 
+// DefinitionString implementation of STristateColumn for IColumnSpec
 func (c *STristateColumn) DefinitionString() string {
 	buf := definitionBuffer(c)
 	return buf.String()
@@ -463,13 +464,13 @@ func (c *STristateColumn) IsZero(val interface{}) bool {
 	}
 }
 
-// return an instance of STristateColumn
+// NewTristateColumn return an instance of STristateColumn
 func NewTristateColumn(name string, tagmap map[string]string, isPointer bool) STristateColumn {
 	bc := STristateColumn{SBaseWidthColumn: NewBaseWidthColumn(name, "TINYINT", tagmap, isPointer)}
 	return bc
 }
 
-// represents a integer type of column, with value of integer
+// SIntegerColumn represents an integer type of column, with value of integer
 type SIntegerColumn struct {
 	SBaseWidthColumn
 
@@ -526,7 +527,7 @@ func (c *SIntegerColumn) ColType() string {
 	return str
 }
 
-// return an instance of SIntegerColumn
+// NewIntegerColumn return an instance of SIntegerColumn
 func NewIntegerColumn(name string, sqltype string, unsigned bool, tagmap map[string]string, isPointer bool) SIntegerColumn {
 	autoinc := false
 	autoincBase := int64(0)
@@ -566,7 +567,7 @@ func NewIntegerColumn(name string, sqltype string, unsigned bool, tagmap map[str
 	return c
 }
 
-// represents a float type column, e.g. float32 or float64
+// SFloatColumn represents a float type column, e.g. float32 or float64
 type SFloatColumn struct {
 	SBaseColumn
 }
@@ -602,12 +603,12 @@ func (c *SFloatColumn) IsZero(val interface{}) bool {
 	return true
 }
 
-// returns an instance of SFloatColumn
+// NewFloatColumn returns an instance of SFloatColumn
 func NewFloatColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) SFloatColumn {
 	return SFloatColumn{SBaseColumn: NewBaseColumn(name, sqlType, tagmap, isPointer)}
 }
 
-// represents a DECIMAL type of column, i.e. a float with fixed width of digits
+// SDecimalColumn represents a DECIMAL type of column, i.e. a float with fixed width of digits
 type SDecimalColumn struct {
 	SBaseWidthColumn
 	Precision int
@@ -649,7 +650,7 @@ func (c *SDecimalColumn) IsZero(val interface{}) bool {
 	return true
 }
 
-// represents an instance of SDecimalColumn
+// NewDecimalColumn returns an instance of SDecimalColumn
 func NewDecimalColumn(name string, tagmap map[string]string, isPointer bool) SDecimalColumn {
 	tagmap, v, ok := utils.TagPop(tagmap, TAG_PRECISION)
 	if !ok {
@@ -665,7 +666,7 @@ func NewDecimalColumn(name string, tagmap map[string]string, isPointer bool) SDe
 	}
 }
 
-// represents a text type of column
+// STextColumn represents a text type of column
 type STextColumn struct {
 	SBaseWidthColumn
 	Charset string
@@ -731,7 +732,7 @@ func (c *STextColumn) IsZero(val interface{}) bool {
 	}
 }
 
-// return an instance of STextColumn
+// NewTextColumn return an instance of STextColumn
 func NewTextColumn(name string, tagmap map[string]string, isPointer bool) STextColumn {
 	var width int
 	var sqltype string
@@ -781,7 +782,7 @@ func NewStringColumn(name string, sqltype string, tagmap map[string]string) SStr
 	return sc
 }*/
 
-// represents a Detetime type of column, e.g. DateTime
+// STimeTypeColumn represents a Detetime type of column, e.g. DateTime
 type STimeTypeColumn struct {
 	SBaseColumn
 }
@@ -808,7 +809,7 @@ func (c *STimeTypeColumn) IsZero(val interface{}) bool {
 	}
 }
 
-// return an instance of STimeTypeColumn
+// NewTimeTypeColumn return an instance of STimeTypeColumn
 func NewTimeTypeColumn(name string, typeStr string, tagmap map[string]string, isPointer bool) STimeTypeColumn {
 	dc := STimeTypeColumn{
 		NewBaseColumn(name, typeStr, tagmap, isPointer),
@@ -816,7 +817,7 @@ func NewTimeTypeColumn(name string, typeStr string, tagmap map[string]string, is
 	return dc
 }
 
-// represents a DateTime type of column
+// SDateTimeColumn represents a DateTime type of column
 type SDateTimeColumn struct {
 	STimeTypeColumn
 
@@ -827,7 +828,7 @@ type SDateTimeColumn struct {
 	IsUpdatedAt bool
 }
 
-// returns an instance of DateTime column
+// NewDateTimeColumn returns an instance of DateTime column
 func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SDateTimeColumn {
 	createdAt := false
 	updatedAt := false
@@ -846,7 +847,7 @@ func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SD
 	return dtc
 }
 
-// represents a column of compound tye, e.g. a JSON, an Array, or a struct
+// CompoundColumn represents a column of compound tye, e.g. a JSON, an Array, or a struct
 type CompoundColumn struct {
 	STextColumn
 }
@@ -878,7 +879,7 @@ func (c *CompoundColumn) ConvertFromValue(val interface{}) interface{} {
 	}
 }
 
-// returns an instance of CompoundColumn
+// NewCompoundColumn returns an instance of CompoundColumn
 func NewCompoundColumn(name string, tagmap map[string]string, isPointer bool) CompoundColumn {
 	dtc := CompoundColumn{NewTextColumn(name, tagmap, isPointer)}
 	return dtc

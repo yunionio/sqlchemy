@@ -22,13 +22,13 @@ import (
 	"yunion.io/x/log"
 )
 
-// Interface for a SQL embedded function, such as MIN, MAX, NOW, etc.
+// IFunction is the interface for a SQL embedded function, such as MIN, MAX, NOW, etc.
 type IFunction interface {
 	expression() string
 	variables() []interface{}
 }
 
-// a query field that is the result of a SQL embeded function, e.g. COUNT(*) as count
+// SFunctionFieldBase is a query field that is the result of a SQL embeded function, e.g. COUNT(*) as count
 type SFunctionFieldBase struct {
 	IFunction
 	alias string
@@ -99,7 +99,7 @@ func (ff *sExprFunction) variables() []interface{} {
 	return vars
 }
 
-// return an instance of query field by calling a SQL embedded function
+// NewFunctionField returns an instance of query field by calling a SQL embedded function
 func NewFunctionField(name string, funcexp string, fields ...IQueryField) IQueryField {
 	funcBase := &sExprFunction{
 		fields:   fields,
@@ -111,7 +111,7 @@ func NewFunctionField(name string, funcexp string, fields ...IQueryField) IQuery
 	}
 }
 
-// function COUNT
+// COUNT represents the SQL function COUNT
 func COUNT(name string, field ...IQueryField) IQueryField {
 	var expr string
 	if len(field) == 0 {
@@ -122,37 +122,37 @@ func COUNT(name string, field ...IQueryField) IQueryField {
 	return NewFunctionField(name, expr, field...)
 }
 
-// fucntion MAX
+// MAX represents the SQL fucntion MAX
 func MAX(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "MAX(%s)", field)
 }
 
-// function MIN
+// MIN represents the SQL function MIN
 func MIN(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "MIN(%s)", field)
 }
 
-// function SUM
+// SUM represents the SQL function SUM
 func SUM(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "SUM(%s)", field)
 }
 
-// function DISTINCT
+// DISTINCT represents the SQL function DISTINCT
 func DISTINCT(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "DISTINCT(%s)", field)
 }
 
-// function GROUP_CONCAT
+// GROUP_CONCAT represents the SQL function GROUP_CONCAT
 func GROUP_CONCAT(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "GROUP_CONCAT(%s)", field)
 }
 
-// function REPLACE
+// REPLACE represents the SQL function REPLACE
 func REPLACE(name string, field IQueryField, old string, new string) IQueryField {
 	return NewFunctionField(name, fmt.Sprintf(`REPLACE(%s, "%s", "%s")`, "%s", old, new), field)
 }
 
-// a query field of a constant
+// SConstField is a query field of a constant
 type SConstField struct {
 	constVar interface{}
 	alias    string
@@ -186,12 +186,12 @@ func (s *SConstField) Variables() []interface{} {
 	return nil
 }
 
-// return an instance of SConstField
+// NewConstField returns an instance of SConstField
 func NewConstField(variable interface{}) *SConstField {
 	return &SConstField{constVar: variable}
 }
 
-// a query field of a string constant
+// SStringField is a query field of a string constant
 type SStringField struct {
 	strConst string
 	alias    string
@@ -225,12 +225,12 @@ func (s *SStringField) Variables() []interface{} {
 	return nil
 }
 
-// return an instance of SStringField
+// NewStringField returns an instance of SStringField
 func NewStringField(name string) *SStringField {
 	return &SStringField{strConst: name}
 }
 
-// function CONCAT
+// CONCAT represents a SQL function CONCAT
 func CONCAT(name string, fields ...IQueryField) IQueryField {
 	params := []string{}
 	for i := 0; i < len(fields); i++ {
@@ -239,7 +239,7 @@ func CONCAT(name string, fields ...IQueryField) IQueryField {
 	return NewFunctionField(name, `CONCAT(`+strings.Join(params, ",")+`)`, fields...)
 }
 
-// function SUBSTR
+// SUBSTR represents a SQL function SUBSTR
 func SubStr(name string, field IQueryField, pos, length int) IQueryField {
 	var rightStr string
 	if length <= 0 {
@@ -250,24 +250,24 @@ func SubStr(name string, field IQueryField, pos, length int) IQueryField {
 	return NewFunctionField(name, `SUBSTR(%s, `+rightStr, field)
 }
 
-// do binary & operation on a field
+// OR_Val represents a SQL function that does binary | operation on a field
 func OR_Val(name string, field IQueryField, v interface{}) IQueryField {
 	rightStr := fmt.Sprintf("|%v", v)
 	return NewFunctionField(name, "%s"+rightStr, field)
 }
 
-// do binary | operation on a field
+// AND_Val represents a SQL function that does binary & operation on a field
 func AND_Val(name string, field IQueryField, v interface{}) IQueryField {
 	rightStr := fmt.Sprintf("&%v", v)
 	return NewFunctionField(name, "%s"+rightStr, field)
 }
 
-// function INET_ATON
+// INET_ATON represents a SQL function INET_ATON
 func INET_ATON(field IQueryField) IQueryField {
 	return NewFunctionField("", `INET_ATON(%s)`, field)
 }
 
-// function TimestampAdd
+// TimestampAdd represents a SQL function TimestampAdd
 func TimestampAdd(name string, field IQueryField, offsetSeconds int) IQueryField {
 	return NewFunctionField(name, `TIMESTAMPADD(SECOND, `+fmt.Sprintf("%d", offsetSeconds)+`, %s)`, field)
 }
