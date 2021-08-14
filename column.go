@@ -57,7 +57,7 @@ type IColumnSpec interface {
 	// IsIndex returns whether this column is indexable, if it is true, a index of this column will be automatically created
 	IsIndex() bool
 
-	// ExtraDefs returns some extra column attribute definitions, not covered by the standard definiton
+	// ExtraDefs returns some extra column attribute definitions, not covered by the standard fields
 	ExtraDefs() string
 
 	// DefinitionString return the SQL presentation of this column

@@ -91,7 +91,7 @@ func (tq *SQuery) Between(f string, v1, v2 interface{}) *SQuery {
 	return tq.Filter(cond)
 }
 
-// NotBetween fitlers query with a not between condition
+// NotBetween filters query with a not between condition
 func (tq *SQuery) NotBetween(f string, v1, v2 interface{}) *SQuery {
 	cond := Between(tq.Field(f), v1, v2)
 	return tq.Filter(NOT(cond))

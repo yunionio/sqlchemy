@@ -28,7 +28,7 @@ type IFunction interface {
 	variables() []interface{}
 }
 
-// SFunctionFieldBase is a query field that is the result of a SQL embeded function, e.g. COUNT(*) as count
+// SFunctionFieldBase is a query field that is the result of a SQL embedded function, e.g. COUNT(*) as count
 type SFunctionFieldBase struct {
 	IFunction
 	alias string
@@ -119,7 +119,7 @@ func COUNT(name string, field ...IQueryField) IQueryField {
 	return NewFunctionField(name, expr, field...)
 }
 
-// MAX represents the SQL fucntion MAX
+// MAX represents the SQL function MAX
 func MAX(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "MAX(%s)", field)
 }

@@ -34,7 +34,7 @@ func (t *STableSpec) Increment(diff interface{}, target interface{}) error {
 	return t.incrementInternal(diff, "+", target)
 }
 
-// Decrement is similart to Increment methods, the difference is that this method will atomically decrease the numeric fields
+// Decrement is similar to Increment methods, the difference is that this method will atomically decrease the numeric fields
 // with the value of diff
 func (t *STableSpec) Decrement(diff interface{}, target interface{}) error {
 	return t.incrementInternal(diff, "-", target)
