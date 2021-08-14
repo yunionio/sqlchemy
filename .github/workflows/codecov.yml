@@ -32,9 +32,10 @@ jobs:
       - name: Run coverage
         run: |
           echo $GITHUB_WORKSPACE
-          mkdir -p $(dirname $GITHUB_WORKSPACE)/go/yunion.io/x
-          mv $GITHUB_WORKSPACE $(dirname $GITHUB_WORKSPACE)/go/yunion.io/x
-          cd $(dirname $GITHUB_WORKSPACE)/go/yunion.io/x/sqlchemy
+          mkdir -p $(dirname $GITHUB_WORKSPACE)/go/src/yunion.io/x
+          mv $GITHUB_WORKSPACE $(dirname $GITHUB_WORKSPACE)/go/src/yunion.io/x
+          cd $(dirname $GITHUB_WORKSPACE)/go/src/yunion.io/x/sqlchemy
+          GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go get
           GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go test -race -coverprofile=coverage.out -covermode=atomic
       
       - name: Upload coverage to Codecov
