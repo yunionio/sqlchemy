@@ -37,8 +37,5 @@ jobs:
           cd $(dirname $GITHUB_WORKSPACE)/go/src/yunion.io/x/sqlchemy
           GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go get
           GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go test -race -coverprofile=coverage.out -covermode=atomic
-      
-      - name: Upload coverage to Codecov
-        run: |
-          cd $(dirname $GITHUB_WORKSPACE)/go/src/yunion.io/x/sqlchemy
+          dir
           bash <(curl -s https://codecov.io/bash)
