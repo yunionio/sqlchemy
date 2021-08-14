@@ -23,58 +23,58 @@ import (
 	"yunion.io/x/pkg/utils"
 )
 
-// interface represents a table
+// ITableSpec is the interface represents a table
 type ITableSpec interface {
-	// perform an insert operation that insert one record at a time
+	// Insert performs an insert operation that insert one record at a time
 	Insert(dt interface{}) error
 
-	// perform an insert or update operation that insert a new record to update the record with current value
+	// InsertOrUpdate performs an atomic insert or update operation that insert a new record to update the record with current value
 	InsertOrUpdate(dt interface{}) error
 
-	// perform an update operation
+	// Update performs an update operation
 	Update(dt interface{}, onUpdate func() error) (UpdateDiffs, error)
 
-	// a special update that do an atomic incremetal update of the numeric fields
+	// Increment performs a special update that do an atomic incremetal update of the numeric fields
 	Increment(diff, target interface{}) error
 
-	// a special update that do an atomic decremental update of the numeric fields
+	// Decrement performs a special update that do an atomic decremental update of the numeric fields
 	Decrement(diff, target interface{}) error
 
-	// returns the data type corresponding to the table
+	// DataType returns the data type corresponding to the table
 	DataType() reflect.Type
 
-	// returns the column definition of a spcific column
+	// ColumnSpec returns the column definition of a spcific column
 	ColumnSpec(name string) IColumnSpec
 
-	// name of the table
+	// Name returns the name of the table
 	Name() string
 
-	// the array of columns definitions
+	// Columns returns the array of columns definitions
 	Columns() []IColumnSpec
 
-	// the array of columns of primary keys
+	// PrimaryColumns returns the array of columns of primary keys
 	PrimaryColumns() []IColumnSpec
 
-	// expression of the table
+	// Expression returns expression of the table
 	Expression() string
 
-	// an instance of the table
+	// Instance returns an instance of STable for this spec
 	Instance() *STable
 
-	// drop foreignkey
+	// DropForeignKeySQL returns the SQL statements to drop foreignkeys for this table
 	DropForeignKeySQL() []string
 
-	// add index to table
+	// AddIndex adds index to table
 	AddIndex(unique bool, cols ...string) bool
 
-	// force synchronize the data definiton and model defintion of the table
+	// SyncSQL forces synchronize the data definiton and model defintion of the table
 	SyncSQL() []string
 
-	// query a struct
+	// Fetch query a struct
 	Fetch(dt interface{}) error
 }
 
-// table specification
+// STableSpec defines the table specification, which implements ITableSpec
 type STableSpec struct {
 	structType reflect.Type
 	name       string
@@ -83,20 +83,20 @@ type STableSpec struct {
 	contraints []sTableConstraint
 }
 
-// an instance of table for query, system will automatically give a alias to this table
+// STable is an instance of table for query, system will automatically give a alias to this table
 type STable struct {
 	spec  ITableSpec
 	alias string
 }
 
-// represents a field in a table, implements IQueryField
+// STableField represents a field in a table, implements IQueryField
 type STableField struct {
 	table *STable
 	spec  IColumnSpec
 	alias string
 }
 
-// generate STableSpec based on the information of a struct model
+// NewTableSpecFromStruct generates STableSpec based on the information of a struct model
 func NewTableSpecFromStruct(s interface{}, name string) *STableSpec {
 	val := reflect.Indirect(reflect.ValueOf(s))
 	st := val.Type()
@@ -122,7 +122,7 @@ func (ts *STableSpec) Expression() string {
 	return fmt.Sprintf("`%s`", ts.name)
 }
 
-// make a clone of a table, so we may create a new table of the same schema
+// Clone makes a clone of a table, so we may create a new table of the same schema
 func (ts *STableSpec) Clone(name string, autoIncOffset int64) *STableSpec {
 	newCols := make([]IColumnSpec, len(ts.columns))
 	for i := range newCols {
@@ -165,7 +165,7 @@ func (ts *STableSpec) DataType() reflect.Type {
 	return ts.structType
 }
 
-// returns the SQL for creating this table
+// CreateSQL returns the SQL for creating this table
 func (ts *STableSpec) CreateSQL() string {
 	cols := make([]string, 0)
 	primaries := make([]string, 0)
@@ -192,13 +192,13 @@ func (ts *STableSpec) CreateSQL() string {
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (\n%s\n) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci%s", ts.name, strings.Join(cols, ",\n"), autoInc)
 }
 
-// return an new table instance from an ITableSpec
+// NewTableInstance return an new table instance from an ITableSpec
 func NewTableInstance(ts ITableSpec) *STable {
 	table := STable{spec: ts, alias: getTableAliasName()}
 	return &table
 }
 
-// return an new table instance from an instance of STableSpec
+// Instance return an new table instance from an instance of STableSpec
 func (ts *STableSpec) Instance() *STable {
 	return NewTableInstance(ts)
 }

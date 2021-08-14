@@ -23,7 +23,7 @@ import (
 	"yunion.io/x/pkg/errors"
 )
 
-// field of a union
+// SUnionQueryField represents a field of a union query
 type SUnionQueryField struct {
 	union *SUnion
 	name  string
@@ -66,7 +66,7 @@ func (sqf *SUnionQueryField) Variables() []interface{} {
 	return nil
 }
 
-// struct to store state of a Union query, which implementation the interface of IQuerySource
+// SUnion is the struct to store state of a Union query, which implementation the interface of IQuerySource
 type SUnion struct {
 	alias   string
 	queries []IQuery
@@ -131,13 +131,13 @@ func (tq *SUnion) Desc(fields ...interface{}) *SUnion {
 }
 */
 
-// union query limit
+// Limit adds limit to a union query
 func (uq *SUnion) Limit(limit int) *SUnion {
 	uq.limit = limit
 	return uq
 }
 
-// union query offset
+// Offset adds offset to a union query
 func (uq *SUnion) Offset(offset int) *SUnion {
 	uq.offset = offset
 	return uq
@@ -170,6 +170,8 @@ func (uq *SUnion) Variables() []interface{} {
 	return ret
 }
 
+// Union method returns union query of several queries.
+// Require the fields of all queries should exactly match
 // deprecated
 func Union(query ...IQuery) *SUnion {
 	u, err := UnionWithError(query...)
@@ -179,7 +181,8 @@ func Union(query ...IQuery) *SUnion {
 	return u
 }
 
-// construct union query of several Queries
+// UnionWithError constructs union query of several Queries
+// Require the fields of all queries should exactly match
 func UnionWithError(query ...IQuery) (*SUnion, error) {
 	if len(query) == 0 {
 		return nil, errors.Wrap(sql.ErrNoRows, "empty union query")
@@ -217,7 +220,7 @@ func UnionWithError(query ...IQuery) (*SUnion, error) {
 	return uq, nil
 }
 
-// returns a SQuery of a SUnion
+// Query of SUnion returns a SQuery of a union query
 func (uq *SUnion) Query(f ...IQueryField) *SQuery {
 	return DoQuery(uq, f...)
 }
