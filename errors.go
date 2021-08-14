@@ -39,7 +39,7 @@ const (
 	// ErrNeedsPointer is an Error constant: input should be a pointer
 	ErrNeedsPointer = errors.Error("input needs pointer input")
 
-	// ErrNeedsPointer is an Error constant: input should be an Array or Slice
+	// ErrNeedsArray is an Error constant: input should be an Array or Slice
 	ErrNeedsArray = errors.Error("input needs slice or array")
 
 	// ErrReadOnly is an Error constant: database is read-only
@@ -48,8 +48,11 @@ const (
 	// ErrNotSupported is an Error constant: method not supported yet
 	ErrNotSupported = errors.ErrNotSupported
 
-	// ErrTableNotExists is an Errir constant: table not exists
+	// ErrTableNotExists is an Error constant: table not exists
 	ErrTableNotExists = errors.Error("TableNotExists")
+
+	// ErrUnionFieldsNotMatch is an Error constant: fields of union queries not match
+	ErrUnionFieldsNotMatch = errors.Error("cannot union, name of fields not match")
 )
 
 const (

@@ -127,9 +127,8 @@ func (c *SBaseColumn) IsPointer() bool {
 func (c *SBaseColumn) Name() string {
 	if len(c.dbName) > 0 {
 		return c.dbName
-	} else {
-		return c.name
 	}
+	return c.name
 }
 
 // ColType implementation of SBaseColumn for IColumnSpec
@@ -338,9 +337,8 @@ type SBaseWidthColumn struct {
 func (c *SBaseWidthColumn) ColType() string {
 	if c.width > 0 {
 		return fmt.Sprintf("%s(%d)", c.sqlType, c.width)
-	} else {
-		return c.sqlType
 	}
+	return c.sqlType
 }
 
 // NewBaseWidthColumn return an instance of SBaseWidthColumn
@@ -404,10 +402,9 @@ func (c *SBooleanColumn) IsZero(val interface{}) bool {
 	if c.isPointer {
 		bVal := val.(*bool)
 		return bVal == nil
-	} else {
-		bVal := val.(bool)
-		return bVal == false
 	}
+	bVal := val.(bool)
+	return bVal == false
 }
 
 // NewBooleanColumn return an instance of SBooleanColumn
@@ -448,9 +445,8 @@ func (c *STristateColumn) ConvertFromValue(val interface{}) interface{} {
 	bVal := val.(tristate.TriState)
 	if bVal == tristate.True {
 		return 1
-	} else {
-		return 0
 	}
+	return 0
 }
 
 // IsZero implementation of STristateColumn for IColumnSpec
@@ -458,10 +454,9 @@ func (c *STristateColumn) IsZero(val interface{}) bool {
 	if c.isPointer {
 		bVal := val.(*tristate.TriState)
 		return bVal == nil
-	} else {
-		bVal := val.(tristate.TriState)
-		return bVal == tristate.None
 	}
+	bVal := val.(tristate.TriState)
+	return bVal == tristate.None
 }
 
 // NewTristateColumn return an instance of STristateColumn
@@ -678,9 +673,8 @@ func (c *STextColumn) IsSupportDefault() bool {
 	// MySQL does not support default for TEXT/BLOB
 	if c.sqlType == "VARCHAR" {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 // ColType implementation of STextColumn for IColumnSpec
@@ -712,9 +706,8 @@ func (c *STextColumn) IsSearchable() bool {
 func (c *STextColumn) IsAscii() bool {
 	if c.Charset == "ascii" {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 // DefinitionString implementation of STextColumn for IColumnSpec
@@ -727,9 +720,8 @@ func (c *STextColumn) DefinitionString() string {
 func (c *STextColumn) IsZero(val interface{}) bool {
 	if c.isPointer {
 		return gotypes.IsNil(val)
-	} else {
-		return reflect.ValueOf(val).Len() == 0
 	}
+	return reflect.ValueOf(val).Len() == 0
 }
 
 // NewTextColumn return an instance of STextColumn
@@ -803,10 +795,9 @@ func (c *STimeTypeColumn) IsZero(val interface{}) bool {
 	if c.isPointer {
 		bVal := val.(*time.Time)
 		return bVal == nil
-	} else {
-		bVal := val.(time.Time)
-		return bVal.IsZero()
 	}
+	bVal := val.(time.Time)
+	return bVal.IsZero()
 }
 
 // NewTimeTypeColumn return an instance of STimeTypeColumn
@@ -874,9 +865,8 @@ func (c *CompoundColumn) ConvertFromValue(val interface{}) interface{} {
 	bVal, ok := val.(gotypes.ISerializable)
 	if ok && bVal != nil {
 		return bVal.String()
-	} else {
-		return ""
 	}
+	return ""
 }
 
 // NewCompoundColumn returns an instance of CompoundColumn

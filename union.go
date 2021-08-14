@@ -34,18 +34,16 @@ type SUnionQueryField struct {
 func (sqf *SUnionQueryField) Expression() string {
 	if len(sqf.alias) > 0 {
 		return fmt.Sprintf("`%s`.`%s` as `%s`", sqf.union.Alias(), sqf.name, sqf.alias)
-	} else {
-		return fmt.Sprintf("`%s`.`%s`", sqf.union.Alias(), sqf.name)
 	}
+	return fmt.Sprintf("`%s`.`%s`", sqf.union.Alias(), sqf.name)
 }
 
 // Name implementation of SUnionQueryField for IQueryField
 func (sqf *SUnionQueryField) Name() string {
 	if len(sqf.alias) > 0 {
 		return sqf.alias
-	} else {
-		return sqf.name
 	}
+	return sqf.name
 }
 
 // Reference implementation of SUnionQueryField for IQueryField
@@ -193,14 +191,14 @@ func UnionWithError(query ...IQuery) (*SUnion, error) {
 		fieldNames = append(fieldNames, f.Name())
 	}
 
-	for i := 1; i < len(query); i += 1 {
+	for i := 1; i < len(query); i++ {
 		qfields := query[i].QueryFields()
 		if len(fieldNames) != len(qfields) {
-			return nil, fmt.Errorf("cannot union, number of fields not match!")
+			return nil, errors.Wrap(ErrUnionFieldsNotMatch, "number not match")
 		}
 		for i := range qfields {
 			if fieldNames[i] != qfields[i].Name() {
-				return nil, fmt.Errorf("cannot union, name of fields not match!")
+				return nil, errors.Wrapf(ErrUnionFieldsNotMatch, "name %s:%s not match", fieldNames[i], qfields[i].Name())
 			}
 		}
 	}

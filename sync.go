@@ -44,10 +44,9 @@ func decodeSqlTypeString(typeStr string) []string {
 	matches := typeReg.FindStringSubmatch(typeStr)
 	if len(matches) >= 3 {
 		return matches[1:]
-	} else {
-		parts := strings.Split(typeStr, " ")
-		return []string{parts[0]}
 	}
+	parts := strings.Split(typeStr, " ")
+	return []string{parts[0]}
 }
 
 func (info *sSqlColumnInfo) toColumnSpec() IColumnSpec {
@@ -218,21 +217,21 @@ func diffCols(tableName string, cols1 []IColumnSpec, cols2 []IColumnSpec) ([]ICo
 						newCol: cols2[j],
 					})
 				}
-				i += 1
-				j += 1
+				i++
+				j++
 			} else if comp > 0 {
 				add = append(add, cols2[j])
-				j += 1
+				j++
 			} else {
 				remove = append(remove, cols1[i])
-				i += 1
+				i++
 			}
 		} else if i < len(cols1) {
 			remove = append(remove, cols1[i])
-			i += 1
+			i++
 		} else if j < len(cols2) {
 			add = append(add, cols2[j])
-			j += 1
+			j++
 		}
 	}
 	return remove, update, add
@@ -240,9 +239,9 @@ func diffCols(tableName string, cols1 []IColumnSpec, cols2 []IColumnSpec) ([]ICo
 
 func diffIndexes2(exists []sTableIndex, defs []sTableIndex) (diff []sTableIndex) {
 	diff = make([]sTableIndex, 0)
-	for i := 0; i < len(exists); i += 1 {
+	for i := 0; i < len(exists); i++ {
 		findDef := false
-		for j := 0; j < len(defs); j += 1 {
+		for j := 0; j < len(defs); j++ {
 			if defs[j].IsIdentical(exists[i].columns...) {
 				findDef = true
 				break

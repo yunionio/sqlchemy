@@ -223,9 +223,8 @@ func (t *STableSpec) insert(data interface{}, update bool, debug bool) error {
 				lastId, err := results.LastInsertId()
 				if err != nil {
 					return errors.Wrap(err, "fetching lastInsertId failed")
-				} else {
-					q = q.Equals(c.Name(), lastId)
 				}
+				q = q.Equals(c.Name(), lastId)
 			} else {
 				priVal, _ := dataFields.GetInterface(c.Name())
 				if !gotypes.IsNil(priVal) {

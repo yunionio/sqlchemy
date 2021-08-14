@@ -47,7 +47,7 @@ func (index *sTableIndex) IsIdentical(cols ...string) bool {
 	if len(index.columns) != len(cols) {
 		return false
 	}
-	for i := 0; i < len(index.columns); i += 1 {
+	for i := 0; i < len(index.columns); i++ {
 		if index.columns[i] != cols[i] {
 			return false
 		}
@@ -57,14 +57,16 @@ func (index *sTableIndex) IsIdentical(cols ...string) bool {
 
 func (index *sTableIndex) QuotedColumns() []string {
 	ret := make([]string, len(index.columns))
-	for i := 0; i < len(ret); i += 1 {
+	for i := 0; i < len(ret); i++ {
 		ret[i] = fmt.Sprintf("`%s`", index.columns[i])
 	}
 	return ret
 }
 
+// AddIndex adds a SQL index over multiple columns for a Table
+// param unique: indicates a unique index cols: name of columns
 func (ts *STableSpec) AddIndex(unique bool, cols ...string) bool {
-	for i := 0; i < len(ts.indexes); i += 1 {
+	for i := 0; i < len(ts.indexes); i++ {
 		if ts.indexes[i].IsIdentical(cols...) {
 			return false
 		}
