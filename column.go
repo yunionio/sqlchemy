@@ -93,7 +93,7 @@ type IColumnSpec interface {
 
 	// IsEqual(v1, v2 interface{}) bool
 
-	// Tags returns the field tags for this column, which is in the struct definiton
+	// Tags returns the field tags for this column, which is in the struct definition
 	Tags() map[string]string
 
 	// IsPointer returns whether this column is a pointer type definition, e.g. *int, *bool
