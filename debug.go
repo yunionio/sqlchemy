@@ -66,6 +66,6 @@ func (t *STableSpec) DebugInsertOrUpdate(dt interface{}) error {
 }
 
 // DebugUpdateFields does update with debug mode on
-func (ts *STableSpec) DebugUpdateFields(dt interface{}, fields map[string]interface{}) error {
-	return ts.updateFields(dt, fields, true)
+func (t *STableSpec) DebugUpdateFields(dt interface{}, fields map[string]interface{}) error {
+	return t.updateFields(dt, fields, true)
 }

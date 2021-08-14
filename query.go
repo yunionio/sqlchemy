@@ -102,13 +102,13 @@ func (tbl *STable) Variables() []interface{} {
 type QueryJoinType string
 
 const (
-	// innerjoin
+	// INNERJOIN represents innerjoin
 	INNERJOIN QueryJoinType = "JOIN"
 
-	// leftjoin
+	// LEFTJOIN represents left join
 	LEFTJOIN QueryJoinType = "LEFT JOIN"
 
-	// rightjoin
+	// RIGHTJOIN represents right-join
 	RIGHTJOIN QueryJoinType = "RIGHT JOIN"
 
 	// FULLJOIN  QueryJoinType = "FULLJOIN"
@@ -121,7 +121,7 @@ type sQueryJoin struct {
 	condition ICondition
 }
 
-// a data structure represents a SQL query in the form of
+// SQuery is a data structure represents a SQL query in the form of
 //     SELECT ... FROM ... JOIN ... ON ... WHERE ... GROUP BY ... ORDER BY ... HAVING ...
 type SQuery struct {
 	rawSql   string
@@ -162,18 +162,16 @@ type SSubQueryField struct {
 func (sqf *SSubQueryField) Expression() string {
 	if len(sqf.alias) > 0 {
 		return fmt.Sprintf("`%s`.`%s` AS `%s`", sqf.query.alias, sqf.field.Name(), sqf.alias)
-	} else {
-		return fmt.Sprintf("`%s`.`%s`", sqf.query.alias, sqf.field.Name())
 	}
+	return fmt.Sprintf("`%s`.`%s`", sqf.query.alias, sqf.field.Name())
 }
 
 // Name implementation of SSubQueryField for IQueryField
 func (sqf *SSubQueryField) Name() string {
 	if len(sqf.alias) > 0 {
 		return sqf.alias
-	} else {
-		return sqf.field.Name()
 	}
+	return sqf.field.Name()
 }
 
 // Reference implementation of SSubQueryField for IQueryField
@@ -267,14 +265,14 @@ func DoQuery(from IQuerySource, f ...IQueryField) *SQuery {
 }
 
 // AppendField appends query field to a query
-func (q *SQuery) AppendField(f ...IQueryField) *SQuery {
-	q.fields = append(q.fields, f...)
-	return q
+func (tq *SQuery) AppendField(f ...IQueryField) *SQuery {
+	tq.fields = append(tq.fields, f...)
+	return tq
 }
 
 // Query of SSubQuery generates a new query from a subquery
-func (table *SSubQuery) Query(f ...IQueryField) *SQuery {
-	return DoQuery(table, f...)
+func (sq *SSubQuery) Query(f ...IQueryField) *SQuery {
+	return DoQuery(sq, f...)
 }
 
 // Query of STable generates a new query from a table
@@ -291,10 +289,10 @@ func (ts *STableSpec) Query(f ...IQueryField) *SQuery {
 type QueryOrderType string
 
 const (
-	// Ascending order
+	// SQL_ORDER_ASC represents Ascending order
 	SQL_ORDER_ASC QueryOrderType = "ASC"
 
-	// Descending order
+	// SQL_ORDER_DESC represents Descending order
 	SQL_ORDER_DESC QueryOrderType = "DESC"
 )
 
@@ -302,9 +300,8 @@ const (
 func (qot QueryOrderType) Equals(orderType string) bool {
 	if strings.ToUpper(orderType) == string(qot) {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 // internal structure to store state of query order
@@ -374,9 +371,8 @@ func (tq *SQuery) Offset(offset int) *SQuery {
 func (tq *SQuery) QueryFields() []IQueryField {
 	if len(tq.fields) > 0 {
 		return tq.fields
-	} else {
-		return tq.from.Fields()
 	}
+	return tq.from.Fields()
 }
 
 // String of SQuery implemetation of SQuery for IQuery
@@ -547,7 +543,7 @@ func (tq *SQuery) Rows() (*sql.Rows, error) {
 	return _db.Query(sqlstr, vars...)
 }
 
-// COUNT of SQuery returns the count of a query
+// Count of SQuery returns the count of a query
 // use CountWithError instead
 // deprecated
 func (tq *SQuery) Count() int {
@@ -636,7 +632,7 @@ func (tq *SQuery) internalFindField(name string) IQueryField {
 	return nil
 }
 
-// a interface a data fetchging
+// IRowScanner is an interface for sql data fetching
 type IRowScanner interface {
 	Scan(desc ...interface{}) error
 }
@@ -665,8 +661,8 @@ func rowScan2StringMap(fields []string, row IRowScanner) (map[string]string, err
 	return results, nil
 }
 
-func (q *SQuery) rowScan2StringMap(row IRowScanner) (map[string]string, error) {
-	queryFields := q.QueryFields()
+func (tq *SQuery) rowScan2StringMap(row IRowScanner) (map[string]string, error) {
+	queryFields := tq.QueryFields()
 	fields := make([]string, len(queryFields))
 	for i, f := range queryFields {
 		fields[i] = f.Name()
@@ -675,20 +671,20 @@ func (q *SQuery) rowScan2StringMap(row IRowScanner) (map[string]string, error) {
 }
 
 // FirstStringMap returns query result of the first row in a stringmap(map[string]string)
-func (q *SQuery) FirstStringMap() (map[string]string, error) {
-	return q.rowScan2StringMap(q.Row())
+func (tq *SQuery) FirstStringMap() (map[string]string, error) {
+	return tq.rowScan2StringMap(tq.Row())
 }
 
 // AllStringMap returns query result of all rows in an array of stringmap(map[string]string)
-func (q *SQuery) AllStringMap() ([]map[string]string, error) {
-	rows, err := q.Rows()
+func (tq *SQuery) AllStringMap() ([]map[string]string, error) {
+	rows, err := tq.Rows()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	results := make([]map[string]string, 0)
 	for rows.Next() {
-		result, err := q.rowScan2StringMap(rows)
+		result, err := tq.rowScan2StringMap(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -722,8 +718,8 @@ func callAfterQuery(val reflect.Value) {
 }
 
 // First return query result of first row and store the result in a data struct
-func (q *SQuery) First(dest interface{}) error {
-	mapResult, err := q.FirstStringMap()
+func (tq *SQuery) First(dest interface{}) error {
+	mapResult, err := tq.FirstStringMap()
 	if err != nil {
 		return err
 	}
@@ -741,7 +737,7 @@ func (q *SQuery) First(dest interface{}) error {
 }
 
 // All return query results of all rows and store the result in an array of data struct
-func (q *SQuery) All(dest interface{}) error {
+func (tq *SQuery) All(dest interface{}) error {
 	arrayType := reflect.TypeOf(dest).Elem()
 
 	if arrayType.Kind() != reflect.Array && arrayType.Kind() != reflect.Slice {
@@ -749,7 +745,7 @@ func (q *SQuery) All(dest interface{}) error {
 	}
 	elemType := arrayType.Elem()
 
-	mapResults, err := q.AllStringMap()
+	mapResults, err := tq.AllStringMap()
 	if err != nil {
 		return err
 	}
@@ -770,12 +766,12 @@ func (q *SQuery) All(dest interface{}) error {
 }
 
 // Row2Map is a utility function that fetch stringmap(map[string]string) from a native sql.Row or sql.Rows
-func (q *SQuery) Row2Map(row IRowScanner) (map[string]string, error) {
-	return q.rowScan2StringMap(row)
+func (tq *SQuery) Row2Map(row IRowScanner) (map[string]string, error) {
+	return tq.rowScan2StringMap(row)
 }
 
 // RowMap2Struct is a utility function that fetch struct from a native sql.Row or sql.Rows
-func (q *SQuery) RowMap2Struct(result map[string]string, dest interface{}) error {
+func (tq *SQuery) RowMap2Struct(result map[string]string, dest interface{}) error {
 	destPtrValue := reflect.ValueOf(dest)
 	if destPtrValue.Kind() != reflect.Ptr {
 		return errors.Wrap(ErrNeedsPointer, "input must be a pointer")
@@ -791,24 +787,24 @@ func (q *SQuery) RowMap2Struct(result map[string]string, dest interface{}) error
 }
 
 // Row2Struct is a utility function that fill a struct with the value of a sql.Row or sql.Rows
-func (q *SQuery) Row2Struct(row IRowScanner, dest interface{}) error {
-	result, err := q.rowScan2StringMap(row)
+func (tq *SQuery) Row2Struct(row IRowScanner, dest interface{}) error {
+	result, err := tq.rowScan2StringMap(row)
 	if err != nil {
 		return err
 	}
-	return q.RowMap2Struct(result, dest)
+	return tq.RowMap2Struct(result, dest)
 }
 
 // Snapshot of SQuery take a snapshot of the query, so we can tell wether the query is modified later by comparing the SQL with snapshot
-func (q *SQuery) Snapshot() *SQuery {
-	q.snapshot = q.String()
-	return q
+func (tq *SQuery) Snapshot() *SQuery {
+	tq.snapshot = tq.String()
+	return tq
 }
 
 // IsAltered of SQuery indicates whether a query was altered. By comparing with the saved query snapshot, we can tell whether a query is altered
-func (q *SQuery) IsAltered() bool {
-	if len(q.snapshot) == 0 {
-		panic(fmt.Sprintf("Query %s has never been snapshot when IsAltered called", q.String()))
+func (tq *SQuery) IsAltered() bool {
+	if len(tq.snapshot) == 0 {
+		panic(fmt.Sprintf("Query %s has never been snapshot when IsAltered called", tq.String()))
 	}
-	return q.String() != q.snapshot
+	return tq.String() != tq.snapshot
 }

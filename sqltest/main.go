@@ -41,25 +41,26 @@ func now() string {
 	return timeutils.MysqlTime(time.Time{})
 }
 
+// SCompondStruct is an example struct
 type SCompondStruct struct {
 	Id  string
 	Age int
 }
 
-func (self *SCompondStruct) IsZero() bool {
-	return len(self.Id) == 0 && self.Age == 0
+func (cs *SCompondStruct) IsZero() bool {
+	return len(cs.Id) == 0 && cs.Age == 0
 }
 
-func (self *SCompondStruct) Equals(obj gotypes.ISerializable) bool {
+func (cs *SCompondStruct) Equals(obj gotypes.ISerializable) bool {
 	comp, ok := obj.(*SCompondStruct)
 	if !ok {
 		return false
 	}
-	return self.Age == comp.Age && self.Id == comp.Id
+	return cs.Age == comp.Age && cs.Id == comp.Id
 }
 
-func (self *SCompondStruct) String() string {
-	return jsonutils.Marshal(self).String()
+func (cs *SCompondStruct) String() string {
+	return jsonutils.Marshal(cs).String()
 }
 
 func init() {

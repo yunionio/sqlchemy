@@ -39,9 +39,8 @@ func (ff *SFunctionFieldBase) Reference() string {
 	if len(ff.alias) == 0 {
 		log.Warningf("reference a function field without alias! %s", ff.expression())
 		return ff.expression()
-	} else {
-		return fmt.Sprintf("`%s`", ff.alias)
 	}
+	return fmt.Sprintf("`%s`", ff.alias)
 }
 
 // Expression implementation of SFunctionFieldBase for IQueryField
@@ -49,19 +48,17 @@ func (ff *SFunctionFieldBase) Expression() string {
 	if len(ff.alias) > 0 {
 		// add alias
 		return fmt.Sprintf("%s AS `%s`", ff.expression(), ff.alias)
-	} else {
-		// no alias
-		return ff.expression()
 	}
+	// no alias
+	return ff.expression()
 }
 
 // Name implementation of SFunctionFieldBase for IQueryField
 func (ff *SFunctionFieldBase) Name() string {
 	if len(ff.alias) > 0 {
 		return ff.alias
-	} else {
-		return ff.expression()
 	}
+	return ff.expression()
 }
 
 // Label implementation of SFunctionFieldBase for IQueryField
@@ -239,7 +236,7 @@ func CONCAT(name string, fields ...IQueryField) IQueryField {
 	return NewFunctionField(name, `CONCAT(`+strings.Join(params, ",")+`)`, fields...)
 }
 
-// SUBSTR represents a SQL function SUBSTR
+// SubStr represents a SQL function SUBSTR
 func SubStr(name string, field IQueryField, pos, length int) IQueryField {
 	var rightStr string
 	if length <= 0 {

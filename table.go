@@ -242,18 +242,16 @@ func (tbl *STable) Fields() []IQueryField {
 func (c *STableField) Expression() string {
 	if len(c.alias) > 0 {
 		return fmt.Sprintf("`%s`.`%s` as `%s`", c.table.Alias(), c.spec.Name(), c.alias)
-	} else {
-		return fmt.Sprintf("`%s`.`%s`", c.table.Alias(), c.spec.Name())
 	}
+	return fmt.Sprintf("`%s`.`%s`", c.table.Alias(), c.spec.Name())
 }
 
 // Name implementation of STableField for IQueryField
 func (c *STableField) Name() string {
 	if len(c.alias) > 0 {
 		return c.alias
-	} else {
-		return c.spec.Name()
 	}
+	return c.spec.Name()
 }
 
 // Reference implementation of STableField for IQueryField

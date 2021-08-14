@@ -321,7 +321,7 @@ func questionMark(count int) string {
 	} else {
 		var buf bytes.Buffer
 		buf.WriteString("( ")
-		for i := 0; i < count; i += 1 {
+		for i := 0; i < count; i++ {
 			if i > 0 {
 				buf.WriteString(", ")
 			}

@@ -44,133 +44,133 @@ func (tq *SQuery) FilterByFalse() *SQuery {
 }
 
 // Like filters query with a like condition
-func (q *SQuery) Like(f string, v string) *SQuery {
-	cond := Like(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) Like(f string, v string) *SQuery {
+	cond := Like(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // Contains filters query with a contains condition
-func (q *SQuery) Contains(f string, v string) *SQuery {
-	cond := Contains(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) Contains(f string, v string) *SQuery {
+	cond := Contains(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // Startswith filters query with a startswith condition
-func (q *SQuery) Startswith(f string, v string) *SQuery {
-	cond := Startswith(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) Startswith(f string, v string) *SQuery {
+	cond := Startswith(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // Endswith filters query with a endswith condition
-func (q *SQuery) Endswith(f string, v string) *SQuery {
-	cond := Endswith(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) Endswith(f string, v string) *SQuery {
+	cond := Endswith(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // NotLike filters query with a not like condition
-func (q *SQuery) NotLike(f string, v string) *SQuery {
-	cond := Like(q.Field(f), v)
-	return q.Filter(NOT(cond))
+func (tq *SQuery) NotLike(f string, v string) *SQuery {
+	cond := Like(tq.Field(f), v)
+	return tq.Filter(NOT(cond))
 }
 
 // In filters query with a in condition
-func (q *SQuery) In(f string, v interface{}) *SQuery {
-	cond := In(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) In(f string, v interface{}) *SQuery {
+	cond := In(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // NotIn filters query with a not in condition
-func (q *SQuery) NotIn(f string, v interface{}) *SQuery {
-	cond := In(q.Field(f), v)
-	return q.Filter(NOT(cond))
+func (tq *SQuery) NotIn(f string, v interface{}) *SQuery {
+	cond := In(tq.Field(f), v)
+	return tq.Filter(NOT(cond))
 }
 
 // Between filters query with a between condition
-func (q *SQuery) Between(f string, v1, v2 interface{}) *SQuery {
-	cond := Between(q.Field(f), v1, v2)
-	return q.Filter(cond)
+func (tq *SQuery) Between(f string, v1, v2 interface{}) *SQuery {
+	cond := Between(tq.Field(f), v1, v2)
+	return tq.Filter(cond)
 }
 
 // NotBetween fitlers query with a not between condition
-func (q *SQuery) NotBetween(f string, v1, v2 interface{}) *SQuery {
-	cond := Between(q.Field(f), v1, v2)
-	return q.Filter(NOT(cond))
+func (tq *SQuery) NotBetween(f string, v1, v2 interface{}) *SQuery {
+	cond := Between(tq.Field(f), v1, v2)
+	return tq.Filter(NOT(cond))
 }
 
 // Equals filters query with a equals condition
-func (q *SQuery) Equals(f string, v interface{}) *SQuery {
-	cond := Equals(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) Equals(f string, v interface{}) *SQuery {
+	cond := Equals(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // NotEquals filters the query with a not equals condition
-func (q *SQuery) NotEquals(f string, v interface{}) *SQuery {
-	cond := NotEquals(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) NotEquals(f string, v interface{}) *SQuery {
+	cond := NotEquals(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // GE filters the query with a >= condition
-func (q *SQuery) GE(f string, v interface{}) *SQuery {
-	cond := GE(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) GE(f string, v interface{}) *SQuery {
+	cond := GE(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // LE filters the query with a <= condition
-func (q *SQuery) LE(f string, v interface{}) *SQuery {
-	cond := LE(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) LE(f string, v interface{}) *SQuery {
+	cond := LE(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // GT filters the query with a > condition
-func (q *SQuery) GT(f string, v interface{}) *SQuery {
-	cond := GT(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) GT(f string, v interface{}) *SQuery {
+	cond := GT(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // LT filters the query with a < condition
-func (q *SQuery) LT(f string, v interface{}) *SQuery {
-	cond := LT(q.Field(f), v)
-	return q.Filter(cond)
+func (tq *SQuery) LT(f string, v interface{}) *SQuery {
+	cond := LT(tq.Field(f), v)
+	return tq.Filter(cond)
 }
 
 // IsNull filters the query with a is null condition
-func (q *SQuery) IsNull(f string) *SQuery {
-	cond := IsNull(q.Field(f))
-	return q.Filter(cond)
+func (tq *SQuery) IsNull(f string) *SQuery {
+	cond := IsNull(tq.Field(f))
+	return tq.Filter(cond)
 }
 
 // IsNotNull filters the query with a is not null condition
-func (q *SQuery) IsNotNull(f string) *SQuery {
-	cond := IsNotNull(q.Field(f))
-	return q.Filter(cond)
+func (tq *SQuery) IsNotNull(f string) *SQuery {
+	cond := IsNotNull(tq.Field(f))
+	return tq.Filter(cond)
 }
 
 // IsEmpty filters the query with a is_empty condition
-func (q *SQuery) IsEmpty(f string) *SQuery {
-	cond := IsEmpty(q.Field(f))
-	return q.Filter(cond)
+func (tq *SQuery) IsEmpty(f string) *SQuery {
+	cond := IsEmpty(tq.Field(f))
+	return tq.Filter(cond)
 }
 
 // IsNullOrEmpty filters the query with a is null or empty condition
-func (q *SQuery) IsNullOrEmpty(f string) *SQuery {
-	cond := IsNullOrEmpty(q.Field(f))
-	return q.Filter(cond)
+func (tq *SQuery) IsNullOrEmpty(f string) *SQuery {
+	cond := IsNullOrEmpty(tq.Field(f))
+	return tq.Filter(cond)
 }
 
 // IsNotEmpty filters the query with a is not empty condition
-func (q *SQuery) IsNotEmpty(f string) *SQuery {
-	cond := IsNotEmpty(q.Field(f))
-	return q.Filter(cond)
+func (tq *SQuery) IsNotEmpty(f string) *SQuery {
+	cond := IsNotEmpty(tq.Field(f))
+	return tq.Filter(cond)
 }
 
 // IsTrue filters the query with a is true condition
-func (q *SQuery) IsTrue(f string) *SQuery {
-	cond := IsTrue(q.Field(f))
-	return q.Filter(cond)
+func (tq *SQuery) IsTrue(f string) *SQuery {
+	cond := IsTrue(tq.Field(f))
+	return tq.Filter(cond)
 }
 
 // IsFalse filters the query with a is false condition
-func (q *SQuery) IsFalse(f string) *SQuery {
-	cond := IsFalse(q.Field(f))
-	return q.Filter(cond)
+func (tq *SQuery) IsFalse(f string) *SQuery {
+	cond := IsFalse(tq.Field(f))
+	return tq.Filter(cond)
 }

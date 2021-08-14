@@ -150,9 +150,8 @@ func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target i
 	if aCnt != 1 {
 		if aCnt == 0 {
 			return sql.ErrNoRows
-		} else {
-			return errors.Wrapf(ErrUnexpectRowCount, "affected rows %d != 1", aCnt)
 		}
+		return errors.Wrapf(ErrUnexpectRowCount, "affected rows %d != 1", aCnt)
 	}
 	q := t.Query()
 	for k, v := range primaries {
