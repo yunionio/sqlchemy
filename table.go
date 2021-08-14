@@ -34,7 +34,7 @@ type ITableSpec interface {
 	// Update performs an update operation
 	Update(dt interface{}, onUpdate func() error) (UpdateDiffs, error)
 
-	// Increment performs a special update that do an atomic incremetal update of the numeric fields
+	// Increment performs a special update that do an atomic incremental update of the numeric fields
 	Increment(diff, target interface{}) error
 
 	// Decrement performs a special update that do an atomic decremental update of the numeric fields
@@ -67,7 +67,7 @@ type ITableSpec interface {
 	// AddIndex adds index to table
 	AddIndex(unique bool, cols ...string) bool
 
-	// SyncSQL forces synchronize the data definiton and model defintion of the table
+	// SyncSQL forces synchronize the data definition and model definition of the table
 	SyncSQL() []string
 
 	// Fetch query a struct

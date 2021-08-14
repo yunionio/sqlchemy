@@ -285,7 +285,7 @@ func (ts *STableSpec) Exists() bool {
 	return in
 }
 
-// SyncSQL returns SQL statements that make table in database consistant with TableSpec definitions
+// SyncSQL returns SQL statements that make table in database consistent with TableSpec definitions
 // by comparing table definition derived from TableSpec and that in database
 func (ts *STableSpec) SyncSQL() []string {
 	if !ts.Exists() {
