@@ -35,6 +35,14 @@ func TestQuery(t *testing.T) {
 		want := "SELECT `t2`.`col0` FROM ((SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? )) UNION (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? ))) AS `t2`"
 		testGotWant(t, q.String(), want)
 	})
+
+	t.Run("query order by SUM func", func(t *testing.T) {
+		testReset()
+		q := testTable.Query(SUM("total", testTable.Field("col1")), testTable.Field("col0")).GroupBy(testTable.Field("col0"))
+		q = q.Asc(q.Field("total"))
+		want := "SELECT SUM(`t1`.`col1`) AS `total`, `t1`.`col0` FROM `test` AS `t1` GROUP BY `t1`.`col0` ORDER BY `total` ASC"
+		testGotWant(t, q.String(), want)
+	})
 }
 
 func TestCountQuery(t *testing.T) {
