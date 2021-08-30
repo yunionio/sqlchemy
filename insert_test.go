@@ -25,6 +25,7 @@ func insertSqlPrep(v interface{}) (string, []interface{}, error) {
 	vvvalue := reflect.ValueOf(v).Elem()
 	vv := vvvalue.Interface()
 	vvFields := reflectutils.FetchStructFieldValueSet(vvvalue)
+	SetDefaultDB(nil)
 	ts := NewTableSpecFromStruct(vv, "vv")
 	sql, vals, err := ts.insertSqlPrep(vvFields, false)
 	return sql, vals, err

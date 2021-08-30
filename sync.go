@@ -16,151 +16,13 @@ package sqlchemy
 
 import (
 	"fmt"
-	"math/bits"
-	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 
 	"yunion.io/x/log"
 	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/utils"
 )
-
-type sSqlColumnInfo struct {
-	Field      string
-	Type       string
-	Collation  string
-	Null       string
-	Key        string
-	Default    string
-	Extra      string
-	Privileges string
-	Comment    string
-}
-
-func decodeSqlTypeString(typeStr string) []string {
-	typeReg := regexp.MustCompile(`(\w+)\((\d+)(,\s*(\d+))?\)`)
-	matches := typeReg.FindStringSubmatch(typeStr)
-	if len(matches) >= 3 {
-		return matches[1:]
-	}
-	parts := strings.Split(typeStr, " ")
-	return []string{parts[0]}
-}
-
-func (info *sSqlColumnInfo) toColumnSpec() IColumnSpec {
-	tagmap := make(map[string]string)
-
-	matches := decodeSqlTypeString(info.Type)
-	typeStr := strings.ToUpper(matches[0])
-	width := 0
-	if len(matches) > 1 {
-		width, _ = strconv.Atoi(matches[1])
-	}
-	if width > 0 {
-		tagmap[TAG_WIDTH] = fmt.Sprintf("%d", width)
-	}
-	if info.Null == "YES" {
-		tagmap[TAG_NULLABLE] = "true"
-	} else {
-		tagmap[TAG_NULLABLE] = "false"
-	}
-	if info.Key == "PRI" {
-		tagmap[TAG_PRIMARY] = "true"
-	} else {
-		tagmap[TAG_PRIMARY] = "false"
-	}
-	charset := ""
-	if info.Collation == "ascii_general_ci" {
-		charset = "ascii"
-	} else if info.Collation == "utf8_general_ci" || info.Collation == "utf8mb4_unicode_ci" {
-		charset = "utf8"
-	} else {
-		charset = "ascii"
-	}
-	if len(charset) > 0 {
-		tagmap[TAG_CHARSET] = charset
-	}
-	if info.Default != "NULL" {
-		tagmap[TAG_DEFAULT] = info.Default
-	}
-	if strings.HasSuffix(typeStr, "CHAR") {
-		c := NewTextColumn(info.Field, tagmap, false)
-		return &c
-	} else if strings.HasSuffix(typeStr, "TEXT") {
-		tagmap[TAG_TEXT_LENGTH] = typeStr[:len(typeStr)-4]
-		c := NewTextColumn(info.Field, tagmap, false)
-		return &c
-	} else if strings.HasSuffix(typeStr, "INT") {
-		if info.Extra == "auto_increment" {
-			tagmap[TAG_AUTOINCREMENT] = "true"
-		}
-		unsigned := false
-		if strings.HasSuffix(info.Type, " unsigned") {
-			unsigned = true
-		}
-		if _, ok := tagmap[TAG_WIDTH]; !ok {
-			if unsigned {
-				tagmap[TAG_WIDTH] = uintWidthString(typeStr)
-			} else {
-				tagmap[TAG_WIDTH] = intWidthString(typeStr)
-			}
-		}
-		c := NewIntegerColumn(info.Field, typeStr, unsigned, tagmap, false)
-		return &c
-	} else if typeStr == "FLOAT" || typeStr == "DOUBLE" {
-		c := NewFloatColumn(info.Field, typeStr, tagmap, false)
-		return &c
-	} else if typeStr == "DECIMAL" {
-		if len(matches) > 3 {
-			precision, _ := strconv.Atoi(matches[3])
-			if precision > 0 {
-				tagmap[TAG_PRECISION] = fmt.Sprintf("%d", precision)
-			}
-		}
-		c := NewDecimalColumn(info.Field, tagmap, false)
-		return &c
-	} else if typeStr == "DATETIME" {
-		c := NewDateTimeColumn(info.Field, tagmap, false)
-		return &c
-	} else if typeStr == "DATE" || typeStr == "TIMESTAMP" {
-		c := NewTimeTypeColumn(info.Field, typeStr, tagmap, false)
-		return &c
-	} else if strings.HasPrefix(typeStr, "ENUM(") {
-		// enum type, force convert to text
-		// discourage use of enum, use text instead
-		enums := utils.FindWords([]byte(typeStr[5:len(typeStr)-1]), 0)
-
-		width := 0
-		for i := range enums {
-			if width < len(enums[i]) {
-				width = len(enums[i])
-			}
-		}
-		tagmap[TAG_WIDTH] = fmt.Sprintf("%d", 1<<uint(bits.Len(uint(width))))
-		c := NewTextColumn(info.Field, tagmap, false)
-		return &c
-	} else {
-		log.Errorf("unsupported type %s", typeStr)
-		return nil
-	}
-}
-
-func (ts *STableSpec) fetchColumnDefs() ([]IColumnSpec, error) {
-	sql := fmt.Sprintf("SHOW FULL COLUMNS IN `%s`", ts.name)
-	query := NewRawQuery(sql, "field", "type", "collation", "null", "key", "default", "extra", "privileges", "comment")
-	infos := make([]sSqlColumnInfo, 0)
-	err := query.All(&infos)
-	if err != nil {
-		return nil, err
-	}
-	specs := make([]IColumnSpec, 0)
-	for _, info := range infos {
-		specs = append(specs, info.toColumnSpec())
-	}
-	return specs, nil
-}
 
 func (ts *STableSpec) fetchIndexesAndConstraints() ([]sTableIndex, []sTableConstraint, error) {
 	sql := fmt.Sprintf("SHOW CREATE TABLE `%s`", ts.name)
@@ -280,7 +142,7 @@ func (ts *STableSpec) DropForeignKeySQL() []string {
 
 // Exists checks wheter a table exists
 func (ts *STableSpec) Exists() bool {
-	tables := GetTables()
+	tables := ts.Database().GetTables()
 	in, _ := utils.InStringArray(ts.name, tables)
 	return in
 }
@@ -294,22 +156,25 @@ func (ts *STableSpec) SyncSQL() []string {
 		return []string{sql}
 	}
 
-	indexes, _, err := ts.fetchIndexesAndConstraints()
-	if err != nil {
-		if errors.Cause(err) != ErrTableNotExists {
-			log.Errorf("fetchIndexesAndConstraints fail %s", err)
+	var addIndexes, removeIndexes []sTableIndex
+
+	if ts.Database().backend.IsSupportIndexAndContraints() {
+		indexes, _, err := ts.fetchIndexesAndConstraints()
+		if err != nil {
+			if errors.Cause(err) != ErrTableNotExists {
+				log.Errorf("fetchIndexesAndConstraints fail %s", err)
+			}
+			return nil
 		}
-		return nil
+		addIndexes, removeIndexes = diffIndexes(indexes, ts.indexes)
 	}
 
 	ret := make([]string, 0)
-	cols, err := ts.fetchColumnDefs()
+	cols, err := ts.Database().backend.FetchTableColumnSpecs(ts)
 	if err != nil {
 		log.Errorf("fetchColumnDefs fail: %s", err)
 		return nil
 	}
-
-	addIndexes, removeIndexes := diffIndexes(indexes, ts.indexes)
 
 	for _, idx := range removeIndexes {
 		sql := fmt.Sprintf("DROP INDEX `%s` ON `%s`", idx.name, ts.name)
@@ -417,7 +282,7 @@ func (ts *STableSpec) Sync() error {
 	sqls := ts.SyncSQL()
 	if sqls != nil {
 		for _, sql := range sqls {
-			_, err := _db.Exec(sql)
+			_, err := ts.Database().Exec(sql)
 			if err != nil {
 				log.Errorf("exec sql error %s: %s", sql, err)
 				return err

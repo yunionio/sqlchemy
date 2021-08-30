@@ -168,6 +168,11 @@ func (uq *SUnion) Variables() []interface{} {
 	return ret
 }
 
+// Database implementation of SUnion for IQUerySource
+func (uq *SUnion) Database() *SDatabase {
+	return uq.queries[0].Database()
+}
+
 // Union method returns union query of several queries.
 // Require the fields of all queries should exactly match
 // deprecated
@@ -191,7 +196,13 @@ func UnionWithError(query ...IQuery) (*SUnion, error) {
 		fieldNames = append(fieldNames, f.Name())
 	}
 
+	var db *SDatabase
 	for i := 1; i < len(query); i++ {
+		if db == nil {
+			db = query[i].Database()
+		} else if db != query[i].Database() {
+			panic(ErrUnionDatabasesNotMatch)
+		}
 		qfields := query[i].QueryFields()
 		if len(fieldNames) != len(qfields) {
 			return nil, errors.Wrap(ErrUnionFieldsNotMatch, "number not match")
