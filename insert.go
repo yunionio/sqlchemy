@@ -183,7 +183,7 @@ func (t *STableSpec) insert(data interface{}, update bool, debug bool) error {
 		log.Debugf("%s values: %v", insertSql, values)
 	}
 
-	results, err := _db.Exec(insertSql, values...)
+	results, err := t.Database().Exec(insertSql, values...)
 	if err != nil {
 		return err
 	}

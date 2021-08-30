@@ -140,7 +140,7 @@ func (ts *STableSpec) updateFields(dt interface{}, fields map[string]interface{}
 	if DEBUG_SQLCHEMY || debug {
 		log.Infof("Update: %s", buf.String())
 	}
-	results, err := _db.Exec(buf.String(), vars...)
+	results, err := ts.Database().Exec(buf.String(), vars...)
 	if err != nil {
 		return err
 	}
