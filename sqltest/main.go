@@ -21,7 +21,6 @@ import (
 	"reflect"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-plus/uuid"
 
 	"yunion.io/x/jsonutils"
@@ -30,6 +29,7 @@ import (
 	"yunion.io/x/pkg/util/timeutils"
 
 	"yunion.io/x/sqlchemy"
+	_ "yunion.io/x/sqlchemy/backends"
 )
 
 func uuid4() string {
@@ -110,22 +110,35 @@ type AgentTable struct {
 }
 
 func main() {
-	db, err := sql.Open("mysql", "testgo:openstack@tcp(127.0.0.1:3306)/testgo?charset=utf8&parseTime")
+	// db, err := sql.Open("mysql", "testgo:openstack@tcp(127.0.0.1:3306)/testgo?charset=utf8&parseTime")
+	dbName := sqlchemy.DBName("mydb")
+
+	db, err := sql.Open("sqlite3", "file:mydb.s3db?cache=shared&mode=rwc")
 	if err != nil {
 		panic(fmt.Sprintf("Open DB failed: %s", err))
 	}
-	sqlchemy.SetDB(db)
+	sqlchemy.SetDBWithNameBackend(db, dbName, sqlchemy.SQLiteBackend)
 	defer sqlchemy.CloseDB()
 
-	tablespec := sqlchemy.NewTableSpecFromStruct(TestTable{}, "testtable")
-	tablespec.Sync()
-	tablespec.CheckSync()
+	tablespec := sqlchemy.NewTableSpecFromStructWithDBName(TestTable{}, "testtable", dbName)
+	{
+		err := tablespec.Sync()
+		if err != nil {
+			panic(fmt.Sprintf("table.sync %s", err.Error()))
+		}
+	}
+	{
+		err := tablespec.CheckSync()
+		if err != nil {
+			panic(fmt.Sprintf("table.checkSync %s", err.Error()))
+		}
+	}
 
-	agespec := sqlchemy.NewTableSpecFromStruct(AgentTable{}, "age_tbl")
+	agespec := sqlchemy.NewTableSpecFromStructWithDBName(AgentTable{}, "age_tbl", dbName)
 	agespec.Sync()
 	agespec.CheckSync()
 
-	ticketSpec := sqlchemy.NewTableSpecFromStruct(Ticket{}, "ticket_tbl")
+	ticketSpec := sqlchemy.NewTableSpecFromStructWithDBName(Ticket{}, "ticket_tbl", dbName)
 	ticketSpec.Sync()
 	ticketSpec.CheckSync()
 

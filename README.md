@@ -17,6 +17,34 @@ Features
 Quick Examples
 ----------------
 
+## Database initialization
+
+Before using sqlchemy, database connection should be setup first.
+
+```go
+dbconn := sql.Open("mysql", "testgo:openstack@tcp(127.0.0.1:3306)/testgo?charset=utf8&parseTime")
+
+sqlchemy.SetDefaultDB(dbconn)
+```
+
+```go
+dbconn := sql.Open("mysql", "testgo:openstack@tcp(127.0.0.1:3306)/testgo?charset=utf8&parseTime")
+
+sqlchemy.SetDBWithNameBackend(dbconn, sqlchemy.DBName("mysqldb"), sqlchemy.MySQLBackend)
+```
+
+```go
+dbconn := sql.Open("sqlite3", "file:mydb.s3db?cache=shared&mode=rwc")
+
+sqlchemy.SetDBWithNameBackend(dbconn, sqlchemy.DBName("sqlitedb"), sqlchemy.SQLiteBackend)
+```
+
+```go
+dbconn := sql.Open("clickhouse", "tcp://host1:9000?username=user&password=qwerty&database=clicks")
+
+sqlchemy.SetDBWithNameBackend(dbconn, sqlchemy.DBName("clickhousedb"), sqlchemy.ClickhouseBackend)
+```
+
 ## Table Schema
 
 Table schema is defined by struct field tags
@@ -44,6 +72,10 @@ Create a table from a struct schema
 
 ```go
 tablespec := sqlchemy.NewTableSpecFromStruct(TestTable{}, "testtable")
+```
+
+```go
+tablespec := sqlchemy.NewTableSpecFromStructWithDBName(TestTable{}, "testtable", sqlchemy.DBName("mydb"))
 ```
 
 Check whether table schema definition is consistent with schema in database.

@@ -24,7 +24,6 @@ import (
 
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
-	"yunion.io/x/pkg/util/regutils"
 	"yunion.io/x/pkg/utils"
 )
 
@@ -116,6 +115,8 @@ type SBaseColumn struct {
 	isIndex       bool
 	isAllowZero   bool
 	tags          map[string]string
+
+	table *STableSpec
 }
 
 // IsPointer implementation of SBaseColumn for IColumnSpec
@@ -230,48 +231,12 @@ func (c *SBaseColumn) Tags() map[string]string {
 }
 
 // generate SQL representation of a column
-func definitionBuffer(c IColumnSpec) bytes.Buffer {
-	var buf bytes.Buffer
-	buf.WriteByte('`')
-	buf.WriteString(c.Name())
-	buf.WriteByte('`')
-	buf.WriteByte(' ')
-	buf.WriteString(c.ColType())
-
-	extra := c.ExtraDefs()
-	if len(extra) > 0 {
-		buf.WriteString(" ")
-		buf.WriteString(extra)
-	}
-
-	if !c.IsNullable() {
-		buf.WriteString(" NOT NULL")
-	}
-
-	def := c.Default()
-	defOk := c.IsSupportDefault()
-	if def != "" {
-		if !defOk {
-			panic(fmt.Errorf("column %q type %q does not support having default value: %q",
-				c.Name(), c.ColType(), def,
-			))
-		}
-		def = c.ConvertFromString(def)
-		buf.WriteString(" DEFAULT ")
-		if c.IsText() {
-			buf.WriteByte('\'')
-		}
-		buf.WriteString(def)
-		if c.IsText() {
-			buf.WriteByte('\'')
-		}
-	}
-
-	return buf
+func (table *STableSpec) columnDefinitionBuffer(c IColumnSpec) bytes.Buffer {
+	return table.Database().backend.ColumnDefinitionBuffer(c)
 }
 
 // NewBaseColumn returns an instance of SBaseColumn
-func NewBaseColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SBaseColumn {
+func (table *STableSpec) NewBaseColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SBaseColumn {
 	var val string
 	var ok bool
 	dbName := ""
@@ -324,6 +289,8 @@ func NewBaseColumn(name string, sqltype string, tagmap map[string]string, isPoin
 		tags:          tagmap,
 		isPointer:     isPointer,
 		isAllowZero:   isAllowZero,
+
+		table: table,
 	}
 }
 
@@ -342,14 +309,14 @@ func (c *SBaseWidthColumn) ColType() string {
 }
 
 // NewBaseWidthColumn return an instance of SBaseWidthColumn
-func NewBaseWidthColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SBaseWidthColumn {
+func (table *STableSpec) NewBaseWidthColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SBaseWidthColumn {
 	width := 0
 	tagmap, v, ok := utils.TagPop(tagmap, TAG_WIDTH)
 	if ok {
 		width, _ = strconv.Atoi(v)
 	}
 	wc := SBaseWidthColumn{
-		SBaseColumn: NewBaseColumn(name, sqltype, tagmap, isPointer),
+		SBaseColumn: table.NewBaseColumn(name, sqltype, tagmap, isPointer),
 		width:       width,
 	}
 	return wc
@@ -362,7 +329,7 @@ type SBooleanColumn struct {
 
 // DefinitionString implementation of SBooleanColumn for IColumnSpec
 func (c *SBooleanColumn) DefinitionString() string {
-	buf := definitionBuffer(c)
+	buf := c.table.columnDefinitionBuffer(c)
 	return buf.String()
 }
 
@@ -408,8 +375,8 @@ func (c *SBooleanColumn) IsZero(val interface{}) bool {
 }
 
 // NewBooleanColumn return an instance of SBooleanColumn
-func NewBooleanColumn(name string, tagmap map[string]string, isPointer bool) SBooleanColumn {
-	bc := SBooleanColumn{SBaseWidthColumn: NewBaseWidthColumn(name, "TINYINT", tagmap, isPointer)}
+func (table *STableSpec) NewBooleanColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) SBooleanColumn {
+	bc := SBooleanColumn{SBaseWidthColumn: table.NewBaseWidthColumn(name, sqlType, tagmap, isPointer)}
 	if !bc.IsPointer() && len(bc.Default()) > 0 && bc.ConvertFromString(bc.Default()) == "1" {
 		msg := fmt.Sprintf("Non-pointer boolean column should not default true: %s(%s)", name, tagmap)
 		panic(msg)
@@ -424,7 +391,7 @@ type STristateColumn struct {
 
 // DefinitionString implementation of STristateColumn for IColumnSpec
 func (c *STristateColumn) DefinitionString() string {
-	buf := definitionBuffer(c)
+	buf := c.table.columnDefinitionBuffer(c)
 	return buf.String()
 }
 
@@ -460,8 +427,8 @@ func (c *STristateColumn) IsZero(val interface{}) bool {
 }
 
 // NewTristateColumn return an instance of STristateColumn
-func NewTristateColumn(name string, tagmap map[string]string, isPointer bool) STristateColumn {
-	bc := STristateColumn{SBaseWidthColumn: NewBaseWidthColumn(name, "TINYINT", tagmap, isPointer)}
+func (table *STableSpec) NewTristateColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) STristateColumn {
+	bc := STristateColumn{SBaseWidthColumn: table.NewBaseWidthColumn(name, sqlType, tagmap, isPointer)}
 	return bc
 }
 
@@ -497,7 +464,7 @@ func (c *SIntegerColumn) ExtraDefs() string {
 
 // DefinitionString implementation of SIntegerColumn for IColumnSpec
 func (c *SIntegerColumn) DefinitionString() string {
-	buf := definitionBuffer(c)
+	buf := c.table.columnDefinitionBuffer(c)
 	return buf.String()
 }
 
@@ -523,7 +490,7 @@ func (c *SIntegerColumn) ColType() string {
 }
 
 // NewIntegerColumn return an instance of SIntegerColumn
-func NewIntegerColumn(name string, sqltype string, unsigned bool, tagmap map[string]string, isPointer bool) SIntegerColumn {
+func (table *STableSpec) NewIntegerColumn(name string, sqltype string, unsigned bool, tagmap map[string]string, isPointer bool) SIntegerColumn {
 	autoinc := false
 	autoincBase := int64(0)
 	tagmap, v, ok := utils.TagPop(tagmap, TAG_AUTOINCREMENT)
@@ -542,7 +509,7 @@ func NewIntegerColumn(name string, sqltype string, unsigned bool, tagmap map[str
 		autover = utils.ToBool(v)
 	}
 	c := SIntegerColumn{
-		SBaseWidthColumn:    NewBaseWidthColumn(name, sqltype, tagmap, isPointer),
+		SBaseWidthColumn:    table.NewBaseWidthColumn(name, sqltype, tagmap, isPointer),
 		IsAutoIncrement:     autoinc,
 		AutoIncrementOffset: autoincBase,
 		IsAutoVersion:       autover,
@@ -574,7 +541,7 @@ func (c *SFloatColumn) IsNumeric() bool {
 
 // DefinitionString implementation of SFloatColumn for IColumnSpec
 func (c *SFloatColumn) DefinitionString() string {
-	buf := definitionBuffer(c)
+	buf := c.table.columnDefinitionBuffer(c)
 	return buf.String()
 }
 
@@ -599,8 +566,8 @@ func (c *SFloatColumn) IsZero(val interface{}) bool {
 }
 
 // NewFloatColumn returns an instance of SFloatColumn
-func NewFloatColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) SFloatColumn {
-	return SFloatColumn{SBaseColumn: NewBaseColumn(name, sqlType, tagmap, isPointer)}
+func (table *STableSpec) NewFloatColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) SFloatColumn {
+	return SFloatColumn{SBaseColumn: table.NewBaseColumn(name, sqlType, tagmap, isPointer)}
 }
 
 // SDecimalColumn represents a DECIMAL type of column, i.e. a float with fixed width of digits
@@ -621,7 +588,7 @@ func (c *SDecimalColumn) IsNumeric() bool {
 
 // DefinitionString implementation of SDecimalColumn for IColumnSpec
 func (c *SDecimalColumn) DefinitionString() string {
-	buf := definitionBuffer(c)
+	buf := c.table.columnDefinitionBuffer(c)
 	return buf.String()
 }
 
@@ -646,7 +613,7 @@ func (c *SDecimalColumn) IsZero(val interface{}) bool {
 }
 
 // NewDecimalColumn returns an instance of SDecimalColumn
-func NewDecimalColumn(name string, tagmap map[string]string, isPointer bool) SDecimalColumn {
+func (table *STableSpec) NewDecimalColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) SDecimalColumn {
 	tagmap, v, ok := utils.TagPop(tagmap, TAG_PRECISION)
 	if !ok {
 		panic(fmt.Sprintf("Field %q of float misses precision tag", name))
@@ -656,7 +623,7 @@ func NewDecimalColumn(name string, tagmap map[string]string, isPointer bool) SDe
 		panic(fmt.Sprintf("Field precision of %q shoud be integer (%q)", name, v))
 	}
 	return SDecimalColumn{
-		SBaseWidthColumn: NewBaseWidthColumn(name, "DECIMAL", tagmap, isPointer),
+		SBaseWidthColumn: table.NewBaseWidthColumn(name, sqlType, tagmap, isPointer),
 		Precision:        prec,
 	}
 }
@@ -712,7 +679,7 @@ func (c *STextColumn) IsAscii() bool {
 
 // DefinitionString implementation of STextColumn for IColumnSpec
 func (c *STextColumn) DefinitionString() string {
-	buf := definitionBuffer(c)
+	buf := c.table.columnDefinitionBuffer(c)
 	return buf.String()
 }
 
@@ -725,26 +692,7 @@ func (c *STextColumn) IsZero(val interface{}) bool {
 }
 
 // NewTextColumn return an instance of STextColumn
-func NewTextColumn(name string, tagmap map[string]string, isPointer bool) STextColumn {
-	var width int
-	var sqltype string
-	widthStr, _ := tagmap[TAG_WIDTH]
-	if len(widthStr) > 0 && regutils.MatchInteger(widthStr) {
-		width, _ = strconv.Atoi(widthStr)
-	}
-	tagmap, txtLen, _ := utils.TagPop(tagmap, TAG_TEXT_LENGTH)
-	if width == 0 {
-		switch strings.ToLower(txtLen) {
-		case "medium":
-			sqltype = "MEDIUMTEXT"
-		case "long":
-			sqltype = "LONGTEXT"
-		default:
-			sqltype = "TEXT"
-		}
-	} else {
-		sqltype = "VARCHAR"
-	}
+func (table *STableSpec) NewTextColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) STextColumn {
 	tagmap, charset, _ := utils.TagPop(tagmap, TAG_CHARSET)
 	if len(charset) == 0 {
 		charset = "utf8"
@@ -752,7 +700,7 @@ func NewTextColumn(name string, tagmap map[string]string, isPointer bool) STextC
 		panic(fmt.Sprintf("Unsupported charset %s for %s", charset, name))
 	}
 	return STextColumn{
-		SBaseWidthColumn: NewBaseWidthColumn(name, sqltype, tagmap, isPointer),
+		SBaseWidthColumn: table.NewBaseWidthColumn(name, sqlType, tagmap, isPointer),
 		Charset:          charset,
 	}
 }
@@ -786,7 +734,7 @@ func (c *STimeTypeColumn) IsText() bool {
 
 // DefinitionString implementation of STimeTypeColumn for IColumnSpec
 func (c *STimeTypeColumn) DefinitionString() string {
-	buf := definitionBuffer(c)
+	buf := c.table.columnDefinitionBuffer(c)
 	return buf.String()
 }
 
@@ -801,9 +749,9 @@ func (c *STimeTypeColumn) IsZero(val interface{}) bool {
 }
 
 // NewTimeTypeColumn return an instance of STimeTypeColumn
-func NewTimeTypeColumn(name string, typeStr string, tagmap map[string]string, isPointer bool) STimeTypeColumn {
+func (table *STableSpec) NewTimeTypeColumn(name string, typeStr string, tagmap map[string]string, isPointer bool) STimeTypeColumn {
 	dc := STimeTypeColumn{
-		NewBaseColumn(name, typeStr, tagmap, isPointer),
+		table.NewBaseColumn(name, typeStr, tagmap, isPointer),
 	}
 	return dc
 }
@@ -820,7 +768,7 @@ type SDateTimeColumn struct {
 }
 
 // NewDateTimeColumn returns an instance of DateTime column
-func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SDateTimeColumn {
+func (table *STableSpec) NewDateTimeColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) SDateTimeColumn {
 	createdAt := false
 	updatedAt := false
 	tagmap, v, ok := utils.TagPop(tagmap, TAG_CREATE_TIMESTAMP)
@@ -832,7 +780,7 @@ func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SD
 		updatedAt = utils.ToBool(v)
 	}
 	dtc := SDateTimeColumn{
-		NewTimeTypeColumn(name, "DATETIME", tagmap, isPointer),
+		table.NewTimeTypeColumn(name, sqlType, tagmap, isPointer),
 		createdAt, updatedAt,
 	}
 	return dtc
@@ -845,7 +793,7 @@ type CompoundColumn struct {
 
 // DefinitionString implementation of CompoundColumn for IColumnSpec
 func (c *CompoundColumn) DefinitionString() string {
-	buf := definitionBuffer(c)
+	buf := c.table.columnDefinitionBuffer(c)
 	return buf.String()
 }
 
@@ -870,7 +818,7 @@ func (c *CompoundColumn) ConvertFromValue(val interface{}) interface{} {
 }
 
 // NewCompoundColumn returns an instance of CompoundColumn
-func NewCompoundColumn(name string, tagmap map[string]string, isPointer bool) CompoundColumn {
-	dtc := CompoundColumn{NewTextColumn(name, tagmap, isPointer)}
+func (table *STableSpec) NewCompoundColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) CompoundColumn {
+	dtc := CompoundColumn{table.NewTextColumn(name, sqlType, tagmap, isPointer)}
 	return dtc
 }

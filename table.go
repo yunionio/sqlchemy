@@ -119,7 +119,7 @@ func NewTableSpecFromStructWithDBName(s interface{}, name string, dbName DBName)
 			dbName: dbName,
 		},
 	}
-	struct2TableSpec(val, table)
+	table.struct2TableSpec(val)
 	return table
 }
 
