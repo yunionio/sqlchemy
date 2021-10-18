@@ -83,11 +83,15 @@ func GetDBWithName(name DBName) *SDatabase {
 }
 
 type sDBReferer struct {
-	dbName DBName
+	dbName    DBName
+	_db_cache *SDatabase
 }
 
 func (r *sDBReferer) Database() *SDatabase {
-	return GetDBWithName(r.dbName)
+	if r._db_cache == nil {
+		r._db_cache = GetDBWithName(r.dbName)
+	}
+	return r._db_cache
 }
 
 // CloseDB close DB connection

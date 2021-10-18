@@ -34,7 +34,7 @@ func decodeSqlTypeString(typeStr string) []string {
 	return []string{parts[0]}
 }
 
-func (info *sSqlColumnInfo) toColumnSpec() sqlchemy.IColumnSpec {
+func (info *sSqlColumnInfo) toColumnSpec(table *sqlchemy.STableSpec) sqlchemy.IColumnSpec {
 	tagmap := make(map[string]string)
 
 	matches := decodeSqlTypeString(info.Type)
@@ -71,11 +71,11 @@ func (info *sSqlColumnInfo) toColumnSpec() sqlchemy.IColumnSpec {
 		tagmap[sqlchemy.TAG_DEFAULT] = info.Default
 	}
 	if strings.HasSuffix(typeStr, "CHAR") {
-		c := sqlchemy.NewTextColumn(info.Field, tagmap, false)
+		c := table.NewTextColumn(info.Field, typeStr, tagmap, false)
 		return &c
 	} else if strings.HasSuffix(typeStr, "TEXT") {
 		tagmap[sqlchemy.TAG_TEXT_LENGTH] = typeStr[:len(typeStr)-4]
-		c := sqlchemy.NewTextColumn(info.Field, tagmap, false)
+		c := table.NewTextColumn(info.Field, typeStr, tagmap, false)
 		return &c
 	} else if strings.HasSuffix(typeStr, "INT") {
 		if info.Extra == "auto_increment" {
@@ -92,10 +92,10 @@ func (info *sSqlColumnInfo) toColumnSpec() sqlchemy.IColumnSpec {
 				tagmap[sqlchemy.TAG_WIDTH] = intWidthString(typeStr)
 			}
 		}
-		c := sqlchemy.NewIntegerColumn(info.Field, typeStr, unsigned, tagmap, false)
+		c := table.NewIntegerColumn(info.Field, typeStr, unsigned, tagmap, false)
 		return &c
 	} else if typeStr == "FLOAT" || typeStr == "DOUBLE" {
-		c := sqlchemy.NewFloatColumn(info.Field, typeStr, tagmap, false)
+		c := table.NewFloatColumn(info.Field, typeStr, tagmap, false)
 		return &c
 	} else if typeStr == "DECIMAL" {
 		if len(matches) > 3 {
@@ -104,13 +104,13 @@ func (info *sSqlColumnInfo) toColumnSpec() sqlchemy.IColumnSpec {
 				tagmap[sqlchemy.TAG_PRECISION] = fmt.Sprintf("%d", precision)
 			}
 		}
-		c := sqlchemy.NewDecimalColumn(info.Field, tagmap, false)
+		c := table.NewDecimalColumn(info.Field, typeStr, tagmap, false)
 		return &c
 	} else if typeStr == "DATETIME" {
-		c := sqlchemy.NewDateTimeColumn(info.Field, tagmap, false)
+		c := table.NewDateTimeColumn(info.Field, typeStr, tagmap, false)
 		return &c
 	} else if typeStr == "DATE" || typeStr == "TIMESTAMP" {
-		c := sqlchemy.NewTimeTypeColumn(info.Field, typeStr, tagmap, false)
+		c := table.NewTimeTypeColumn(info.Field, typeStr, tagmap, false)
 		return &c
 	} else if strings.HasPrefix(typeStr, "ENUM(") {
 		// enum type, force convert to text
@@ -124,7 +124,7 @@ func (info *sSqlColumnInfo) toColumnSpec() sqlchemy.IColumnSpec {
 			}
 		}
 		tagmap[sqlchemy.TAG_WIDTH] = fmt.Sprintf("%d", 1<<uint(bits.Len(uint(width))))
-		c := sqlchemy.NewTextColumn(info.Field, tagmap, false)
+		c := table.NewTextColumn(info.Field, "VARCHAR", tagmap, false)
 		return &c
 	} else {
 		log.Errorf("unsupported type %s", typeStr)

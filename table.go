@@ -119,7 +119,7 @@ func NewTableSpecFromStructWithDBName(s interface{}, name string, dbName DBName)
 			dbName: dbName,
 		},
 	}
-	struct2TableSpec(val, table)
+	table.struct2TableSpec(val)
 	return table
 }
 
@@ -152,6 +152,7 @@ func (ts *STableSpec) Clone(name string, autoIncOffset int64) *STableSpec {
 		columns:    newCols,
 		indexes:    ts.indexes,
 		contraints: ts.contraints,
+		sDBReferer: ts.sDBReferer,
 	}
 }
 

@@ -14,6 +14,11 @@
 
 package sqlchemy
 
+import (
+	"bytes"
+	"reflect"
+)
+
 type DBBackendName string
 
 const (
@@ -38,6 +43,10 @@ type IBackend interface {
 	IsSupportIndexAndContraints() bool
 	//
 	FetchTableColumnSpecs(ts ITableSpec) ([]IColumnSpec, error)
+	//
+	GetColumnSpecByFieldType(table *STableSpec, fieldType reflect.Type, fieldname string, tagmap map[string]string, isPointer bool) IColumnSpec
+	//
+	ColumnDefinitionBuffer(col IColumnSpec) bytes.Buffer
 }
 
 var _driver_tbl = make(map[DBBackendName]IBackend)

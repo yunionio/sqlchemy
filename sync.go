@@ -122,19 +122,29 @@ func diffIndexes(exists []sTableIndex, defs []sTableIndex) (added []sTableIndex,
 
 // DropForeignKeySQL returns the SQL statements to do droping foreignkey for a TableSpec
 func (ts *STableSpec) DropForeignKeySQL() []string {
-	_, constraints, err := ts.fetchIndexesAndConstraints()
-	if err != nil {
-		if errors.Cause(err) != ErrTableNotExists {
-			log.Errorf("fetchIndexesAndConstraints fail %s", err)
-		}
-		return nil
-	}
-
 	ret := make([]string, 0)
-	for _, constraint := range constraints {
-		sql := fmt.Sprintf("ALTER TABLE `%s` DROP FOREIGN KEY `%s`", ts.name, constraint.name)
-		ret = append(ret, sql)
-		log.Infof("%s;", sql)
+
+	db := ts.Database()
+	if db == nil {
+		panic("DropForeignKeySQL empty database")
+	}
+	if db.backend == nil {
+		panic("DropForeignKeySQL empty backend")
+	}
+	if db.backend.IsSupportIndexAndContraints() {
+		_, constraints, err := ts.fetchIndexesAndConstraints()
+		if err != nil {
+			if errors.Cause(err) != ErrTableNotExists {
+				log.Errorf("fetchIndexesAndConstraints fail %s", err)
+			}
+			return nil
+		}
+
+		for _, constraint := range constraints {
+			sql := fmt.Sprintf("ALTER TABLE `%s` DROP FOREIGN KEY `%s`", ts.name, constraint.name)
+			ret = append(ret, sql)
+			log.Infof("%s;", sql)
+		}
 	}
 
 	return ret

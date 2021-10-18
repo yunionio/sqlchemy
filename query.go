@@ -149,6 +149,11 @@ type SQuery struct {
 	db *SDatabase
 }
 
+// IsGroupBy returns wether the query contains group by clauses
+func (tq *SQuery) IsGroupBy() bool {
+	return len(tq.groupBy) > 0
+}
+
 // SSubQuery represents a subquery. A subquery is a query used as a query source
 // SSubQuery should implementation IQuerySource
 // At the same time, a subquery can be used in condition. e.g. IN condition
@@ -270,6 +275,9 @@ func (sq *SSubQuery) Database() *SDatabase {
 
 // DoQuery returns a SQuery instance that query specified fields from a query source
 func DoQuery(from IQuerySource, f ...IQueryField) *SQuery {
+	if from.Database() == nil {
+		panic("DoQuery IQuerySource with empty database")
+	}
 	// if len(f) == 0 {
 	// 	f = from.Fields()
 	// }
@@ -487,7 +495,7 @@ func (tq *SQuery) RightJoin(from IQuerySource, on ICondition) *SQuery {
 
 func (tq *SQuery) _join(from IQuerySource, on ICondition, joinType QueryJoinType) *SQuery {
 	if from.Database() != tq.db {
-		panic("Cannot join across databases")
+		panic(fmt.Sprintf("Cannot join across databases %s!=%s", tq.db.name, from.Database().name))
 	}
 	if tq.joins == nil {
 		tq.joins = make([]sQueryJoin, 0)
@@ -550,6 +558,12 @@ func (tq *SQuery) Row() *sql.Row {
 	if DEBUG_SQLCHEMY {
 		sqlDebug(sqlstr, vars)
 	}
+	if tq.db == nil {
+		panic("tq.db")
+	}
+	if tq.db.db == nil {
+		panic("tq.db.db")
+	}
 	return tq.db.db.QueryRow(sqlstr, vars...)
 }
 
@@ -580,6 +594,7 @@ func (tq *SQuery) countQuery() *SQuery {
 			COUNT("count"),
 		},
 		from: tq2.SubQuery(),
+		db:   tq.Database(),
 	}
 	return cq
 }
