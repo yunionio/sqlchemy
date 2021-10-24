@@ -14,7 +14,9 @@
 
 package mysql
 
-import "github.com/go-sql-driver/mysql"
+import (
+	"github.com/go-sql-driver/mysql"
+)
 
 const (
 	mysqlErrorTableNotExist = 0x47a

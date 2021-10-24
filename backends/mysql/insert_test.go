@@ -18,9 +18,9 @@ import (
 	"reflect"
 	"testing"
 
-	"yunion.io/x/sqlchemy"
-
 	"yunion.io/x/pkg/util/reflectutils"
+
+	"yunion.io/x/sqlchemy"
 )
 
 func insertSqlPrep(v interface{}) (string, []interface{}, error) {

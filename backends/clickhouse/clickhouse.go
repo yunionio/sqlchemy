@@ -19,13 +19,13 @@ import (
 	"reflect"
 	"strings"
 
-	"yunion.io/x/pkg/utils"
-
 	_ "github.com/ClickHouse/clickhouse-go"
 
 	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
+	"yunion.io/x/pkg/utils"
+
 	"yunion.io/x/sqlchemy"
 )
 

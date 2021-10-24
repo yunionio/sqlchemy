@@ -18,7 +18,6 @@ import (
 	"reflect"
 
 	"yunion.io/x/log"
-
 	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/util/reflectutils"

@@ -11,7 +11,7 @@ Features
 
 * Automatic creation and synchronization of table schema based on golang struct
 * Query syntax inpired by sqlalchemy
-* Support MySQL/MariaDB with InnoDB engine ONLY
+* Support: MySQL/MariaDB with InnoDB engine/SQLITE(Exprimental)/ClickHouse(Exprimental) 
 * Support select, insert, update and insert or update
 
 Quick Examples
@@ -21,23 +21,30 @@ Quick Examples
 
 Before using sqlchemy, database connection should be setup first.
 
+### Setup database with default backend(MySQL with InnoDB)
+
 ```go
 dbconn := sql.Open("mysql", "testgo:openstack@tcp(127.0.0.1:3306)/testgo?charset=utf8&parseTime")
 
 sqlchemy.SetDefaultDB(dbconn)
 ```
 
+### Setup database with MySQL with InnoDB
+
 ```go
 dbconn := sql.Open("mysql", "testgo:openstack@tcp(127.0.0.1:3306)/testgo?charset=utf8&parseTime")
 
 sqlchemy.SetDBWithNameBackend(dbconn, sqlchemy.DBName("mysqldb"), sqlchemy.MySQLBackend)
 ```
+### Setup database with SQLite backend
 
 ```go
 dbconn := sql.Open("sqlite3", "file:mydb.s3db?cache=shared&mode=rwc")
 
 sqlchemy.SetDBWithNameBackend(dbconn, sqlchemy.DBName("sqlitedb"), sqlchemy.SQLiteBackend)
 ```
+
+### Setup database with clickhosue
 
 ```go
 dbconn := sql.Open("clickhouse", "tcp://host1:9000?username=user&password=qwerty&database=clicks")
