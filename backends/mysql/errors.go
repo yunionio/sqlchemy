@@ -12,4 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlchemy
+package mysql
+
+import "github.com/go-sql-driver/mysql"
+
+const (
+	mysqlErrorTableNotExist = 0x47a
+)
+
+func isMysqlError(err error, code uint16) bool {
+	if myErr, ok := err.(*mysql.MySQLError); ok {
+		return myErr.Number == code
+	}
+	return false
+}

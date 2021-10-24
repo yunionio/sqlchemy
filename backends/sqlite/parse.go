@@ -12,27 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlchemy
+package sqlite
 
 import (
-	"fmt"
-	"sync"
+	"regexp"
+
+	"yunion.io/x/pkg/errors"
+
+	"yunion.io/x/sqlchemy"
+)
+
+const (
+	indexPattern = `\((?P<cols>` + "`" + `\w+` + "`" + `(,\s*` + "`" + `\w+` + "`" + `)*)\)`
 )
 
 var (
-	tableID                 = 0
-	tableIDLock *sync.Mutex = &sync.Mutex{}
+	indexRegexp = regexp.MustCompile(indexPattern)
 )
 
-func getTableAliasName() string {
-	tableIDLock.Lock()
-	defer tableIDLock.Unlock()
-	tableID++
-	return fmt.Sprintf("t%d", tableID)
+type sSqliteTableInfo struct {
+	Type string
+	Name string
+	Sql  string
 }
 
-func ResetTableID() {
-	tableIDLock.Lock()
-	defer tableIDLock.Unlock()
-	tableID = 0
+func (ti *sSqliteTableInfo) parseTableIndex() (sqlchemy.STableIndex, error) {
+	matches := indexRegexp.FindAllStringSubmatch(ti.Sql, -1)
+	if len(matches) > 0 {
+		return sqlchemy.NewTableIndex(ti.Name, sqlchemy.FetchColumns(matches[0][1]), false), nil
+	}
+	return sqlchemy.STableIndex{}, errors.ErrNotFound
 }

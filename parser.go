@@ -27,10 +27,17 @@ func (table *STableSpec) structField2ColumnSpec(field *reflectutils.SStructField
 	if _, ok := tagmap[TAG_IGNORE]; ok {
 		return nil
 	}
+	db := table.Database()
+	if db == nil {
+		panic("structField2ColumnSpec: empty database")
+	}
+	if db.backend == nil {
+		panic("structField2ColumnSpec: empty backend")
+	}
 	fieldType := field.Value.Type()
-	var retCol = table.Database().backend.GetColumnSpecByFieldType(table, fieldType, fieldname, tagmap, false)
+	var retCol = db.backend.GetColumnSpecByFieldType(table, fieldType, fieldname, tagmap, false)
 	if retCol == nil && fieldType.Kind() == reflect.Ptr {
-		retCol = table.Database().backend.GetColumnSpecByFieldType(table, fieldType.Elem(), fieldname, tagmap, true)
+		retCol = db.backend.GetColumnSpecByFieldType(table, fieldType.Elem(), fieldname, tagmap, true)
 	}
 	if retCol == nil {
 		panic(fmt.Sprintf("unsupported colume %s data type %s", fieldname, fieldType.Name()))
@@ -44,7 +51,7 @@ func (table *STableSpec) struct2TableSpec(sv reflect.Value) {
 	for i := 0; i < len(fields); i++ {
 		column := table.structField2ColumnSpec(&fields[i])
 		if column != nil {
-			if intC, ok := column.(*SIntegerColumn); ok && intC.IsAutoIncrement {
+			if column.IsAutoIncrement() {
 				autoIncCnt++
 				if autoIncCnt > 1 {
 					panic(fmt.Sprintf("Table %s contains multiple autoincremental columns!!", table.name))

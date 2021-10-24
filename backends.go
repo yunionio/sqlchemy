@@ -15,7 +15,6 @@
 package sqlchemy
 
 import (
-	"bytes"
 	"reflect"
 )
 
@@ -38,15 +37,30 @@ type IBackend interface {
 	// GetTableSQL returns the SQL for query tablenames
 	GetTableSQL() string
 	// GetCreateSQL returns the SQL for create a table
-	GetCreateSQL(ts ITableSpec) string
+	GetCreateSQLs(ts ITableSpec) []string
 	//
 	IsSupportIndexAndContraints() bool
 	//
 	FetchTableColumnSpecs(ts ITableSpec) ([]IColumnSpec, error)
 	//
+	FetchIndexesAndConstraints(ts ITableSpec) ([]STableIndex, []STableConstraint, error)
+	//
 	GetColumnSpecByFieldType(table *STableSpec, fieldType reflect.Type, fieldname string, tagmap map[string]string, isPointer bool) IColumnSpec
 	//
-	ColumnDefinitionBuffer(col IColumnSpec) bytes.Buffer
+	CurrentUTCTimeStampString() string
+
+	// Capability
+
+	// CanUpdate returns wether the backend supports update
+	CanUpdate() bool
+	// CanInsert returns wether the backend supports Insert
+	CanInsert() bool
+	// CanInsertOrUpdate returns weather the backend supports InsertOrUpdate
+	CanInsertOrUpdate() bool
+
+	DropIndexSQLTemplate() string
+
+	CanSupportRowAffected() bool
 }
 
 var _driver_tbl = make(map[DBBackendName]IBackend)

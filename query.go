@@ -585,7 +585,7 @@ func (tq *SQuery) Count() int {
 	return cnt
 }
 
-func (tq *SQuery) countQuery() *SQuery {
+func (tq *SQuery) CountQuery() *SQuery {
 	tq2 := *tq
 	tq2.limit = 0
 	tq2.offset = 0
@@ -601,7 +601,7 @@ func (tq *SQuery) countQuery() *SQuery {
 
 // CountWithError of SQuery returns the row count of a query
 func (tq *SQuery) CountWithError() (int, error) {
-	cq := tq.countQuery()
+	cq := tq.CountQuery()
 	count := 0
 	err := cq.Row().Scan(&count)
 	if err == nil {
@@ -690,7 +690,7 @@ func rowScan2StringMap(fields []string, row IRowScanner) (map[string]string, err
 		} else {
 			value := rawValue.Interface()
 			// log.Infof("%s %s", value, reflect.TypeOf(value))
-			results[f] = getStringValue(value)
+			results[f] = GetStringValue(value)
 		}
 	}
 	return results, nil

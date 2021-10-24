@@ -13,3 +13,22 @@
 // limitations under the License.
 
 package sqlchemy
+
+import (
+	"bytes"
+	"text/template"
+)
+
+var (
+	templateTbl = make(map[string]*template.Template)
+)
+
+func templateEval(temp string, variables interface{}) string {
+	if eval, ok := templateTbl[temp]; !ok {
+		eval = template.Must(template.New(temp).Parse(temp))
+		templateTbl[temp] = eval
+	}
+	buf := new(bytes.Buffer)
+	templateTbl[temp].Execute(buf, variables)
+	return buf.String()
+}

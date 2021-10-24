@@ -12,4 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlchemy
+package clickhouse
+
+const (
+	// TAG_PARTITION defines expression of PARTITION BY
+	TAG_PARTITION = "clickhouse_partition_by"
+
+	// TAG_ORDER defines fields of ORDER BY
+	TAG_ORDER = "clickhouse_order_by"
+)

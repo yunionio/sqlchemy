@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlchemy
+package mysql
 
 import (
 	"reflect"
 	"testing"
+
+	"yunion.io/x/sqlchemy"
 
 	"yunion.io/x/pkg/util/reflectutils"
 )
@@ -25,9 +27,9 @@ func insertSqlPrep(v interface{}) (string, []interface{}, error) {
 	vvvalue := reflect.ValueOf(v).Elem()
 	vv := vvvalue.Interface()
 	vvFields := reflectutils.FetchStructFieldValueSet(vvvalue)
-	SetDefaultDB(nil)
-	ts := NewTableSpecFromStruct(vv, "vv")
-	sql, vals, err := ts.insertSqlPrep(vvFields, false)
+	sqlchemy.SetDefaultDB(nil)
+	ts := sqlchemy.NewTableSpecFromStruct(vv, "vv")
+	sql, vals, err := ts.InsertSqlPrep(vvFields, false)
 	return sql, vals, err
 }
 

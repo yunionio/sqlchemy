@@ -24,21 +24,8 @@ import (
 	"yunion.io/x/pkg/utils"
 )
 
-func (ts *STableSpec) fetchIndexesAndConstraints() ([]sTableIndex, []sTableConstraint, error) {
-	sql := fmt.Sprintf("SHOW CREATE TABLE `%s`", ts.name)
-	query := NewRawQuery(sql, "table", "create table")
-	row := query.Row()
-	var name, defStr string
-	err := row.Scan(&name, &defStr)
-	if err != nil {
-		if isMysqlError(err, mysqlErrorTableNotExist) {
-			err = ErrTableNotExists
-		}
-		return nil, nil, err
-	}
-	indexes := parseIndexes(defStr)
-	constraints := parseConstraints(defStr)
-	return indexes, constraints, nil
+func (ts *STableSpec) fetchIndexesAndConstraints() ([]STableIndex, []STableConstraint, error) {
+	return ts.Database().backend.FetchIndexesAndConstraints(ts)
 }
 
 func compareColumnSpec(c1, c2 IColumnSpec) int {
@@ -99,8 +86,8 @@ func diffCols(tableName string, cols1 []IColumnSpec, cols2 []IColumnSpec) ([]ICo
 	return remove, update, add
 }
 
-func diffIndexes2(exists []sTableIndex, defs []sTableIndex) (diff []sTableIndex) {
-	diff = make([]sTableIndex, 0)
+func diffIndexes2(exists []STableIndex, defs []STableIndex) (diff []STableIndex) {
+	diff = make([]STableIndex, 0)
 	for i := 0; i < len(exists); i++ {
 		findDef := false
 		for j := 0; j < len(defs); j++ {
@@ -116,7 +103,7 @@ func diffIndexes2(exists []sTableIndex, defs []sTableIndex) (diff []sTableIndex)
 	return
 }
 
-func diffIndexes(exists []sTableIndex, defs []sTableIndex) (added []sTableIndex, removed []sTableIndex) {
+func diffIndexes(exists []STableIndex, defs []STableIndex) (added []STableIndex, removed []STableIndex) {
 	return diffIndexes2(defs, exists), diffIndexes2(exists, defs)
 }
 
@@ -162,11 +149,10 @@ func (ts *STableSpec) Exists() bool {
 func (ts *STableSpec) SyncSQL() []string {
 	if !ts.Exists() {
 		log.Debugf("table %s not created yet", ts.name)
-		sql := ts.CreateSQL()
-		return []string{sql}
+		return ts.CreateSQLs()
 	}
 
-	var addIndexes, removeIndexes []sTableIndex
+	var addIndexes, removeIndexes []STableIndex
 
 	if ts.Database().backend.IsSupportIndexAndContraints() {
 		indexes, _, err := ts.fetchIndexesAndConstraints()
@@ -187,7 +173,13 @@ func (ts *STableSpec) SyncSQL() []string {
 	}
 
 	for _, idx := range removeIndexes {
-		sql := fmt.Sprintf("DROP INDEX `%s` ON `%s`", idx.name, ts.name)
+		sql := templateEval(ts.Database().backend.DropIndexSQLTemplate(), struct {
+			Table string
+			Index string
+		}{
+			Table: ts.name,
+			Index: idx.name,
+		})
 		ret = append(ret, sql)
 		log.Infof("%s;", sql)
 	}
@@ -232,31 +224,29 @@ func (ts *STableSpec) SyncSQL() []string {
 		// ignore drop statement
 		// if the column is auto_increment integer column,
 		// then need to drop auto_increment attribute
-		if intCol, ok := col.(*SIntegerColumn); ok {
-			if intCol.IsAutoIncrement {
-				// make sure the column is nullable
-				col.SetNullable(true)
-				log.Errorf("column %s is auto_increment, drop auto_inrement attribute", col.Name())
-				intCol.IsAutoIncrement = false
-				sql := fmt.Sprintf("MODIFY %s", col.DefinitionString())
-				alters = append(alters, sql)
-			}
+		if col.IsAutoIncrement() {
+			// make sure the column is nullable
+			col.SetNullable(true)
+			log.Errorf("column %s is auto_increment, drop auto_inrement attribute", col.Name())
+			col.SetAutoIncrement(false)
+			sql := fmt.Sprintf("MODIFY COLUMN %s", col.DefinitionString())
+			alters = append(alters, sql)
 		}
 		// if the column is not nullable but no default
 		// then need to drop the not-nullable attribute
 		if !col.IsNullable() && col.Default() == "" {
 			col.SetNullable(true)
-			sql := fmt.Sprintf("MODIFY %s", col.DefinitionString())
+			sql := fmt.Sprintf("MODIFY COLUMN %s", col.DefinitionString())
 			alters = append(alters, sql)
 			log.Errorf("column %s is not nullable but no default, drop not nullable attribute", col.Name())
 		}
 	}
 	for _, cols := range update {
-		sql := fmt.Sprintf("MODIFY %s", cols.newCol.DefinitionString())
+		sql := fmt.Sprintf("MODIFY COLUMN %s", cols.newCol.DefinitionString())
 		alters = append(alters, sql)
 	}
 	for _, col := range add {
-		sql := fmt.Sprintf("ADD %s", col.DefinitionString())
+		sql := fmt.Sprintf("ADD COLUMN %s", col.DefinitionString())
 		alters = append(alters, sql)
 	}
 	if changePrimary {

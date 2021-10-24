@@ -81,8 +81,8 @@ type STableSpec struct {
 	structType reflect.Type
 	name       string
 	columns    []IColumnSpec
-	indexes    []sTableIndex
-	contraints []sTableConstraint
+	indexes    []STableIndex
+	contraints []STableConstraint
 
 	sDBReferer
 }
@@ -138,10 +138,13 @@ func (ts *STableSpec) Clone(name string, autoIncOffset int64) *STableSpec {
 	newCols := make([]IColumnSpec, len(ts.columns))
 	for i := range newCols {
 		col := ts.columns[i]
-		if intCol, ok := col.(*SIntegerColumn); ok && intCol.IsAutoIncrement {
-			newCol := *intCol
-			newCol.AutoIncrementOffset = autoIncOffset
-			newCols[i] = &newCol
+		if col.IsAutoIncrement() {
+			colValue := reflect.ValueOf(col).Elem()
+			newColValue := reflect.New(colValue.Type()).Elem()
+			reflect.Copy(newColValue, colValue)
+			newCol := newColValue.Addr().Interface().(IColumnSpec)
+			newCol.SetAutoIncrementOffset(autoIncOffset)
+			newCols[i] = newCol
 		} else {
 			newCols[i] = col
 		}
@@ -178,8 +181,8 @@ func (ts *STableSpec) DataType() reflect.Type {
 }
 
 // CreateSQL returns the SQL for creating this table
-func (ts *STableSpec) CreateSQL() string {
-	return ts.Database().backend.GetCreateSQL(ts)
+func (ts *STableSpec) CreateSQLs() []string {
+	return ts.Database().backend.GetCreateSQLs(ts)
 }
 
 // NewTableInstance return an new table instance from an ITableSpec

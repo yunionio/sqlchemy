@@ -87,13 +87,11 @@ func (ts *STableSpec) updateFields(dt interface{}, fields map[string]interface{}
 			primaryCols[name] = colValue
 			continue
 		}
-		intCol, ok := col.(*SIntegerColumn)
-		if ok && intCol.IsAutoVersion {
+		if col.IsAutoVersion() {
 			versionFields = append(versionFields, name)
 			continue
 		}
-		dateCol, ok := col.(*SDateTimeColumn)
-		if ok && dateCol.IsUpdatedAt {
+		if col.IsUpdatedAt() {
 			updatedFields = append(updatedFields, name)
 			continue
 		}

@@ -1,9 +1,18 @@
-package sqlchemy
+// Copyright 2019 Yunion
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-import (
-	"bytes"
-	"fmt"
-)
+package sqlchemy
 
 type SBaseBackend struct {
 }
@@ -12,46 +21,14 @@ func (bb *SBaseBackend) GetTableSQL() string {
 	return "SHOW TABLES"
 }
 
-func (bb *SBaseBackend) GetCreateSQL(ts ITableSpec) string {
-	return ""
+func (bb *SBaseBackend) FetchIndexesAndConstraints(ts ITableSpec) ([]STableIndex, []STableConstraint, error) {
+	return nil, nil, nil
 }
 
-func (bb *SBaseBackend) ColumnDefinitionBuffer(c IColumnSpec) bytes.Buffer {
-	var buf bytes.Buffer
-	buf.WriteByte('`')
-	buf.WriteString(c.Name())
-	buf.WriteByte('`')
-	buf.WriteByte(' ')
-	buf.WriteString(c.ColType())
+func (bb *SBaseBackend) DropIndexSQLTemplate() string {
+	return "DROP INDEX `{{ .Index }}` ON `{{ .Table }}`"
+}
 
-	extra := c.ExtraDefs()
-	if len(extra) > 0 {
-		buf.WriteString(" ")
-		buf.WriteString(extra)
-	}
-
-	if !c.IsNullable() {
-		buf.WriteString(" NOT NULL")
-	}
-
-	def := c.Default()
-	defOk := c.IsSupportDefault()
-	if def != "" {
-		if !defOk {
-			panic(fmt.Errorf("column %q type %q does not support having default value: %q",
-				c.Name(), c.ColType(), def,
-			))
-		}
-		def = c.ConvertFromString(def)
-		buf.WriteString(" DEFAULT ")
-		if c.IsText() {
-			buf.WriteByte('\'')
-		}
-		buf.WriteString(def)
-		if c.IsText() {
-			buf.WriteByte('\'')
-		}
-	}
-
-	return buf
+func (bb *SBaseBackend) CanSupportRowAffected() bool {
+	return true
 }

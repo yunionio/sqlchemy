@@ -15,8 +15,6 @@
 package sqlchemy
 
 import (
-	"github.com/go-sql-driver/mysql"
-
 	"yunion.io/x/pkg/errors"
 )
 
@@ -57,14 +55,3 @@ const (
 	// ErrUnionDatabasesNotMatch is an Error constant: backend database of union queries not match
 	ErrUnionDatabasesNotMatch = errors.Error("cannot union across different databases")
 )
-
-const (
-	mysqlErrorTableNotExist = 0x47a
-)
-
-func isMysqlError(err error, code uint16) bool {
-	if myErr, ok := err.(*mysql.MySQLError); ok {
-		return myErr.Number == code
-	}
-	return false
-}

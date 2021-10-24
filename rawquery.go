@@ -14,6 +14,8 @@
 
 package sqlchemy
 
+import "yunion.io/x/log"
+
 // SRawQueryField is a struct represents a field of a raw SQL query
 // a raw query is a query that not follow standard SELECT ... FROM ... pattern
 // e.g. show tables
@@ -54,6 +56,7 @@ func NewRawQuery(sqlStr string, fields ...string) *SQuery {
 
 // NewRawQuery returns an instance of SQuery with raw SQL query for a database, e.g. show tables
 func (db *SDatabase) NewRawQuery(sqlStr string, fields ...string) *SQuery {
+	log.Debugf("Raw query: %s", sqlStr)
 	qfs := make([]IQueryField, len(fields))
 	for i, f := range fields {
 		rqf := SRawQueryField{name: f}
