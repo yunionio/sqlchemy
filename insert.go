@@ -58,7 +58,7 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 
 	now := timeutils.UtcNow()
 
-	for _, c := range t.columns {
+	for _, c := range t.Columns() {
 		isAutoInc := false
 		if c.IsAutoIncrement() {
 			isAutoInc = true
@@ -243,7 +243,7 @@ func (t *STableSpec) insert(data interface{}, update bool, debug bool) error {
 	// query the value, so default value can be feedback into the object
 	// fields = reflectutils.FetchStructFieldNameValueInterfaces(dataValue)
 	q := t.Query()
-	for _, c := range t.columns {
+	for _, c := range t.Columns() {
 		if c.IsPrimary() {
 			if c.IsAutoIncrement() {
 				lastId, err := results.LastInsertId()

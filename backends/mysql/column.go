@@ -245,6 +245,10 @@ func (c *SIntegerColumn) IsAutoIncrement() bool {
 	return c.isAutoIncrement
 }
 
+func (c *SIntegerColumn) AutoIncrementOffset() int64 {
+	return c.autoIncrementOffset
+}
+
 func (c *SIntegerColumn) SetAutoIncrement(on bool) {
 	c.isAutoIncrement = on
 }
@@ -548,6 +552,10 @@ func (c *SDateTimeColumn) IsCreatedAt() bool {
 
 func (c *SDateTimeColumn) IsUpdatedAt() bool {
 	return c.isUpdatedAt
+}
+
+func (c *SDateTimeColumn) IsDateTime() bool {
+	return true
 }
 
 // NewDateTimeColumn returns an instance of DateTime column

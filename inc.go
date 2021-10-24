@@ -71,7 +71,7 @@ func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target i
 	updatedFields := make([]string, 0)
 	incFields := make([]string, 0)
 
-	for _, c := range t.columns {
+	for _, c := range t.Columns() {
 		k := c.Name()
 		v, _ := fields.GetInterface(k)
 		if c.IsPrimary() {

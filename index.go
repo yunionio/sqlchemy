@@ -74,13 +74,13 @@ func (index *STableIndex) QuotedColumns() []string {
 // AddIndex adds a SQL index over multiple columns for a Table
 // param unique: indicates a unique index cols: name of columns
 func (ts *STableSpec) AddIndex(unique bool, cols ...string) bool {
-	for i := 0; i < len(ts.indexes); i++ {
-		if ts.indexes[i].IsIdentical(cols...) {
+	for i := 0; i < len(ts._indexes); i++ {
+		if ts._indexes[i].IsIdentical(cols...) {
 			return false
 		}
 	}
 	name := fmt.Sprintf("ix_%s_%s", ts.name, strings.Join(cols, "_"))
 	idx := STableIndex{name: name, columns: cols, isUnique: unique}
-	ts.indexes = append(ts.indexes, idx)
+	ts._indexes = append(ts._indexes, idx)
 	return true
 }

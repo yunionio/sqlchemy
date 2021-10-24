@@ -423,6 +423,10 @@ func (c *SDateTimeColumn) IsUpdatedAt() bool {
 	return c.isUpdatedAt
 }
 
+func (c *SDateTimeColumn) IsDateTime() bool {
+	return true
+}
+
 // NewDateTimeColumn returns an instance of DateTime column
 func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SDateTimeColumn {
 	createdAt := false

@@ -42,7 +42,7 @@ func (ts *STableSpec) prepareUpdate(dt interface{}) (*SUpdateSession, error) {
 	fields := reflectutils.FetchStructFieldValueSet(dataValue) //  fetchStructFieldNameValue(dataType, dataValue)
 
 	zeroPrimary := make([]string, 0)
-	for _, c := range ts.columns {
+	for _, c := range ts.Columns() {
 		k := c.Name()
 		ov, ok := fields.GetInterface(k)
 		if !ok {
@@ -111,7 +111,7 @@ func (us *SUpdateSession) saveUpdate(dt interface{}) (UpdateDiffs, error) {
 	updatedFields := make([]string, 0)
 	primaries := make(map[string]interface{})
 	setters := UpdateDiffs{}
-	for _, c := range us.tableSpec.columns {
+	for _, c := range us.tableSpec.Columns() {
 		k := c.Name()
 		of, _ := ofields.GetInterface(k)
 		nf, _ := fields.GetInterface(k)
