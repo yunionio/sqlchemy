@@ -139,9 +139,9 @@ func (ts *STableSpec) Clone(name string, autoIncOffset int64) *STableSpec {
 	for i := range newCols {
 		col := columns[i]
 		if col.IsAutoIncrement() {
-			colValue := reflect.ValueOf(col).Elem()
-			newColValue := reflect.New(colValue.Type()).Elem()
-			reflect.Copy(newColValue, colValue)
+			colValue := reflect.Indirect(reflect.ValueOf(col))
+			newColValue := reflect.Indirect(reflect.New(colValue.Type()))
+			newColValue.Set(colValue)
 			newCol := newColValue.Addr().Interface().(IColumnSpec)
 			newCol.SetAutoIncrementOffset(autoIncOffset)
 			newCols[i] = newCol

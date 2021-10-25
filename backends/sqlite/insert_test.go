@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysql
+package sqlite
 
 import (
 	"reflect"
@@ -27,7 +27,7 @@ func insertSqlPrep(v interface{}, update bool) (string, []interface{}, error) {
 	vvvalue := reflect.ValueOf(v).Elem()
 	vv := vvvalue.Interface()
 	vvFields := reflectutils.FetchStructFieldValueSet(vvvalue)
-	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.MySQLBackend)
+	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.SQLiteBackend)
 	ts := sqlchemy.NewTableSpecFromStruct(vv, "vv")
 	sql, vals, err := ts.InsertSqlPrep(vvFields, update)
 	return sql, vals, err
@@ -57,7 +57,7 @@ func TestInsertAutoIncrement(t *testing.T) {
 				Name:  "a",
 			},
 			update:  true,
-			wantSQL: "INSERT INTO `vv` (`row_id`, `name`) VALUES (?, ?) ON DUPLICATE KEY UPDATE SET `row_id` = ?, `name` = ?",
+			wantSQL: "INSERT INTO `vv` (`row_id`, `name`) VALUES (?, ?) ON CONFLICT(`row_id`) DO UPDATE SET `row_id` = ?, `name` = ?",
 			wantVar: 4,
 		},
 	}

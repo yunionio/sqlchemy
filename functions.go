@@ -268,3 +268,7 @@ func INET_ATON(field IQueryField) IQueryField {
 func TimestampAdd(name string, field IQueryField, offsetSeconds int) IQueryField {
 	return NewFunctionField(name, `TIMESTAMPADD(SECOND, `+fmt.Sprintf("%d", offsetSeconds)+`, %s)`, field)
 }
+
+func Cast(field IQueryField, typeStr string) IQueryField {
+	return NewFunctionField(field.Name(), `CAST(%s AS `+typeStr+`)`, field)
+}

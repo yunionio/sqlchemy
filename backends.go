@@ -58,7 +58,12 @@ type IBackend interface {
 	// CanInsertOrUpdate returns weather the backend supports InsertOrUpdate
 	CanInsertOrUpdate() bool
 
+	// DropIndexSQLTemplate returns the template of drop index SQL
 	DropIndexSQLTemplate() string
+	// InsertSQLTemplate returns the template of insert SQL
+	InsertSQLTemplate() string
+	// InsertOrUpdateSQLTemplate returns the template of insert or update SQL
+	InsertOrUpdateSQLTemplate() string
 
 	CanSupportRowAffected() bool
 }

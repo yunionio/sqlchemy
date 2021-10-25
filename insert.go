@@ -56,6 +56,8 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 	updates := make([]string, 0)
 	updateValues := make([]interface{}, 0)
 
+	primaryKeys := make([]string, 0)
+
 	now := timeutils.UtcNow()
 
 	for _, c := range t.Columns() {
@@ -70,6 +72,10 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 
 		if !find {
 			continue
+		}
+
+		if c.IsPrimary() {
+			primaryKeys = append(primaryKeys, fmt.Sprintf("`%s`", k))
 		}
 
 		if c.IsCreatedAt() || c.IsUpdatedAt() {
@@ -146,15 +152,34 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 		}
 	}
 
-	insertSql := fmt.Sprintf("INSERT INTO `%s` (%s) VALUES(%s)",
-		t.name,
-		strings.Join(names, ", "),
-		strings.Join(format, ", "))
-
-	if update {
-		insertSql += " ON DUPLICATE KEY UPDATE " + strings.Join(updates, ", ")
+	var insertSql string
+	if !update {
+		insertSql = templateEval(t.Database().backend.InsertSQLTemplate(), struct {
+			Table   string
+			Columns string
+			Values  string
+		}{
+			Table:   t.name,
+			Columns: strings.Join(names, ", "),
+			Values:  strings.Join(format, ", "),
+		})
+	} else {
+		insertSql = templateEval(t.Database().backend.InsertOrUpdateSQLTemplate(), struct {
+			Table       string
+			Columns     string
+			Values      string
+			PrimaryKeys string
+			SetValues   string
+		}{
+			Table:       t.name,
+			Columns:     strings.Join(names, ", "),
+			Values:      strings.Join(format, ", "),
+			PrimaryKeys: strings.Join(primaryKeys, ", "),
+			SetValues:   strings.Join(updates, ", "),
+		})
 		values = append(values, updateValues...)
 	}
+
 	return insertSql, values, nil
 }
 

@@ -59,6 +59,10 @@ func (sqlite *SSqliteBackend) DropIndexSQLTemplate() string {
 	return "DROP INDEX IF EXISTS `{{ .Table }}`.`{{ .Index }}`"
 }
 
+func (sqlite *SSqliteBackend) InsertOrUpdateSQLTemplate() string {
+	return "INSERT INTO `{{ .Table }}` ({{ .Columns }}) VALUES ({{ .Values }}) ON CONFLICT({{ .PrimaryKeys }}) DO UPDATE SET {{ .SetValues }}"
+}
+
 func (sqlite *SSqliteBackend) GetTableSQL() string {
 	return "SELECT name FROM sqlite_master WHERE type='table'"
 }

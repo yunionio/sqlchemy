@@ -56,6 +56,10 @@ func (mysql *SMySQLBackend) CanInsertOrUpdate() bool {
 	return true
 }
 
+func (mysql *SMySQLBackend) InsertOrUpdateSQLTemplate() string {
+	return "INSERT INTO `{{ .Table }}` ({{ .Columns }}) VALUES ({{ .Values }}) ON DUPLICATE KEY UPDATE SET {{ .SetValues }}"
+}
+
 func (mysql *SMySQLBackend) GetCreateSQLs(ts sqlchemy.ITableSpec) []string {
 	cols := make([]string, 0)
 	primaries := make([]string, 0)
