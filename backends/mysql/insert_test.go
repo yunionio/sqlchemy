@@ -57,8 +57,8 @@ func TestInsertAutoIncrement(t *testing.T) {
 				Name:  "a",
 			},
 			update:  true,
-			wantSQL: "INSERT INTO `vv` (`row_id`, `name`) VALUES (?, ?) ON DUPLICATE KEY UPDATE SET `row_id` = ?, `name` = ?",
-			wantVar: 4,
+			wantSQL: "INSERT INTO `vv` (`row_id`, `name`) VALUES (?, ?) ON DUPLICATE KEY UPDATE SET `name` = ?",
+			wantVar: 3,
 		},
 	}
 	for _, c := range cases {

@@ -114,7 +114,7 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 			names = append(names, fmt.Sprintf("`%s`", k))
 			format = append(format, "?")
 
-			if update {
+			if update && !c.IsPrimary() {
 				updates = append(updates, fmt.Sprintf("`%s` = ?", k))
 				updateValues = append(updateValues, val)
 			}
@@ -127,7 +127,7 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 			names = append(names, fmt.Sprintf("`%s`", k))
 			format = append(format, "?")
 
-			if update {
+			if update && !c.IsPrimary() {
 				updates = append(updates, fmt.Sprintf("`%s` = ?", k))
 				updateValues = append(updateValues, v)
 			}
