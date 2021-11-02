@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"yunion.io/x/jsonutils"
+
 	"yunion.io/x/log"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
@@ -173,7 +175,7 @@ func (c *SBooleanColumn) IsZero(val interface{}) bool {
 // NewBooleanColumn return an instance of SBooleanColumn
 func NewBooleanColumn(name string, tagmap map[string]string, isPointer bool) SBooleanColumn {
 	bc := SBooleanColumn{SClickhouseBaseColumn: NewClickhouseBaseColumn(name, "UInt8", tagmap, isPointer)}
-	if !bc.IsPointer() && len(bc.Default()) > 0 && bc.ConvertFromString(bc.Default()) == "1" {
+	if !bc.IsPointer() && len(bc.Default()) > 0 && bc.ConvertFromString(bc.Default()) == uint8(1) {
 		msg := fmt.Sprintf("Non-pointer boolean column should not default true: %s(%s)", name, tagmap)
 		panic(msg)
 	}
@@ -207,9 +209,12 @@ func (c *STristateColumn) ConvertFromString(str string) interface{} {
 func (c *STristateColumn) ConvertFromValue(val interface{}) interface{} {
 	bVal := val.(tristate.TriState)
 	if bVal == tristate.True {
-		return 1
+		return uint8(1)
+	} else if bVal == tristate.False {
+		return uint8(0)
+	} else {
+		return sql.NullInt32{}
 	}
-	return 0
 }
 
 // IsZero implementation of STristateColumn for IColumnSpec
@@ -224,6 +229,10 @@ func (c *STristateColumn) IsZero(val interface{}) bool {
 
 // NewTristateColumn return an instance of STristateColumn
 func NewTristateColumn(name string, tagmap map[string]string, isPointer bool) STristateColumn {
+	if _, ok := tagmap[sqlchemy.TAG_NULLABLE]; ok {
+		// tristate always nullable
+		delete(tagmap, sqlchemy.TAG_NULLABLE)
+	}
 	bc := STristateColumn{SClickhouseBaseColumn: NewClickhouseBaseColumn(name, "UInt8", tagmap, isPointer)}
 	return bc
 }
@@ -273,7 +282,7 @@ func (c *SIntegerColumn) ConvertFromString(str string) interface{} {
 		case "UInt32":
 			return uint32(val)
 		case "UInt64":
-			return uint64(val)
+			return val
 		default:
 			panic(fmt.Sprintf("unsupported type %s", ctype))
 		}
@@ -303,24 +312,14 @@ func (c *SIntegerColumn) IsAutoVersion() bool {
 
 // NewIntegerColumn return an instance of SIntegerColumn
 func NewIntegerColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SIntegerColumn {
-	autover := false
-	tagmap, v, ok := utils.TagPop(tagmap, sqlchemy.TAG_AUTOVERSION)
-	if ok {
-		autover = utils.ToBool(v)
+	if _, ok := tagmap[sqlchemy.TAG_AUTOVERSION]; ok {
+		log.Warningf("auto_version field %s not supported by ClickHouse", name)
 	}
 	if _, ok := tagmap[sqlchemy.TAG_AUTOINCREMENT]; ok {
 		log.Warningf("auto_increment field %s not supported by ClickHouse", name)
 	}
 	c := SIntegerColumn{
 		SClickhouseBaseColumn: NewClickhouseBaseColumn(name, sqltype, tagmap, isPointer),
-		isAutoVersion:         autover,
-	}
-	if autover {
-		c.SetPrimary(false)
-		c.SetNullable(false)
-		if len(c.Default()) == 0 {
-			c.SetDefault("0")
-		}
 	}
 	return c
 }
@@ -453,13 +452,13 @@ func NewDecimalColumn(name string, tagmap map[string]string, isPointer bool) SDe
 	}
 	var sqlType string
 	if width <= 9 {
-		sqlType = "DECIMAL32"
+		sqlType = "Decimal32"
 	} else if width <= 18 {
-		sqlType = "DECIMAL64"
+		sqlType = "Decimal64"
 	} else if width <= 38 {
-		sqlType = "DECIMAL128"
+		sqlType = "Decimal128"
 	} else if width <= 76 {
-		sqlType = "DECIMAL256"
+		sqlType = "Decimal256"
 	} else {
 		panic(fmt.Sprintf("unsupported decimal width %d", width))
 	}
@@ -597,7 +596,7 @@ func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SD
 		updatedAt = utils.ToBool(v)
 	}
 	dtc := SDateTimeColumn{
-		NewTimeTypeColumn(name, "DATETIME", tagmap, isPointer),
+		NewTimeTypeColumn(name, "DateTime", tagmap, isPointer),
 		createdAt, updatedAt,
 	}
 	return dtc
@@ -625,18 +624,19 @@ func (c *CompoundColumn) IsZero(val interface{}) bool {
 	return false
 }
 
-// ConvertFromString implementation of STristateColumn for IColumnSpec
+// ConvertFromString implementation of CompoundColumn for IColumnSpec
 func (c *CompoundColumn) ConvertFromString(str string) interface{} {
-	return str
+	json, err := jsonutils.ParseString(str)
+	if err != nil {
+		log.Errorf("ParseString fail %s", err)
+		json = jsonutils.JSONNull
+	}
+	return json.String()
 }
 
 // ConvertFromValue implementation of CompoundColumn for IColumnSpec
 func (c *CompoundColumn) ConvertFromValue(val interface{}) interface{} {
-	bVal, ok := val.(gotypes.ISerializable)
-	if ok && bVal != nil {
-		return bVal.String()
-	}
-	return ""
+	return jsonutils.Marshal(val).String()
 }
 
 // NewCompoundColumn returns an instance of CompoundColumn

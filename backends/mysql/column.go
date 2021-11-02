@@ -23,6 +23,9 @@ import (
 	"strings"
 	"time"
 
+	"yunion.io/x/jsonutils"
+	"yunion.io/x/log"
+
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
 	"yunion.io/x/pkg/util/timeutils"
@@ -149,8 +152,11 @@ func (c *STristateColumn) ConvertFromValue(val interface{}) interface{} {
 	bVal := val.(tristate.TriState)
 	if bVal == tristate.True {
 		return 1
+	} else if bVal == tristate.False {
+		return 0
+	} else {
+		return sql.NullInt32{}
 	}
-	return 0
 }
 
 // IsZero implementation of STristateColumn for IColumnSpec
@@ -165,6 +171,10 @@ func (c *STristateColumn) IsZero(val interface{}) bool {
 
 // NewTristateColumn return an instance of STristateColumn
 func NewTristateColumn(name string, tagmap map[string]string, isPointer bool) STristateColumn {
+	if _, ok := tagmap[sqlchemy.TAG_NULLABLE]; ok {
+		// tristate always nullable
+		delete(tagmap, sqlchemy.TAG_NULLABLE)
+	}
 	bc := STristateColumn{SBaseWidthColumn: sqlchemy.NewBaseWidthColumn(name, "TINYINT", tagmap, isPointer)}
 	return bc
 }
@@ -599,13 +609,19 @@ func (c *CompoundColumn) IsZero(val interface{}) bool {
 	return false
 }
 
+// ConvertFromString implementation of CompoundColumn for IColumnSpec
+func (c *CompoundColumn) ConvertFromString(str string) interface{} {
+	json, err := jsonutils.ParseString(str)
+	if err != nil {
+		log.Errorf("ParseString fail %s", err)
+		json = jsonutils.JSONNull
+	}
+	return json.String()
+}
+
 // ConvertFromValue implementation of CompoundColumn for IColumnSpec
 func (c *CompoundColumn) ConvertFromValue(val interface{}) interface{} {
-	bVal, ok := val.(gotypes.ISerializable)
-	if ok && bVal != nil {
-		return bVal.String()
-	}
-	return ""
+	return jsonutils.Marshal(val).String()
 }
 
 // NewCompoundColumn returns an instance of CompoundColumn

@@ -23,6 +23,10 @@ import (
 	"strings"
 	"time"
 
+	"yunion.io/x/log"
+
+	"yunion.io/x/jsonutils"
+
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
 	"yunion.io/x/pkg/util/timeutils"
@@ -68,6 +72,10 @@ func columnDefinitionBuffer(c sqlchemy.IColumnSpec) bytes.Buffer {
 		}
 	}
 
+	if _, ok := c.(*STextColumn); ok {
+		buf.WriteString(" COLLATE NOCASE")
+	}
+
 	return buf
 }
 
@@ -96,9 +104,9 @@ func (c *SBooleanColumn) ConvertFromString(str string) interface{} {
 func (c *SBooleanColumn) ConvertFromValue(val interface{}) interface{} {
 	bVal := val.(bool)
 	if bVal {
-		return uint8(1)
+		return 1
 	}
-	return uint8(0)
+	return 0
 }
 
 // IsZero implementation of SBooleanColumn for IColumnSpec
@@ -149,8 +157,11 @@ func (c *STristateColumn) ConvertFromValue(val interface{}) interface{} {
 	bVal := val.(tristate.TriState)
 	if bVal == tristate.True {
 		return 1
+	} else if bVal == tristate.None {
+		return sql.NullInt32{}
+	} else {
+		return 0
 	}
-	return 0
 }
 
 // IsZero implementation of STristateColumn for IColumnSpec
@@ -165,6 +176,10 @@ func (c *STristateColumn) IsZero(val interface{}) bool {
 
 // NewTristateColumn return an instance of STristateColumn
 func NewTristateColumn(name string, tagmap map[string]string, isPointer bool) STristateColumn {
+	if _, ok := tagmap[sqlchemy.TAG_NULLABLE]; ok {
+		// tristate always nullable
+		delete(tagmap, sqlchemy.TAG_NULLABLE)
+	}
 	bc := STristateColumn{SBaseColumn: sqlchemy.NewBaseColumn(name, "INTEGER", tagmap, isPointer)}
 	return bc
 }
@@ -399,7 +414,7 @@ func (c *STimeTypeColumn) ConvertFromString(str string) interface{} {
 // NewTimeTypeColumn return an instance of STimeTypeColumn
 func NewTimeTypeColumn(name string, tagmap map[string]string, isPointer bool) STimeTypeColumn {
 	dc := STimeTypeColumn{
-		sqlchemy.NewBaseColumn(name, "TEXT", tagmap, isPointer),
+		SBaseColumn: sqlchemy.NewBaseColumn(name, "TEXT", tagmap, isPointer),
 	}
 	return dc
 }
@@ -440,8 +455,9 @@ func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SD
 		updatedAt = utils.ToBool(v)
 	}
 	dtc := SDateTimeColumn{
-		NewTimeTypeColumn(name, tagmap, isPointer),
-		createdAt, updatedAt,
+		STimeTypeColumn: NewTimeTypeColumn(name, tagmap, isPointer),
+		isCreatedAt:     createdAt,
+		isUpdatedAt:     updatedAt,
 	}
 	return dtc
 }
@@ -468,13 +484,19 @@ func (c *CompoundColumn) IsZero(val interface{}) bool {
 	return false
 }
 
+// ConvertFromString implementation of CompoundColumn for IColumnSpec
+func (c *CompoundColumn) ConvertFromString(str string) interface{} {
+	json, err := jsonutils.ParseString(str)
+	if err != nil {
+		log.Errorf("ParseString fail %s", err)
+		json = jsonutils.JSONNull
+	}
+	return json.String()
+}
+
 // ConvertFromValue implementation of CompoundColumn for IColumnSpec
 func (c *CompoundColumn) ConvertFromValue(val interface{}) interface{} {
-	bVal, ok := val.(gotypes.ISerializable)
-	if ok && bVal != nil {
-		return bVal.String()
-	}
-	return ""
+	return jsonutils.Marshal(val).String()
 }
 
 // NewCompoundColumn returns an instance of CompoundColumn

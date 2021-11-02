@@ -279,7 +279,7 @@ func (t *STableSpec) insert(data interface{}, update bool, debug bool) error {
 			} else {
 				priVal, _ := dataFields.GetInterface(c.Name())
 				if !gotypes.IsNil(priVal) {
-					q = q.Equals(c.Name(), priVal)
+					q = q.Equals(c.Name(), c.ConvertFromValue(priVal))
 				}
 			}
 		}

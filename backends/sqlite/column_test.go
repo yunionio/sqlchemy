@@ -12,67 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysql
+package sqlite
 
 import (
 	"database/sql"
 	"testing"
 
 	"yunion.io/x/jsonutils"
+
 	"yunion.io/x/pkg/tristate"
+
 	"yunion.io/x/sqlchemy"
 )
 
-func TestBadColumns(t *testing.T) {
-	wantPanic := func(t *testing.T, msgFmt string, msgVals ...interface{}) {
-		if msg := recover(); msg == nil {
-			t.Errorf(msgFmt, msgVals...)
-		}
-	}
-	isPtr := false
-
-	t.Run("bool default true", func(t *testing.T) {
-		defer wantPanic(t, "non-pointer boolean must not have default value")
-		NewBooleanColumn(
-			"bad_column",
-			map[string]string{
-				"default": "1",
-			},
-			isPtr,
-		)
-	})
-	t.Run("text with default", func(t *testing.T) {
-		defer wantPanic(t, "ERROR 1101 (42000): BLOB/TEXT column 'xxx' can't have a default value")
-		col := NewTextColumn(
-			"bad",
-			"TEXT",
-			map[string]string{
-				"default": "off",
-			},
-			isPtr,
-		)
-		def := col.DefinitionString()
-		if def != "" {
-			t.Fatal("should have paniced")
-		}
-	})
-}
-
 var (
 	triCol         = NewTristateColumn("field", nil, false)
-	notNullTriCol  = NewTristateColumn("field", nil, false)
+	notNullTriCol  = NewTristateColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
 	boolCol        = NewBooleanColumn("field", nil, false)
 	notNullBoolCol = NewBooleanColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
-	intCol         = NewIntegerColumn("field", "INT", false, nil, false)
-	uIntCol        = NewIntegerColumn("field", "INT", true, nil, false)
-	floatCol       = NewFloatColumn("field", "FLOAT", nil, false)
-	textCol        = NewTextColumn("field", "TEXT", nil, false)
-	charCol        = NewTextColumn("field", "VARCHAR", map[string]string{sqlchemy.TAG_WIDTH: "16"}, false)
-	notNullTextCol = NewTextColumn("field", "VARCHAR", map[string]string{sqlchemy.TAG_WIDTH: "16", sqlchemy.TAG_NULLABLE: "false"}, false)
-	defTextCol     = NewTextColumn("field", "VARCHAR", map[string]string{sqlchemy.TAG_WIDTH: "16", sqlchemy.TAG_DEFAULT: "new!"}, false)
+	integerCol     = NewIntegerColumn("field", nil, false)
+	floatCol       = NewFloatColumn("field", nil, false)
+	textCol        = NewTextColumn("field", nil, false)
+	notNullTextCol = NewTextColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
+	defTextCol     = NewTextColumn("field", map[string]string{sqlchemy.TAG_DEFAULT: "new!"}, false)
 	dateCol        = NewDateTimeColumn("field", nil, false)
 	notNullDateCol = NewDateTimeColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
-	compCol        = NewCompoundColumn("field", "TEXT", nil, false)
+	compCol        = NewCompoundColumn("field", nil, false)
 )
 
 func TestColumns(t *testing.T) {
@@ -82,55 +47,51 @@ func TestColumns(t *testing.T) {
 	}{
 		{
 			in:   &triCol,
-			want: "`field` TINYINT",
+			want: "`field` INTEGER",
 		},
 		{
 			in:   &notNullTriCol,
-			want: "`field` TINYINT",
+			want: "`field` INTEGER",
 		},
 		{
 			in:   &boolCol,
-			want: "`field` TINYINT",
+			want: "`field` INTEGER",
 		},
 		{
 			in:   &notNullBoolCol,
-			want: "`field` TINYINT NOT NULL",
+			want: "`field` INTEGER NOT NULL",
 		},
 		{
-			in:   &intCol,
-			want: "`field` INT",
+			in:   &integerCol,
+			want: "`field` INTEGER",
 		},
 		{
 			in:   &floatCol,
-			want: "`field` FLOAT",
+			want: "`field` REAL",
 		},
 		{
 			in:   &textCol,
-			want: "`field` TEXT CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'",
-		},
-		{
-			in:   &charCol,
-			want: "`field` VARCHAR(16) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'",
+			want: "`field` TEXT COLLATE NOCASE",
 		},
 		{
 			in:   &notNullTextCol,
-			want: "`field` VARCHAR(16) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' NOT NULL",
+			want: "`field` TEXT NOT NULL COLLATE NOCASE",
 		},
 		{
 			in:   &defTextCol,
-			want: "`field` VARCHAR(16) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' DEFAULT 'new!'",
+			want: "`field` TEXT DEFAULT 'new!' COLLATE NOCASE",
 		},
 		{
 			in:   &dateCol,
-			want: "`field` DATETIME",
+			want: "`field` TEXT",
 		},
 		{
 			in:   &notNullDateCol,
-			want: "`field` DATETIME NOT NULL",
+			want: "`field` TEXT NOT NULL",
 		},
 		{
 			in:   &compCol,
-			want: "`field` TEXT CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'",
+			want: "`field` TEXT",
 		},
 	}
 	for _, c := range cases {
@@ -175,7 +136,7 @@ func TestConvertValue(t *testing.T) {
 		{
 			in:   23,
 			want: 23,
-			col:  &intCol,
+			col:  &integerCol,
 		},
 		{
 			in:   jsonutils.NewDict(),
@@ -224,7 +185,7 @@ func TestConvertString(t *testing.T) {
 		{
 			in:   "23",
 			want: int64(23),
-			col:  &intCol,
+			col:  &integerCol,
 		},
 		{
 			in:   "0.01",

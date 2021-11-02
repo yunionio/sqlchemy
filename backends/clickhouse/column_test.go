@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysql
+package clickhouse
 
 import (
 	"database/sql"
@@ -33,19 +33,22 @@ func TestBadColumns(t *testing.T) {
 
 	t.Run("bool default true", func(t *testing.T) {
 		defer wantPanic(t, "non-pointer boolean must not have default value")
-		NewBooleanColumn(
+		bc := NewBooleanColumn(
 			"bad_column",
 			map[string]string{
-				"default": "1",
+				"default": "true",
 			},
 			isPtr,
 		)
+		def := bc.DefinitionString()
+		if def != "" {
+			t.Fatal("should have paniced")
+		}
 	})
-	t.Run("text with default", func(t *testing.T) {
+	t.Run("Decimal missing width and precision", func(t *testing.T) {
 		defer wantPanic(t, "ERROR 1101 (42000): BLOB/TEXT column 'xxx' can't have a default value")
-		col := NewTextColumn(
+		col := NewDecimalColumn(
 			"bad",
-			"TEXT",
 			map[string]string{
 				"default": "off",
 			},
@@ -63,16 +66,21 @@ var (
 	notNullTriCol  = NewTristateColumn("field", nil, false)
 	boolCol        = NewBooleanColumn("field", nil, false)
 	notNullBoolCol = NewBooleanColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
-	intCol         = NewIntegerColumn("field", "INT", false, nil, false)
-	uIntCol        = NewIntegerColumn("field", "INT", true, nil, false)
-	floatCol       = NewFloatColumn("field", "FLOAT", nil, false)
-	textCol        = NewTextColumn("field", "TEXT", nil, false)
-	charCol        = NewTextColumn("field", "VARCHAR", map[string]string{sqlchemy.TAG_WIDTH: "16"}, false)
-	notNullTextCol = NewTextColumn("field", "VARCHAR", map[string]string{sqlchemy.TAG_WIDTH: "16", sqlchemy.TAG_NULLABLE: "false"}, false)
-	defTextCol     = NewTextColumn("field", "VARCHAR", map[string]string{sqlchemy.TAG_WIDTH: "16", sqlchemy.TAG_DEFAULT: "new!"}, false)
+	intCol         = NewIntegerColumn("field", "Int8", nil, false)
+	uIntCol        = NewIntegerColumn("field", "UInt32", nil, false)
+	float32Col     = NewFloatColumn("field", "Float32", nil, false)
+	float64Col     = NewFloatColumn("field", "Float64", nil, false)
+	decimal32Col   = NewDecimalColumn("field", map[string]string{sqlchemy.TAG_WIDTH: "9", sqlchemy.TAG_PRECISION: "8"}, false)
+	decimal64Col   = NewDecimalColumn("field", map[string]string{sqlchemy.TAG_WIDTH: "18", sqlchemy.TAG_PRECISION: "8"}, false)
+	decimal128Col  = NewDecimalColumn("field", map[string]string{sqlchemy.TAG_WIDTH: "38", sqlchemy.TAG_PRECISION: "8"}, false)
+	decimal256Col  = NewDecimalColumn("field", map[string]string{sqlchemy.TAG_WIDTH: "76", sqlchemy.TAG_PRECISION: "8"}, false)
+	textCol        = NewTextColumn("field", "String", nil, false)
+	charCol        = NewTextColumn("field", "String", map[string]string{sqlchemy.TAG_WIDTH: "16"}, false)
+	notNullTextCol = NewTextColumn("field", "String", map[string]string{sqlchemy.TAG_WIDTH: "16", sqlchemy.TAG_NULLABLE: "false"}, false)
+	defTextCol     = NewTextColumn("field", "String", map[string]string{sqlchemy.TAG_WIDTH: "16", sqlchemy.TAG_DEFAULT: "new!"}, false)
 	dateCol        = NewDateTimeColumn("field", nil, false)
 	notNullDateCol = NewDateTimeColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
-	compCol        = NewCompoundColumn("field", "TEXT", nil, false)
+	compCol        = NewCompoundColumn("field", nil, false)
 )
 
 func TestColumns(t *testing.T) {
@@ -82,55 +90,79 @@ func TestColumns(t *testing.T) {
 	}{
 		{
 			in:   &triCol,
-			want: "`field` TINYINT",
+			want: "`field` Nullable(UInt8)",
 		},
 		{
 			in:   &notNullTriCol,
-			want: "`field` TINYINT",
+			want: "`field` Nullable(UInt8)",
 		},
 		{
 			in:   &boolCol,
-			want: "`field` TINYINT",
+			want: "`field` Nullable(UInt8)",
 		},
 		{
 			in:   &notNullBoolCol,
-			want: "`field` TINYINT NOT NULL",
+			want: "`field` UInt8",
 		},
 		{
 			in:   &intCol,
-			want: "`field` INT",
+			want: "`field` Nullable(Int8)",
 		},
 		{
-			in:   &floatCol,
-			want: "`field` FLOAT",
+			in:   &uIntCol,
+			want: "`field` Nullable(UInt32)",
+		},
+		{
+			in:   &float32Col,
+			want: "`field` Nullable(Float32)",
+		},
+		{
+			in:   &float64Col,
+			want: "`field` Nullable(Float64)",
+		},
+		{
+			in:   &decimal32Col,
+			want: "`field` Nullable(Decimal32(9, 8))",
+		},
+		{
+			in:   &decimal64Col,
+			want: "`field` Nullable(Decimal64(18, 8))",
+		},
+		{
+			in:   &decimal128Col,
+			want: "`field` Nullable(Decimal128(38, 8))",
+		},
+		{
+			in:   &decimal256Col,
+			want: "`field` Nullable(Decimal256(76, 8))",
 		},
 		{
 			in:   &textCol,
-			want: "`field` TEXT CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'",
+			want: "`field` Nullable(String)",
 		},
 		{
 			in:   &charCol,
-			want: "`field` VARCHAR(16) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'",
+			want: "`field` Nullable(String)",
 		},
 		{
 			in:   &notNullTextCol,
-			want: "`field` VARCHAR(16) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' NOT NULL",
+			want: "`field` String",
 		},
 		{
 			in:   &defTextCol,
-			want: "`field` VARCHAR(16) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' DEFAULT 'new!'",
+			want: "`field` Nullable(String) DEFAULT 'new!'",
 		},
 		{
 			in:   &dateCol,
-			want: "`field` DATETIME",
+			want: "`field` Nullable(DateTime)",
 		},
 		{
 			in:   &notNullDateCol,
-			want: "`field` DATETIME NOT NULL",
+			want: "`field` DateTime",
 		},
 		{
 			in:   &compCol,
-			want: "`field` TEXT CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'",
+			want: "`field` Nullable(String)",
 		},
 	}
 	for _, c := range cases {
@@ -149,22 +181,22 @@ func TestConvertValue(t *testing.T) {
 	}{
 		{
 			in:   true,
-			want: 1,
+			want: uint8(1),
 			col:  &boolCol,
 		},
 		{
 			in:   false,
-			want: 0,
+			want: uint8(0),
 			col:  &boolCol,
 		},
 		{
 			in:   tristate.True,
-			want: 1,
+			want: uint8(1),
 			col:  &triCol,
 		},
 		{
 			in:   tristate.False,
-			want: 0,
+			want: uint8(0),
 			col:  &triCol,
 		},
 		{
@@ -198,22 +230,22 @@ func TestConvertString(t *testing.T) {
 	}{
 		{
 			in:   `true`,
-			want: 1,
+			want: uint8(1),
 			col:  &boolCol,
 		},
 		{
 			in:   "false",
-			want: 0,
+			want: uint8(0),
 			col:  &boolCol,
 		},
 		{
 			in:   "true",
-			want: 1,
+			want: uint8(1),
 			col:  &triCol,
 		},
 		{
 			in:   "false",
-			want: 0,
+			want: uint8(0),
 			col:  &triCol,
 		},
 		{
@@ -223,13 +255,13 @@ func TestConvertString(t *testing.T) {
 		},
 		{
 			in:   "23",
-			want: int64(23),
+			want: int8(23),
 			col:  &intCol,
 		},
 		{
 			in:   "0.01",
-			want: 0.01,
-			col:  &floatCol,
+			want: float32(0.01),
+			col:  &float32Col,
 		},
 	}
 	for _, c := range cases {
