@@ -58,8 +58,8 @@ func SetDBWithNameBackend(db *sql.DB, name DBName, backend DBBackendName) {
 	}
 }
 
-// Deprecated
 // GetDB get DB instance
+// Deprecated
 func GetDB() *sql.DB {
 	return GetDefaultDB().db
 }
@@ -111,6 +111,7 @@ type tableName struct {
 }
 
 // GetTables get all tables' name in default database
+// Deprecated
 func GetTables() []string {
 	return GetDefaultDB().GetTables()
 }
@@ -132,6 +133,7 @@ func (db *SDatabase) GetTables() []string {
 }
 
 // Exec execute a raw SQL query for the default db instance
+// Deprecated
 func Exec(sql string, args ...interface{}) (sql.Result, error) {
 	return GetDefaultDB().Exec(sql, args...)
 }

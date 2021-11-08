@@ -24,6 +24,7 @@ import (
 	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/util/reflectutils"
+	"yunion.io/x/pkg/util/timeutils"
 )
 
 // Increment perform an incremental update on a record, the primary key of the record is specified in diff,
@@ -46,17 +47,13 @@ func (t *STableSpec) Decrement(diff interface{}, target interface{}) error {
 	return t.incrementInternal(diff, "-", target)
 }
 
-func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target interface{}) error {
-	if target == nil {
-		if reflect.ValueOf(diff).Kind() != reflect.Ptr {
-			return errors.Wrap(ErrNeedsPointer, "Incremental input must be a Pointer")
-		}
-	} else {
-		if reflect.ValueOf(target).Kind() != reflect.Ptr {
-			return errors.Wrap(ErrNeedsPointer, "Incremental update target must be a Pointer")
-		}
-	}
+type incrementSqlResult struct {
+	sql       string
+	vars      []interface{}
+	primaries map[string]interface{}
+}
 
+func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, target interface{}) (*incrementSqlResult, error) {
 	dataValue := reflect.Indirect(reflect.ValueOf(diff))
 	fields := reflectutils.FetchStructFieldValueSet(dataValue)
 	var targetFields reflectutils.SStructFieldValueSet
@@ -64,6 +61,8 @@ func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target i
 		targetValue := reflect.Indirect(reflect.ValueOf(target))
 		targetFields = reflectutils.FetchStructFieldValueSet(targetValue)
 	}
+
+	now := timeutils.UtcNow()
 
 	primaries := make(map[string]interface{})
 	vars := make([]interface{}, 0)
@@ -83,7 +82,7 @@ func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target i
 			} else if c.IsText() {
 				primaries[k] = ""
 			} else {
-				return ErrEmptyPrimaryKey
+				return nil, ErrEmptyPrimaryKey
 			}
 			continue
 		}
@@ -103,10 +102,10 @@ func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target i
 	}
 
 	if len(vars) == 0 {
-		return ErrNoDataToUpdate
+		return nil, ErrNoDataToUpdate
 	}
 	if len(primaries) == 0 {
-		return ErrEmptyPrimaryKey
+		return nil, ErrEmptyPrimaryKey
 	}
 
 	var buf bytes.Buffer
@@ -124,7 +123,8 @@ func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target i
 		buf.WriteString(fmt.Sprintf(", `%s` = `%s` + 1", versionField, versionField))
 	}
 	for _, updatedField := range updatedFields {
-		buf.WriteString(fmt.Sprintf(", `%s` = %s", updatedField, t.Database().backend.CurrentUTCTimeStampString()))
+		buf.WriteString(fmt.Sprintf(", `%s` = ?", updatedField))
+		vars = append(vars, now)
 	}
 
 	buf.WriteString(" WHERE ")
@@ -143,22 +143,44 @@ func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target i
 		log.Infof("Update: %s %s", buf.String(), vars)
 	}
 
-	results, err := t.Database().Exec(buf.String(), vars...)
-	if err != nil {
-		return errors.Wrapf(err, "_db.Exec %s %#v", buf.String(), vars)
-	}
-	aCnt, err := results.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "results.RowsAffected")
-	}
-	if aCnt != 1 {
-		if aCnt == 0 {
-			return sql.ErrNoRows
+	return &incrementSqlResult{
+		sql:       buf.String(),
+		vars:      vars,
+		primaries: primaries,
+	}, nil
+}
+
+func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target interface{}) error {
+	if target == nil {
+		if reflect.ValueOf(diff).Kind() != reflect.Ptr {
+			return errors.Wrap(ErrNeedsPointer, "Incremental input must be a Pointer")
 		}
-		return errors.Wrapf(ErrUnexpectRowCount, "affected rows %d != 1", aCnt)
+	} else {
+		if reflect.ValueOf(target).Kind() != reflect.Ptr {
+			return errors.Wrap(ErrNeedsPointer, "Incremental update target must be a Pointer")
+		}
+	}
+
+	intResult, err := t.incrementInternalSql(diff, opcode, target)
+
+	results, err := t.Database().Exec(intResult.sql, intResult.vars...)
+	if err != nil {
+		return errors.Wrapf(err, "_db.Exec %s %#v", intResult.sql, intResult.vars)
+	}
+	if t.Database().backend.CanSupportRowAffected() {
+		aCnt, err := results.RowsAffected()
+		if err != nil {
+			return errors.Wrap(err, "results.RowsAffected")
+		}
+		if aCnt != 1 {
+			if aCnt == 0 {
+				return sql.ErrNoRows
+			}
+			return errors.Wrapf(ErrUnexpectRowCount, "affected rows %d != 1", aCnt)
+		}
 	}
 	q := t.Query()
-	for k, v := range primaries {
+	for k, v := range intResult.primaries {
 		q = q.Equals(k, v)
 	}
 	if target != nil {

@@ -38,15 +38,11 @@ func FetchColumns(match string) []string {
 	ret := make([]string, 0)
 	if len(match) > 0 {
 		for _, part := range strings.Split(match, ",") {
-			if part[len(part)-1] == ')' {
-				part = part[:strings.LastIndexByte(part, '(')]
-			}
 			part = strings.Trim(part, " `")
 			if len(part) > 0 {
 				ret = append(ret, part)
 			}
 		}
 	}
-	// log.Debugf("%s", ret)
 	return ret
 }

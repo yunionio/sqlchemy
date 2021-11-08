@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlite
+package clickhouse
 
 import (
 	"testing"
@@ -22,13 +22,13 @@ import (
 )
 
 func insertSqlPrep(v interface{}, update bool) (string, []interface{}, error) {
-	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.SQLiteBackend)
+	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.ClickhouseBackend)
 	ts := sqlchemy.NewTableSpecFromStruct(v, "vv")
 	results, err := ts.InsertSqlPrep(v, update)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "InsertSqlPrep")
 	}
-	return results.Sql, results.Values, nil
+	return results.Sql, results.Values, err
 }
 
 func TestInsertAutoIncrement(t *testing.T) {
@@ -41,10 +41,12 @@ func TestInsertAutoIncrement(t *testing.T) {
 		{
 			value: &struct {
 				RowId int `auto_increment:"true"`
-			}{},
+			}{
+				RowId: 12345,
+			},
 			update:  false,
-			wantSQL: "INSERT INTO `vv` () VALUES ()",
-			wantVar: 0,
+			wantSQL: "INSERT INTO `vv` (`row_id`) VALUES (?)",
+			wantVar: 1,
 		},
 		{
 			value: &struct {
@@ -55,7 +57,7 @@ func TestInsertAutoIncrement(t *testing.T) {
 				Name:  "a",
 			},
 			update:  true,
-			wantSQL: "INSERT INTO `vv` (`row_id`, `name`) VALUES (?, ?) ON CONFLICT(`row_id`) DO UPDATE SET `name` = ?",
+			wantSQL: "",
 			wantVar: 3,
 		},
 	}
@@ -73,20 +75,6 @@ func TestInsertAutoIncrement(t *testing.T) {
 			}
 		}
 	}
-}
-
-func TestInsertMultiAutoIncrement(t *testing.T) {
-	defer func() {
-		v := recover()
-		if v == nil {
-			t.Errorf("should panic with multiple auto_increment fields")
-		}
-	}()
-	_, _, err := insertSqlPrep(&struct {
-		RowId  int `auto_increment:"true"`
-		RowId2 int `auto_increment:"true"`
-	}{}, false)
-	t.Errorf("should panic but it continues: err: %s", err)
 }
 
 func TestInsertWithPointerValue(t *testing.T) {

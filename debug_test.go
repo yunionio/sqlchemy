@@ -16,19 +16,24 @@ package sqlchemy
 
 import "testing"
 
-func TestFetchColumns(t *testing.T) {
+func TestSqlDebug(t *testing.T) {
 	cases := []struct {
-		in   string
-		want []string
+		sql  string
+		vars []interface{}
+		want string
 	}{
 		{
-			in:   "`external_id`",
-			want: []string{"external_id"},
+			sql: `SET a = ?, b = ?`,
+			vars: []interface{}{
+				"name",
+				123,
+			},
+			want: `SET a = 'name', b = 123`,
 		},
 	}
 	for _, c := range cases {
-		got := FetchColumns(c.in)
-		if got[0] != c.want[0] {
+		got := _sqlDebug(c.sql, c.vars)
+		if got != c.want {
 			t.Errorf("want: %s got: %s", c.want, got)
 		}
 	}

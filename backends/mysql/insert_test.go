@@ -15,22 +15,20 @@
 package mysql
 
 import (
-	"reflect"
 	"testing"
 
-	"yunion.io/x/pkg/util/reflectutils"
-
+	"yunion.io/x/pkg/errors"
 	"yunion.io/x/sqlchemy"
 )
 
 func insertSqlPrep(v interface{}, update bool) (string, []interface{}, error) {
-	vvvalue := reflect.ValueOf(v).Elem()
-	vv := vvvalue.Interface()
-	vvFields := reflectutils.FetchStructFieldValueSet(vvvalue)
 	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.MySQLBackend)
-	ts := sqlchemy.NewTableSpecFromStruct(vv, "vv")
-	sql, vals, err := ts.InsertSqlPrep(vvFields, update)
-	return sql, vals, err
+	ts := sqlchemy.NewTableSpecFromStruct(v, "vv")
+	results, err := ts.InsertSqlPrep(v, update)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "InsertSqlPrep")
+	}
+	return results.Sql, results.Values, err
 }
 
 func TestInsertAutoIncrement(t *testing.T) {

@@ -299,7 +299,7 @@ func main() {
 
 	qId1 := t1.Query(t1.Field("id"))
 	t3 := ticketSpec.Instance()
-	qId2 := t3.Query(sqlchemy.Cast(t3.Field("id"), "TEXT"))
+	qId2 := t3.Query(sqlchemy.CAST(t3.Field("id"), "TEXT", "id"))
 
 	{
 		union, err := sqlchemy.UnionAllWithError(qId1, qId2)

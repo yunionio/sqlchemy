@@ -19,12 +19,11 @@ import (
 	"reflect"
 	"strings"
 
-	"yunion.io/x/pkg/util/timeutils"
-
 	"yunion.io/x/log"
 	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/util/reflectutils"
+	"yunion.io/x/pkg/util/timeutils"
 )
 
 // Insert perform a insert operation, the value of the record is store in dt
@@ -45,7 +44,18 @@ func (t *STableSpec) InsertOrUpdate(dt interface{}) error {
 	return t.insert(dt, true, false)
 }
 
-func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet, update bool) (string, []interface{}, error) {
+type InsertSqlResult struct {
+	Sql       string
+	Values    []interface{}
+	Primaries map[string]interface{}
+}
+
+func (t *STableSpec) InsertSqlPrep(data interface{}, update bool) (*InsertSqlResult, error) {
+	beforeInsert(reflect.ValueOf(data))
+
+	dataValue := reflect.ValueOf(data).Elem()
+	dataFields := reflectutils.FetchStructFieldValueSet(dataValue)
+
 	var autoIncField string
 	createdAtFields := make([]string, 0)
 
@@ -57,6 +67,7 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 	updateValues := make([]interface{}, 0)
 
 	primaryKeys := make([]string, 0)
+	primaries := make(map[string]interface{})
 
 	now := timeutils.UtcNow()
 
@@ -78,6 +89,7 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 			primaryKeys = append(primaryKeys, fmt.Sprintf("`%s`", k))
 		}
 
+		// created_at or updated_at but must not be a primary key
 		if c.IsCreatedAt() || c.IsUpdatedAt() {
 			createdAtFields = append(createdAtFields, k)
 			names = append(names, fmt.Sprintf("`%s`", k))
@@ -90,7 +102,7 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 				format = append(format, "?")
 			}
 
-			if update && c.IsUpdatedAt() {
+			if update && c.IsUpdatedAt() && !c.IsPrimary() {
 				if c.IsZero(ov) {
 					updates = append(updates, fmt.Sprintf("`%s` = ?", k))
 					updateValues = append(updateValues, now)
@@ -100,14 +112,23 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 				}
 			}
 
+			if c.IsPrimary() {
+				if c.IsZero(ov) {
+					primaries[k] = now
+				} else {
+					primaries[k] = ov
+				}
+			}
 			continue
 		}
 
+		// auto_version and must not be a primary key
 		if update && c.IsAutoVersion() {
 			updates = append(updates, fmt.Sprintf("`%s` = `%s` + 1", k, k))
 			continue
 		}
 
+		// empty but with default
 		if c.IsSupportDefault() && (len(c.Default()) > 0 || c.IsString()) && !gotypes.IsNil(ov) && c.IsZero(ov) && !c.AllowZero() { // empty text value
 			val := c.ConvertFromString(c.Default())
 			values = append(values, val)
@@ -118,9 +139,14 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 				updates = append(updates, fmt.Sprintf("`%s` = ?", k))
 				updateValues = append(updateValues, val)
 			}
+
+			if c.IsPrimary() {
+				primaries[k] = val
+			}
 			continue
 		}
 
+		// not empty
 		if !gotypes.IsNil(ov) && (!c.IsZero(ov) || (!c.IsPointer() && !c.IsText())) && !isAutoInc {
 			v := c.ConvertFromValue(ov)
 			values = append(values, v)
@@ -131,9 +157,14 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 				updates = append(updates, fmt.Sprintf("`%s` = ?", k))
 				updateValues = append(updateValues, v)
 			}
+
+			if c.IsPrimary() {
+				primaries[k] = v
+			}
 			continue
 		}
 
+		// empty primary but is autoinc or text
 		if c.IsPrimary() {
 			if isAutoInc {
 				if len(autoIncField) > 0 {
@@ -144,8 +175,9 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 				values = append(values, "")
 				names = append(names, fmt.Sprintf("`%s`", k))
 				format = append(format, "?")
+				primaries[k] = ""
 			} else {
-				return "", nil, errors.Wrapf(ErrEmptyPrimaryKey, "cannot insert for null primary key %q", k)
+				return nil, errors.Wrapf(ErrEmptyPrimaryKey, "cannot insert for null primary key %q", k)
 			}
 
 			continue
@@ -180,7 +212,11 @@ func (t *STableSpec) InsertSqlPrep(dataFields reflectutils.SStructFieldValueSet,
 		values = append(values, updateValues...)
 	}
 
-	return insertSql, values, nil
+	return &InsertSqlResult{
+		Sql:       insertSql,
+		Values:    values,
+		Primaries: primaries,
+	}, nil
 }
 
 func beforeInsert(val reflect.Value) {
@@ -204,31 +240,26 @@ func beforeInsert(val reflect.Value) {
 }
 
 func (t *STableSpec) insert(data interface{}, update bool, debug bool) error {
-	beforeInsert(reflect.ValueOf(data))
-
-	dataValue := reflect.ValueOf(data).Elem()
-	dataFields := reflectutils.FetchStructFieldValueSet(dataValue)
-	insertSql, values, err := t.InsertSqlPrep(dataFields, update)
+	insertResult, err := t.InsertSqlPrep(data, update)
 	if err != nil {
 		return errors.Wrap(err, "insertSqlPrep")
 	}
 
 	if DEBUG_SQLCHEMY || debug {
-		log.Debugf("%s values: %#v", insertSql, values)
+		log.Debugf("%s values: %#v", insertResult.Sql, insertResult.Values)
 	}
-	log.Debugf("sql: %s values: %#v", insertSql, values)
 
 	tx, err := t.Database().db.Begin()
 	if err != nil {
 		return errors.Wrap(err, "Begin transaction")
 	}
-	stmt, err := tx.Prepare(insertSql)
+	stmt, err := tx.Prepare(insertResult.Sql)
 	if err != nil {
-		return errors.Wrapf(err, "Prepare sql %s", insertSql)
+		return errors.Wrapf(err, "Prepare sql %s", insertResult.Sql)
 	}
 	defer stmt.Close()
 
-	results, err := stmt.Exec(values...)
+	results, err := stmt.Exec(insertResult.Values...)
 	if err != nil {
 		return errors.Wrap(err, "Exec")
 	}
@@ -277,7 +308,7 @@ func (t *STableSpec) insert(data interface{}, update bool, debug bool) error {
 				}
 				q = q.Equals(c.Name(), lastId)
 			} else {
-				priVal, _ := dataFields.GetInterface(c.Name())
+				priVal, _ := insertResult.Primaries[c.Name()]
 				if !gotypes.IsNil(priVal) {
 					q = q.Equals(c.Name(), c.ConvertFromValue(priVal))
 				}
