@@ -19,10 +19,18 @@ import (
 	"strings"
 )
 
-type sTableIndex struct {
+type STableIndex struct {
 	name     string
 	columns  []string
 	isUnique bool
+}
+
+func NewTableIndex(name string, cols []string, unique bool) STableIndex {
+	return STableIndex{
+		name:     name,
+		columns:  cols,
+		isUnique: unique,
+	}
 }
 
 /*type TColumnNames []string
@@ -43,7 +51,7 @@ func (cols TColumnNames) Less(i, j int) bool {
 	}
 }*/
 
-func (index *sTableIndex) IsIdentical(cols ...string) bool {
+func (index *STableIndex) IsIdentical(cols ...string) bool {
 	if len(index.columns) != len(cols) {
 		return false
 	}
@@ -55,7 +63,7 @@ func (index *sTableIndex) IsIdentical(cols ...string) bool {
 	return true
 }
 
-func (index *sTableIndex) QuotedColumns() []string {
+func (index *STableIndex) QuotedColumns() []string {
 	ret := make([]string, len(index.columns))
 	for i := 0; i < len(ret); i++ {
 		ret[i] = fmt.Sprintf("`%s`", index.columns[i])
@@ -66,13 +74,13 @@ func (index *sTableIndex) QuotedColumns() []string {
 // AddIndex adds a SQL index over multiple columns for a Table
 // param unique: indicates a unique index cols: name of columns
 func (ts *STableSpec) AddIndex(unique bool, cols ...string) bool {
-	for i := 0; i < len(ts.indexes); i++ {
-		if ts.indexes[i].IsIdentical(cols...) {
+	for i := 0; i < len(ts._indexes); i++ {
+		if ts._indexes[i].IsIdentical(cols...) {
 			return false
 		}
 	}
 	name := fmt.Sprintf("ix_%s_%s", ts.name, strings.Join(cols, "_"))
-	idx := sTableIndex{name: name, columns: cols, isUnique: unique}
-	ts.indexes = append(ts.indexes, idx)
+	idx := STableIndex{name: name, columns: cols, isUnique: unique}
+	ts._indexes = append(ts._indexes, idx)
 	return true
 }

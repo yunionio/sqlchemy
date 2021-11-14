@@ -15,65 +15,52 @@
 package sqlchemy
 
 import (
-	"reflect"
 	"testing"
-
-	"yunion.io/x/pkg/util/reflectutils"
+	"time"
 )
 
-func insertSqlPrep(v interface{}) (string, []interface{}, error) {
-	vvvalue := reflect.ValueOf(v).Elem()
-	vv := vvvalue.Interface()
-	vvFields := reflectutils.FetchStructFieldValueSet(vvvalue)
-	ts := NewTableSpecFromStruct(vv, "vv")
-	sql, vals, err := ts.insertSqlPrep(vvFields, false)
-	return sql, vals, err
+const (
+	uuid = "bfaf21ec-861e-4a7d-8739-7139588f0e00"
+)
+
+type TableStruct struct {
+	Id        int       `json:"id" primary:"true"`
+	UserId    string    `width:"128" charset:"ascii" nullable:"false"`
+	Name      string    `width:"16"`
+	Age       int       `nullable:"true"`
+	IsMale    bool      `nullalbe:"true"`
+	CreatedAt time.Time `created_at:"true"`
+	UpdatedAt time.Time `updated_at:"true"`
+	Version   int64     `auto_version:"true"`
 }
 
-func TestInsertAutoIncrement(t *testing.T) {
-	sql, vals, err := insertSqlPrep(&struct {
-		RowId int `auto_increment:"true"`
-	}{})
+func (s *TableStruct) BeforeInsert() {
+	s.UserId = uuid
+}
+
+func TestInsertSQL(t *testing.T) {
+	setupMockDatabaseBackend()
+
+	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
+	value := TableStruct{
+		Id:     12345,
+		Name:   "John",
+		Age:    20,
+		IsMale: true,
+	}
+	results, err := table.InsertSqlPrep(&value, false)
 	if err != nil {
-		t.Errorf("prepare sql failed: %s", err)
-		return
+		t.Fatalf("insertSqlPref fail %s", err)
 	}
-	wantSql := "INSERT INTO `vv` () VALUES()"
-	if sql != wantSql {
-		t.Errorf("sql want: %s\ngot: %s", wantSql, sql)
-		return
+	want := "INSERT INTO `testtable` (`id`, `user_id`, `name`, `age`, `is_male`, `created_at`, `updated_at`, `version`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+	wantVars := 8
+	if results.Sql != want {
+		t.Errorf("SQL: want %s got %s", want, results.Sql)
 	}
-	if len(vals) != 0 {
-		t.Errorf("vals want %d, got %d", 0, len(vals))
-		return
+	if len(results.Values) != wantVars {
+		t.Errorf("VARs want %d got %d", wantVars, len(results.Values))
 	}
-}
-
-func TestInsertMultiAutoIncrement(t *testing.T) {
-	defer func() {
-		v := recover()
-		if v == nil {
-			t.Errorf("should panic with multiple auto_increment fields")
-		}
-	}()
-	_, _, err := insertSqlPrep(&struct {
-		RowId  int `auto_increment:"true"`
-		RowId2 int `auto_increment:"true"`
-	}{})
-	t.Errorf("should panic but it continues: err: %s", err)
-}
-
-func TestInsertWithPointerValue(t *testing.T) {
-	sql, vals, err := insertSqlPrep(&struct {
-		RowId int `auto_increment:"true"`
-		ColT1 *int
-		ColT2 int
-		ColT3 string
-		ColT4 *string
-	}{})
-	if err != nil {
-		t.Errorf("prepare sql failed: %s", err)
-		return
+	if value.UserId != uuid {
+		t.Errorf("want %s got %s", uuid, value.UserId)
 	}
-	t.Logf("%s values: %v", sql, vals)
 }
