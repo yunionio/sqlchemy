@@ -8,7 +8,7 @@ import (
 )
 
 func TestQueryString(t *testing.T) {
-	setupMockDatabaseBackend()
+	SetupMockDatabaseBackend()
 
 	type TableStruct struct {
 		Id     int    `json:"id" primary:"true"`

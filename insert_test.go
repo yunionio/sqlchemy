@@ -45,7 +45,7 @@ func (s *TableStruct) BeforeUpdate() {
 }
 
 func TestInsertSQL(t *testing.T) {
-	setupMockDatabaseBackend()
+	SetupMockDatabaseBackend()
 
 	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
 	value := TableStruct{
