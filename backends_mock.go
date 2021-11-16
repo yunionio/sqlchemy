@@ -87,7 +87,7 @@ type sMockBackend struct {
 	SBaseBackend
 }
 
-func setupMockDatabaseBackend() {
+func SetupMockDatabaseBackend() {
 	RegisterBackend(&sMockBackend{})
 
 	SetDBWithNameBackend(&sql.DB{}, DefaultDB, mockBackendName)

@@ -19,7 +19,7 @@ import (
 )
 
 func TestUpdateSQL(t *testing.T) {
-	setupMockDatabaseBackend()
+	SetupMockDatabaseBackend()
 
 	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
 	dt := TableStruct{
