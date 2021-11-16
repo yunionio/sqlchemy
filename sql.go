@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"yunion.io/x/log"
+	"yunion.io/x/pkg/errors"
 )
 
 // DBName is a type of string for name of database
@@ -141,4 +142,47 @@ func Exec(sql string, args ...interface{}) (sql.Result, error) {
 // Exec execute a raw SQL query for a db instance
 func (db *SDatabase) Exec(sql string, args ...interface{}) (sql.Result, error) {
 	return db.db.Exec(sql, args...)
+}
+
+type SSqlResult struct {
+	Result sql.Result
+	Error  error
+}
+
+func (db *SDatabase) TxBatchExec(sqlstr string, varsList [][]interface{}) ([]SSqlResult, error) {
+	tx, err := db.db.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "Begin transaction")
+	}
+	defer tx.Rollback()
+	stmt, err := tx.Prepare(sqlstr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Prepare sql %s", sqlstr)
+	}
+	defer stmt.Close()
+
+	results := make([]SSqlResult, len(varsList))
+	for i := range varsList {
+		vars := varsList[i]
+		result, err := stmt.Exec(vars...)
+		results[i] = SSqlResult{
+			Result: result,
+			Error:  err,
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "Commit transaction")
+	}
+
+	return results, nil
+}
+
+func (db *SDatabase) TxExec(sqlstr string, vars ...interface{}) (sql.Result, error) {
+	results, err := db.TxBatchExec(sqlstr, [][]interface{}{vars})
+	if err != nil {
+		return nil, errors.Wrap(err, "TxBatchExec")
+	}
+	return results[0].Result, results[0].Error
 }

@@ -173,8 +173,3 @@ func (sqlite *SSqliteBackend) GetColumnSpecByFieldType(table *sqlchemy.STableSpe
 	}
 	return nil
 }
-
-func (sqlite *SSqliteBackend) CurrentUTCTimeStampString() string {
-	// the string 'now', is converted into the current date and time as obtained from the xCurrentTime method of the sqlite3_vfs object in use. The 'now' argument to date and time functions always returns exactly the same value for multiple invocations within the same sqlite3_step() call. Universal Coordinated Time (UTC) is used
-	return "datetime('now')"
-}

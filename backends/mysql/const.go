@@ -22,17 +22,17 @@ import (
 var (
 	// INT_WIDTH_DEFAULT records the default width of integer type
 	INT_WIDTH_DEFAULT = map[string]int{
-		"TINYINT":  3,
-		"SMALLINT": 5,
-		"INT":      10,
-		"BIGINT":   19,
+		"TINYINT":  4,
+		"SMALLINT": 6,
+		"INT":      11,
+		"BIGINT":   20,
 	}
 	// UNSIGNED_INT_WIDTH_DEFAULT records the default width of unsigned integer type
 	UNSIGNED_INT_WIDTH_DEFAULT = map[string]int{
-		"TINYINT":  2,
-		"SMALLINT": 4,
-		"INT":      9,
-		"BIGINT":   19,
+		"TINYINT":  3,
+		"SMALLINT": 5,
+		"INT":      10,
+		"BIGINT":   20,
 	}
 )
 

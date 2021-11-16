@@ -72,7 +72,7 @@ func columnDefinitionBuffer(c sqlchemy.IColumnSpec) bytes.Buffer {
 		}
 	}
 
-	if _, ok := c.(*STextColumn); ok {
+	if c.IsText() {
 		buf.WriteString(" COLLATE NOCASE")
 	}
 

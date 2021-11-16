@@ -57,7 +57,7 @@ func (mysql *SMySQLBackend) CanInsertOrUpdate() bool {
 }
 
 func (mysql *SMySQLBackend) InsertOrUpdateSQLTemplate() string {
-	return "INSERT INTO `{{ .Table }}` ({{ .Columns }}) VALUES ({{ .Values }}) ON DUPLICATE KEY UPDATE SET {{ .SetValues }}"
+	return "INSERT INTO `{{ .Table }}` ({{ .Columns }}) VALUES ({{ .Values }}) ON DUPLICATE KEY UPDATE {{ .SetValues }}"
 }
 
 func (mysql *SMySQLBackend) GetCreateSQLs(ts sqlchemy.ITableSpec) []string {
@@ -214,8 +214,4 @@ func (mysql *SMySQLBackend) GetColumnSpecByFieldType(table *sqlchemy.STableSpec,
 		return &col
 	}
 	return nil
-}
-
-func (mysql *SMySQLBackend) CurrentUTCTimeStampString() string {
-	return "UTC_TIMESTAMP()"
 }

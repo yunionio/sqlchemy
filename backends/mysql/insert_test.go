@@ -55,7 +55,7 @@ func TestInsertAutoIncrement(t *testing.T) {
 				Name:  "a",
 			},
 			update:  true,
-			wantSQL: "INSERT INTO `vv` (`row_id`, `name`) VALUES (?, ?) ON DUPLICATE KEY UPDATE SET `name` = ?",
+			wantSQL: "INSERT INTO `vv` (`row_id`, `name`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `name` = ?",
 			wantVar: 3,
 		},
 	}

@@ -16,7 +16,6 @@ package sqlchemy
 
 import (
 	"bytes"
-	"database/sql"
 	"fmt"
 	"reflect"
 
@@ -53,7 +52,7 @@ type incrementSqlResult struct {
 	primaries map[string]interface{}
 }
 
-func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, target interface{}) (*incrementSqlResult, error) {
+func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, target interface{}) (*sUpdateSQLResult, error) {
 	dataValue := reflect.Indirect(reflect.ValueOf(diff))
 	fields := reflectutils.FetchStructFieldValueSet(dataValue)
 	var targetFields reflectutils.SStructFieldValueSet
@@ -143,7 +142,7 @@ func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, targe
 		log.Infof("Update: %s %s", buf.String(), vars)
 	}
 
-	return &incrementSqlResult{
+	return &sUpdateSQLResult{
 		sql:       buf.String(),
 		vars:      vars,
 		primaries: primaries,
@@ -163,33 +162,14 @@ func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target i
 
 	intResult, err := t.incrementInternalSql(diff, opcode, target)
 
-	results, err := t.Database().Exec(intResult.sql, intResult.vars...)
-	if err != nil {
-		return errors.Wrapf(err, "_db.Exec %s %#v", intResult.sql, intResult.vars)
-	}
-	if t.Database().backend.CanSupportRowAffected() {
-		aCnt, err := results.RowsAffected()
-		if err != nil {
-			return errors.Wrap(err, "results.RowsAffected")
-		}
-		if aCnt != 1 {
-			if aCnt == 0 {
-				return sql.ErrNoRows
-			}
-			return errors.Wrapf(ErrUnexpectRowCount, "affected rows %d != 1", aCnt)
-		}
-	}
-	q := t.Query()
-	for k, v := range intResult.primaries {
-		q = q.Equals(k, v)
-	}
 	if target != nil {
-		err = q.First(target)
+		err = t.execUpdateSql(target, intResult)
 	} else {
-		err = q.First(diff)
+		err = t.execUpdateSql(diff, intResult)
 	}
 	if err != nil {
 		return errors.Wrap(err, "query after update failed")
 	}
+
 	return nil
 }

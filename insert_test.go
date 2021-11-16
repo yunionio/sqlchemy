@@ -38,6 +38,12 @@ func (s *TableStruct) BeforeInsert() {
 	s.UserId = uuid
 }
 
+func (s *TableStruct) BeforeUpdate() {
+	if len(s.Name) > 16 {
+		s.Name = s.Name[:14] + ".."
+	}
+}
+
 func TestInsertSQL(t *testing.T) {
 	setupMockDatabaseBackend()
 

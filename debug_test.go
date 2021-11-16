@@ -14,21 +14,27 @@
 
 package sqlchemy
 
-import "testing"
+import (
+	"testing"
+
+	"yunion.io/x/pkg/util/timeutils"
+)
 
 func TestSqlDebug(t *testing.T) {
+	tm, _ := timeutils.ParseIsoTime("2021-11-01T12:00:00Z")
 	cases := []struct {
 		sql  string
 		vars []interface{}
 		want string
 	}{
 		{
-			sql: `SET a = ?, b = ?`,
+			sql: `SET a = ?, b = ?, c = ?`,
 			vars: []interface{}{
 				"name",
 				123,
+				tm,
 			},
-			want: `SET a = 'name', b = 123`,
+			want: `SET a = 'name', b = 123, c = '2021-11-01 12:00:00 +0000 UTC'`,
 		},
 	}
 	for _, c := range cases {
