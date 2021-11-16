@@ -206,7 +206,3 @@ func (click *SClickhouseBackend) GetColumnSpecByFieldType(table *sqlchemy.STable
 	}
 	return nil
 }
-
-func (clickhouse *SClickhouseBackend) CurrentUTCTimeStampString() string {
-	return "now()" // toTimeZone(now(), 'UTC')"
-}

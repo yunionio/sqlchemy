@@ -16,21 +16,11 @@ package sqlchemy
 
 import (
 	"testing"
-	"time"
 )
 
 func TestUpdateSQL(t *testing.T) {
 	setupMockDatabaseBackend()
 
-	type TableStruct struct {
-		Id        int       `json:"id" primary:"true"`
-		Name      string    `width:"16"`
-		Age       int       `nullable:"true"`
-		IsMale    bool      `nullalbe:"true"`
-		CreatedAt time.Time `created_at:"true"`
-		UpdatedAt time.Time `updated_at:"true"`
-		Version   int64     `auto_version:"true"`
-	}
 	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
 	dt := TableStruct{
 		Id:     12345,

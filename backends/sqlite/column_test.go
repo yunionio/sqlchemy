@@ -83,15 +83,15 @@ func TestColumns(t *testing.T) {
 		},
 		{
 			in:   &dateCol,
-			want: "`field` TEXT",
+			want: "`field` TEXT COLLATE NOCASE",
 		},
 		{
 			in:   &notNullDateCol,
-			want: "`field` TEXT NOT NULL",
+			want: "`field` TEXT NOT NULL COLLATE NOCASE",
 		},
 		{
 			in:   &compCol,
-			want: "`field` TEXT",
+			want: "`field` TEXT COLLATE NOCASE",
 		},
 	}
 	for _, c := range cases {

@@ -16,6 +16,7 @@ package sqlchemy
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -26,6 +27,7 @@ type STableIndex struct {
 }
 
 func NewTableIndex(name string, cols []string, unique bool) STableIndex {
+	sort.Sort(TColumnNames(cols))
 	return STableIndex{
 		name:     name,
 		columns:  cols,
@@ -33,7 +35,7 @@ func NewTableIndex(name string, cols []string, unique bool) STableIndex {
 	}
 }
 
-/*type TColumnNames []string
+type TColumnNames []string
 
 func (cols TColumnNames) Len() int {
 	return len(cols)
@@ -49,12 +51,13 @@ func (cols TColumnNames) Less(i, j int) bool {
 	} else {
 		return false
 	}
-}*/
+}
 
 func (index *STableIndex) IsIdentical(cols ...string) bool {
 	if len(index.columns) != len(cols) {
 		return false
 	}
+	sort.Sort(TColumnNames(cols))
 	for i := 0; i < len(index.columns); i++ {
 		if index.columns[i] != cols[i] {
 			return false

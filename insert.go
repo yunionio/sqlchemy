@@ -249,24 +249,9 @@ func (t *STableSpec) insert(data interface{}, update bool, debug bool) error {
 		log.Debugf("%s values: %#v", insertResult.Sql, insertResult.Values)
 	}
 
-	tx, err := t.Database().db.Begin()
+	results, err := t.Database().TxExec(insertResult.Sql, insertResult.Values...)
 	if err != nil {
-		return errors.Wrap(err, "Begin transaction")
-	}
-	stmt, err := tx.Prepare(insertResult.Sql)
-	if err != nil {
-		return errors.Wrapf(err, "Prepare sql %s", insertResult.Sql)
-	}
-	defer stmt.Close()
-
-	results, err := stmt.Exec(insertResult.Values...)
-	if err != nil {
-		return errors.Wrap(err, "Exec")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return errors.Wrap(err, "Commit transaction")
+		return errors.Wrap(err, "TxExec")
 	}
 
 	if t.Database().backend.CanSupportRowAffected() {
@@ -310,7 +295,7 @@ func (t *STableSpec) insert(data interface{}, update bool, debug bool) error {
 			} else {
 				priVal, _ := insertResult.Primaries[c.Name()]
 				if !gotypes.IsNil(priVal) {
-					q = q.Equals(c.Name(), c.ConvertFromValue(priVal))
+					q = q.Equals(c.Name(), priVal)
 				}
 			}
 		}

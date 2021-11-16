@@ -25,10 +25,23 @@ func TestFetchColumns(t *testing.T) {
 			in:   "`external_id`",
 			want: []string{"external_id"},
 		},
+		{
+			in:   "`external_id`(16)",
+			want: []string{"external_id"},
+		},
+		{
+			in:   "`external_id`(16), `name`",
+			want: []string{"external_id", "name"},
+		},
+		{
+			in:   "`external_id`(16), `name`",
+			want: []string{"name", "external_id"},
+		},
 	}
 	for _, c := range cases {
 		got := FetchColumns(c.in)
-		if got[0] != c.want[0] {
+		index := NewTableIndex("", c.want, false)
+		if !index.IsIdentical(got...) {
 			t.Errorf("want: %s got: %s", c.want, got)
 		}
 	}
