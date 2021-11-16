@@ -38,10 +38,10 @@ func getQuoteStringValue(dat interface{}) string {
 	case reflect.Float32, reflect.Float64:
 		return fmt.Sprintf("%f", value.Float())
 	}
-	return strconv.Quote(GetStringValue(dat))
+	return strconv.Quote(getStringValue(dat))
 }
 
-func GetStringValue(dat interface{}) string {
+func getStringValue(dat interface{}) string {
 	value := reflect.ValueOf(dat)
 	switch value.Type() {
 	case tristate.TriStateType:

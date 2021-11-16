@@ -18,6 +18,7 @@ import (
 	"reflect"
 
 	"yunion.io/x/log"
+
 	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/util/reflectutils"
@@ -29,7 +30,7 @@ func (ts *STableSpec) Fetch(dt interface{}) error {
 	q := ts.Query()
 	dataValue := reflect.ValueOf(dt).Elem()
 	fields := reflectutils.FetchStructFieldValueSet(dataValue)
-	for _, c := range ts.Columns() {
+	for _, c := range ts.columns {
 		priVal, _ := fields.GetInterface(c.Name())
 		if c.IsPrimary() && !gotypes.IsNil(priVal) { // skip update primary key
 			q = q.Equals(c.Name(), priVal)
@@ -73,7 +74,7 @@ func (ts *STableSpec) FetchAll(dest interface{}) error {
 	}
 
 	for i := 0; i < arrayValue.Len(); i++ {
-		keyValueStr := GetStringValue(keyValues[i])
+		keyValueStr := getStringValue(keyValues[i])
 		if tmpMap, ok := tmpDestMapMap[keyValueStr]; ok {
 			err = mapString2Struct(tmpMap, arrayValue.Index(i))
 			if err != nil {

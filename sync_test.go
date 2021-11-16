@@ -16,66 +16,137 @@ package sqlchemy
 
 import (
 	"testing"
-	"time"
 )
 
-func TestSyncTable(t *testing.T) {
-	setupMockDatabaseBackend()
+func TestDecodeSqlTypeString(t *testing.T) {
+	t.Log(decodeSqlTypeString("VARCHAR(128)"))
+	t.Log(decodeSqlTypeString("VARCHAR"))
+	t.Log(decodeSqlTypeString("DECIMAL(10,2)"))
+	t.Log(decodeSqlTypeString("TINYINT UNSIGNED"))
+	t.Log(decodeSqlTypeString("INT UNSIGNED"))
+}
 
-	type TableStruct struct {
-		Id        int       `json:"id" primary:"true"`
-		Name      string    `width:"16"`
-		Age       int       `nullable:"true"`
-		IsMale    bool      `nullalbe:"true"`
-		CreatedAt time.Time `created_at:"true"`
-		UpdatedAt time.Time `updated_at:"true"`
-		Version   int64     `auto_version:"true"`
-	}
-	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
-
-	type TableStruct2 struct {
-		Id        int       `json:"id" primary:"true"`
-		Name      string    `width:"16"`
-		Age       int       `nullable:"true"`
-		CreatedAt time.Time `created_at:"true"`
-		UpdatedAt time.Time `updated_at:"true"`
-		Version   int64     `auto_version:"true"`
-	}
-	table2 := NewTableSpecFromStruct(TableStruct2{}, "testtable")
-
+func TestToColumnSpec(t *testing.T) {
 	cases := []struct {
-		cols1  []IColumnSpec
-		cols2  []IColumnSpec
-		remove int
-		update int
-		add    int
+		info sSqlColumnInfo
 	}{
 		{
-			cols1: table.Columns(),
-			cols2: table.Columns(),
+			info: sSqlColumnInfo{
+				Field:     "created_at",
+				Type:      "datetime",
+				Collation: "NULL",
+				Null:      "NO",
+				Key:       "MUL",
+				Default:   "NULL",
+			},
 		},
 		{
-			cols1:  table.Columns(),
-			cols2:  table2.Columns(),
-			remove: 1,
+			info: sSqlColumnInfo{
+				Field:     "updated_at",
+				Type:      "datetime",
+				Collation: "NULL",
+				Null:      "NO",
+				Key:       "",
+				Default:   "NULL",
+			},
 		},
 		{
-			cols1: table2.Columns(),
-			cols2: table.Columns(),
-			add:   1,
+			info: sSqlColumnInfo{
+				Field:     "update_version",
+				Type:      "int(11)",
+				Collation: "NULL",
+				Null:      "NO",
+				Key:       "",
+				Default:   "0",
+			},
+		},
+		{
+			info: sSqlColumnInfo{
+				Field:     "update_version",
+				Type:      "int unsigned",
+				Collation: "NULL",
+				Null:      "NO",
+				Key:       "",
+				Default:   "0",
+			},
+		},
+		{
+			info: sSqlColumnInfo{
+				Field:     "update_version",
+				Type:      "int(10) unsigned",
+				Collation: "NULL",
+				Null:      "NO",
+				Key:       "",
+				Default:   "0",
+			},
+		},
+		{
+			info: sSqlColumnInfo{
+				Field:     "id",
+				Type:      "varchar(128)",
+				Collation: "ascii_general_ci",
+				Null:      "NO",
+				Key:       "PRI",
+				Default:   "NULL",
+			},
+		},
+		{
+			info: sSqlColumnInfo{
+				Field:     "name",
+				Type:      "varchar(128)",
+				Collation: "utf8_general_ci",
+				Null:      "NO",
+				Key:       "MUL",
+				Default:   "NULL",
+			},
+		},
+		{
+			info: sSqlColumnInfo{
+				Field:     "cmtbound",
+				Type:      "float",
+				Collation: "NULL",
+				Null:      "YES",
+				Key:       "",
+				Default:   "1",
+			},
+		},
+		{
+			info: sSqlColumnInfo{
+				Field:     "is_sys_disk_store",
+				Type:      "tinyint(1)",
+				Collation: "NULL",
+				Null:      "NO",
+				Key:       "",
+				Default:   "1",
+			},
+		},
+		{
+			info: sSqlColumnInfo{
+				Field:     "is_sys_disk_store",
+				Type:      "tinyint unsigned",
+				Collation: "NULL",
+				Null:      "NO",
+				Key:       "",
+				Default:   "1",
+			},
+		},
+		{
+			info: sSqlColumnInfo{
+				Field:     "is_sys_disk_store",
+				Type:      "tinyint(3) unsigned",
+				Collation: "NULL",
+				Null:      "NO",
+				Key:       "",
+				Default:   "1",
+			},
 		},
 	}
 	for _, c := range cases {
-		remove, update, add := diffCols("testtable", c.cols1, c.cols2)
-		t.Logf("remove %d update %d add %d", len(remove), len(update), len(add))
-		if len(remove) != c.remove {
-			t.Errorf("remove want %d got %d", c.remove, len(remove))
-		}
-		if len(update) != c.update {
-			t.Errorf("update want %d got %d", c.update, len(update))
-		}
-		if len(add) != c.add {
-			t.Errorf("add want %d got %d", c.add, len(add))
+		got := c.info.toColumnSpec()
+		if got == nil {
+			t.Errorf("fail to convert column spec")
+		} else {
+			t.Logf("column %s", got.DefinitionString())
 		}
 	}
 }

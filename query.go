@@ -30,45 +30,39 @@ import (
 // IQuery is an interface that reprsents a SQL query, e.g.
 // SELECT ... FROM ... WHERE ...
 type IQuery interface {
-	// String returns the queryString
+	// queryString
 	String(fields ...IQueryField) string
 
-	// QueryFields returns fields in the select clause
+	// fields in the select clause
 	QueryFields() []IQueryField
 
-	// Variables returns variables in statement
+	// variables in statement
 	Variables() []interface{}
 
-	// SubQuery convert this SQL to a subquery
+	// convert this SQL to a subquery
 	SubQuery() *SSubQuery
 
-	// Field reference to a field by name
+	// reference to a field by name
 	Field(name string) IQueryField
-
-	// Database returns the database for this query
-	Database() *SDatabase
 }
 
 // IQuerySource is an interface that represents a data source of a SQL query. the source can be a table or a subquery
 // e.g. SELECT ... FROM (SELECT * FROM tbl) AS A
 type IQuerySource interface {
-	// Expression string in select ... from (expresson here)
+	// string in select ... from (expresson here)
 	Expression() string
 
-	// Alias is the alias in select ... from (express) as alias
+	// alias in select ... from (express) as alias
 	Alias() string
 
 	// variables in statement
 	Variables() []interface{}
 
-	// Field reference to a field by name, optionally giving an alias name
+	// reference to a field by name, optionally giving an alias name
 	Field(id string, alias ...string) IQueryField
 
-	// Fields return all the fields that this source provides
+	// return all the fields that this source provides
 	Fields() []IQueryField
-
-	// Database returns the database of this IQuerySource
-	Database() *SDatabase
 }
 
 // IQueryField is an interface that represents a select field in a SQL query
@@ -145,13 +139,6 @@ type SQuery struct {
 	fieldCache map[string]IQueryField
 
 	snapshot string
-
-	db *SDatabase
-}
-
-// IsGroupBy returns wether the query contains group by clauses
-func (tq *SQuery) IsGroupBy() bool {
-	return len(tq.groupBy) > 0
 }
 
 // SSubQuery represents a subquery. A subquery is a query used as a query source
@@ -268,20 +255,12 @@ func (sq *SSubQuery) Fields() []IQueryField {
 	return ret
 }
 
-// Database implementation of SSubQuery for IQuerySource
-func (sq *SSubQuery) Database() *SDatabase {
-	return sq.query.Database()
-}
-
 // DoQuery returns a SQuery instance that query specified fields from a query source
 func DoQuery(from IQuerySource, f ...IQueryField) *SQuery {
-	if from.Database() == nil {
-		panic("DoQuery IQuerySource with empty database")
-	}
 	// if len(f) == 0 {
 	// 	f = from.Fields()
 	// }
-	tq := SQuery{fields: f, from: from, db: from.Database()}
+	tq := SQuery{fields: f, from: from}
 	return &tq
 }
 
@@ -494,9 +473,6 @@ func (tq *SQuery) RightJoin(from IQuerySource, on ICondition) *SQuery {
 }*/
 
 func (tq *SQuery) _join(from IQuerySource, on ICondition, joinType QueryJoinType) *SQuery {
-	if from.Database() != tq.db {
-		panic(fmt.Sprintf("Cannot join across databases %s!=%s", tq.db.name, from.Database().name))
-	}
 	if tq.joins == nil {
 		tq.joins = make([]sQueryJoin, 0)
 	}
@@ -547,10 +523,6 @@ func (tq *SQuery) SubQuery() *SSubQuery {
 	return &sq
 }
 
-func (tq *SQuery) Database() *SDatabase {
-	return tq.db
-}
-
 // Row of SQuery returns an instance of  sql.Row for native data fetching
 func (tq *SQuery) Row() *sql.Row {
 	sqlstr := tq.String()
@@ -558,13 +530,7 @@ func (tq *SQuery) Row() *sql.Row {
 	if DEBUG_SQLCHEMY {
 		sqlDebug(sqlstr, vars)
 	}
-	if tq.db == nil {
-		panic("tq.db")
-	}
-	if tq.db.db == nil {
-		panic("tq.db.db")
-	}
-	return tq.db.db.QueryRow(sqlstr, vars...)
+	return _db.QueryRow(sqlstr, vars...)
 }
 
 // Rows of SQuery returns an instance of sql.Rows for native data fetching
@@ -574,7 +540,7 @@ func (tq *SQuery) Rows() (*sql.Rows, error) {
 	if DEBUG_SQLCHEMY {
 		sqlDebug(sqlstr, vars)
 	}
-	return tq.db.db.Query(sqlstr, vars...)
+	return _db.Query(sqlstr, vars...)
 }
 
 // Count of SQuery returns the count of a query
@@ -585,7 +551,7 @@ func (tq *SQuery) Count() int {
 	return cnt
 }
 
-func (tq *SQuery) CountQuery() *SQuery {
+func (tq *SQuery) countQuery() *SQuery {
 	tq2 := *tq
 	tq2.limit = 0
 	tq2.offset = 0
@@ -594,14 +560,13 @@ func (tq *SQuery) CountQuery() *SQuery {
 			COUNT("count"),
 		},
 		from: tq2.SubQuery(),
-		db:   tq.Database(),
 	}
 	return cq
 }
 
 // CountWithError of SQuery returns the row count of a query
 func (tq *SQuery) CountWithError() (int, error) {
-	cq := tq.CountQuery()
+	cq := tq.countQuery()
 	count := 0
 	err := cq.Row().Scan(&count)
 	if err == nil {
@@ -690,7 +655,7 @@ func rowScan2StringMap(fields []string, row IRowScanner) (map[string]string, err
 		} else {
 			value := rawValue.Interface()
 			// log.Infof("%s %s", value, reflect.TypeOf(value))
-			results[f] = GetStringValue(value)
+			results[f] = getStringValue(value)
 		}
 	}
 	return results, nil

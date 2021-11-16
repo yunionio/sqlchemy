@@ -87,11 +87,13 @@ func (ts *STableSpec) updateFields(dt interface{}, fields map[string]interface{}
 			primaryCols[name] = colValue
 			continue
 		}
-		if col.IsAutoVersion() {
+		intCol, ok := col.(*SIntegerColumn)
+		if ok && intCol.IsAutoVersion {
 			versionFields = append(versionFields, name)
 			continue
 		}
-		if col.IsUpdatedAt() {
+		dateCol, ok := col.(*SDateTimeColumn)
+		if ok && dateCol.IsUpdatedAt {
 			updatedFields = append(updatedFields, name)
 			continue
 		}
@@ -138,7 +140,7 @@ func (ts *STableSpec) updateFields(dt interface{}, fields map[string]interface{}
 	if DEBUG_SQLCHEMY || debug {
 		log.Infof("Update: %s", buf.String())
 	}
-	results, err := ts.Database().Exec(buf.String(), vars...)
+	results, err := _db.Exec(buf.String(), vars...)
 	if err != nil {
 		return err
 	}

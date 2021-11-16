@@ -69,11 +69,9 @@ type SUnion struct {
 	alias   string
 	queries []IQuery
 	fields  []IQueryField
-	// orderBy []sQueryOrder
-	// limit   int
-	// offset  int
-
-	isAll bool
+	orderBy []sQueryOrder
+	limit   int
+	offset  int
 }
 
 // Alias implementation of SUnion for IQuerySource
@@ -81,27 +79,19 @@ func (uq *SUnion) Alias() string {
 	return uq.alias
 }
 
-func (uq *SUnion) operator() string {
-	if uq.isAll {
-		return " UNION ALL "
-	} else {
-		return " UNION "
-	}
-}
-
 // Expression implementation of SUnion for IQuerySource
 func (uq *SUnion) Expression() string {
 	var buf strings.Builder
-	buf.WriteString("(")
+	buf.WriteByte('(')
 	for i := range uq.queries {
 		if i != 0 {
-			buf.WriteString(uq.operator())
+			buf.WriteString(" UNION ")
 		}
-		// buf.WriteByte('(')
+		buf.WriteByte('(')
 		buf.WriteString(uq.queries[i].String())
-		// buf.WriteByte(')')
+		buf.WriteByte(')')
 	}
-	/*if uq.orderBy != nil && len(uq.orderBy) > 0 {
+	if uq.orderBy != nil && len(uq.orderBy) > 0 {
 		buf.WriteString(" ORDER BY ")
 		for i, f := range uq.orderBy {
 			if i > 0 {
@@ -115,7 +105,7 @@ func (uq *SUnion) Expression() string {
 	}
 	if uq.offset > 0 {
 		buf.WriteString(fmt.Sprintf(" OFFSET %d", uq.offset))
-	}*/
+	}
 	buf.WriteByte(')')
 	return buf.String()
 }
@@ -140,16 +130,16 @@ func (tq *SUnion) Desc(fields ...interface{}) *SUnion {
 */
 
 // Limit adds limit to a union query
-// func (uq *SUnion) Limit(limit int) *SUnion {
-//	uq.limit = limit
-//	return uq
-// }
+func (uq *SUnion) Limit(limit int) *SUnion {
+	uq.limit = limit
+	return uq
+}
 
 // Offset adds offset to a union query
-// func (uq *SUnion) Offset(offset int) *SUnion {
-// 	uq.offset = offset
-//	return uq
-// }
+func (uq *SUnion) Offset(offset int) *SUnion {
+	uq.offset = offset
+	return uq
+}
 
 // Fields implementation of SUnion for IQuerySource
 func (uq *SUnion) Fields() []IQueryField {
@@ -178,11 +168,6 @@ func (uq *SUnion) Variables() []interface{} {
 	return ret
 }
 
-// Database implementation of SUnion for IQUerySource
-func (uq *SUnion) Database() *SDatabase {
-	return uq.queries[0].Database()
-}
-
 // Union method returns union query of several queries.
 // Require the fields of all queries should exactly match
 // deprecated
@@ -197,14 +182,6 @@ func Union(query ...IQuery) *SUnion {
 // UnionWithError constructs union query of several Queries
 // Require the fields of all queries should exactly match
 func UnionWithError(query ...IQuery) (*SUnion, error) {
-	return unionWithError(false, query...)
-}
-
-func UnionAllWithError(query ...IQuery) (*SUnion, error) {
-	return unionWithError(true, query...)
-}
-
-func unionWithError(isAll bool, query ...IQuery) (*SUnion, error) {
 	if len(query) == 0 {
 		return nil, errors.Wrap(sql.ErrNoRows, "empty union query")
 	}
@@ -214,13 +191,7 @@ func unionWithError(isAll bool, query ...IQuery) (*SUnion, error) {
 		fieldNames = append(fieldNames, f.Name())
 	}
 
-	var db *SDatabase
 	for i := 1; i < len(query); i++ {
-		if db == nil {
-			db = query[i].Database()
-		} else if db != query[i].Database() {
-			panic(ErrUnionDatabasesNotMatch)
-		}
 		qfields := query[i].QueryFields()
 		if len(fieldNames) != len(qfields) {
 			return nil, errors.Wrap(ErrUnionFieldsNotMatch, "number not match")
@@ -238,7 +209,6 @@ func unionWithError(isAll bool, query ...IQuery) (*SUnion, error) {
 		alias:   getTableAliasName(),
 		queries: query,
 		fields:  fields,
-		isAll:   isAll,
 	}
 
 	for i := range fieldNames {

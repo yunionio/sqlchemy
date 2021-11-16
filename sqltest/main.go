@@ -17,10 +17,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"os"
+
 	"reflect"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-plus/uuid"
 
 	"yunion.io/x/jsonutils"
@@ -29,7 +30,6 @@ import (
 	"yunion.io/x/pkg/util/timeutils"
 
 	"yunion.io/x/sqlchemy"
-	_ "yunion.io/x/sqlchemy/backends"
 )
 
 func uuid4() string {
@@ -73,12 +73,12 @@ func init() {
 
 type TestTable struct {
 	Id        string               `primary:"true" width:"128" charset:"ascii" nullable:"false"`
-	Name      string               `width:"64" charset:"utf8" primary:"true"`
+	Name      string               `width:"64" charset:"utf8" index:"true"`
 	Gender    string               `width:"10" charset:"ascii"`
 	Age       uint8                `default:"18"`
 	Info      jsonutils.JSONObject `nullable:"false"`
 	Compond   *SCompondStruct      `width:"1024"`
-	CreatedAt time.Time            `nullable:"false" created_at:"true" clickhouse_partition_by:"toYYYYMM(created_at)"`
+	CreatedAt time.Time            `nullable:"false" created_at:"true"`
 	UpdatedAt time.Time            `nullable:"false" updated_at:"true"`
 	Version   int                  `default:"0" nullable:"false" auto_version:"true"`
 	DeletedAt time.Time            ``
@@ -110,74 +110,22 @@ type AgentTable struct {
 }
 
 func main() {
-	if len(os.Args) <= 1 {
-		fmt.Println("Usage: go run main.go <backend> ...")
-		fmt.Println("backend: sqlite|mysql|clickhouse")
-		fmt.Println("       go run main.go sqlite <filename>")
-		fmt.Println("       go run main.go mysql <user> <passwd> <host> <database> [port]")
-		fmt.Println("       go run main.go clickhouse <>")
-		os.Exit(1)
-	}
-	// db, err := sql.Open("mysql", "testgo:openstack@tcp(127.0.0.1:3306)/testgo?charset=utf8&parseTime")
-	dbName := sqlchemy.DBName("mydb")
-
-	var db *sql.DB
-	var err error
-	var backend sqlchemy.DBBackendName
-	switch os.Args[1] {
-	case "sqlite", "sqlite3":
-		dbfile := os.Args[2]
-		db, err = sql.Open("sqlite3", fmt.Sprintf("file:%s?cache=shared&mode=rwc", dbfile))
-		backend = sqlchemy.SQLiteBackend
-	case "mysql":
-		user := os.Args[2]
-		pass := os.Args[3]
-		host := os.Args[4]
-		dbname := os.Args[5]
-		port := "3306"
-		if len(os.Args) > 6 {
-			port = os.Args[6]
-		}
-		db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime", user, pass, host, port, dbname))
-		backend = sqlchemy.MySQLBackend
-	case "clickhouse":
-		host := os.Args[2]
-		dbname := os.Args[3]
-		port := "9000"
-		if len(os.Args) > 4 {
-			port = os.Args[4]
-		}
-		db, err = sql.Open("clickhouse", fmt.Sprintf("tcp://%s:%s?database=%s&read_timeout=10&write_timeout=20", host, port, dbname))
-		backend = sqlchemy.ClickhouseBackend
-	default:
-		panic(fmt.Sprintf("unsupported backend %s", os.Args[1]))
-	}
+	db, err := sql.Open("mysql", "testgo:openstack@tcp(127.0.0.1:3306)/testgo?charset=utf8&parseTime")
 	if err != nil {
 		panic(fmt.Sprintf("Open DB failed: %s", err))
 	}
-
-	sqlchemy.SetDBWithNameBackend(db, dbName, backend)
+	sqlchemy.SetDB(db)
 	defer sqlchemy.CloseDB()
 
-	tablespec := sqlchemy.NewTableSpecFromStructWithDBName(TestTable{}, "testtable", dbName)
-	{
-		err := tablespec.Sync()
-		if err != nil {
-			panic(fmt.Sprintf("table.sync %s", err.Error()))
-		}
-	}
-	{
-		err := tablespec.CheckSync()
-		if err != nil {
-			panic(fmt.Sprintf("table.checkSync %s", err.Error()))
-		}
-	}
+	tablespec := sqlchemy.NewTableSpecFromStruct(TestTable{}, "testtable")
+	tablespec.Sync()
+	tablespec.CheckSync()
 
-	agespec := sqlchemy.NewTableSpecFromStructWithDBName(AgentTable{}, "age_tbl", dbName)
+	agespec := sqlchemy.NewTableSpecFromStruct(AgentTable{}, "age_tbl")
 	agespec.Sync()
 	agespec.CheckSync()
 
-	ticketSpec := sqlchemy.NewTableSpecFromStructWithDBName(Ticket{}, "ticket_tbl", dbName)
+	ticketSpec := sqlchemy.NewTableSpecFromStruct(Ticket{}, "ticket_tbl")
 	ticketSpec.Sync()
 	ticketSpec.CheckSync()
 
@@ -200,8 +148,6 @@ func main() {
 
 	dt1 := TestTable{}
 	dt1.Name = "Test"
-	dt1.Gender = "male"
-	dt1.Deleted = true
 	// dt1.Notes = "not null notes"
 	err = tablespec.Insert(&dt1)
 	if err != nil {
@@ -268,7 +214,7 @@ func main() {
 	}
 
 	dt3.Age = 1
-	target := TestTable{Id: dt3.Id, Name: dt3.Name}
+	target := TestTable{Id: dt3.Id}
 	err = tablespec.Increment(dt3, &target)
 	if err != nil {
 		log.Errorf("incremental faild %s", err)
@@ -299,26 +245,22 @@ func main() {
 
 	qId1 := t1.Query(t1.Field("id"))
 	t3 := ticketSpec.Instance()
-	qId2 := t3.Query(sqlchemy.CAST(t3.Field("id"), "TEXT", "id"))
+	qId2 := t3.Query(t3.Field("id"))
 
 	{
-		union, err := sqlchemy.UnionAllWithError(qId1, qId2)
-		if err != nil {
-			log.Errorf("Union with error: %s", err)
-		} else {
-			q := union.Query()
-			fmt.Println(q.String())
+		union := sqlchemy.Union(qId1, qId2)
+		q := union.Limit(20).Offset(10).Query()
+		fmt.Println(q.String())
 
-			type sID struct {
-				Id string
-			}
-			idList := make([]sID, 0)
-			err := q.All(&idList)
-			if err != nil {
-				log.Errorf("fail to query idList %s", err)
-			} else {
-				log.Infof("Test: %s", jsonutils.Marshal(idList))
-			}
+		type sID struct {
+			Id string
+		}
+		idList := make([]sID, 0)
+		err := q.All(&idList)
+		if err != nil {
+			log.Errorf("fail to query idList %s", err)
+		} else {
+			log.Infof("Test: %s", jsonutils.Marshal(idList))
 		}
 	}
 

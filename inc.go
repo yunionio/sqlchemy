@@ -24,7 +24,6 @@ import (
 	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/util/reflectutils"
-	"yunion.io/x/pkg/util/timeutils"
 )
 
 // Increment perform an incremental update on a record, the primary key of the record is specified in diff,
@@ -32,28 +31,26 @@ import (
 // if target is given as a pointer to a variable, the result will be stored in the target
 // if target is not given, the updated result will be stored in diff
 func (t *STableSpec) Increment(diff interface{}, target interface{}) error {
-	if !t.Database().backend.CanUpdate() {
-		return errors.ErrNotSupported
-	}
 	return t.incrementInternal(diff, "+", target)
 }
 
 // Decrement is similar to Increment methods, the difference is that this method will atomically decrease the numeric fields
 // with the value of diff
 func (t *STableSpec) Decrement(diff interface{}, target interface{}) error {
-	if !t.Database().backend.CanUpdate() {
-		return errors.ErrNotSupported
-	}
 	return t.incrementInternal(diff, "-", target)
 }
 
-type incrementSqlResult struct {
-	sql       string
-	vars      []interface{}
-	primaries map[string]interface{}
-}
+func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target interface{}) error {
+	if target == nil {
+		if reflect.ValueOf(diff).Kind() != reflect.Ptr {
+			return errors.Wrap(ErrNeedsPointer, "Incremental input must be a Pointer")
+		}
+	} else {
+		if reflect.ValueOf(target).Kind() != reflect.Ptr {
+			return errors.Wrap(ErrNeedsPointer, "Incremental update target must be a Pointer")
+		}
+	}
 
-func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, target interface{}) (*incrementSqlResult, error) {
 	dataValue := reflect.Indirect(reflect.ValueOf(diff))
 	fields := reflectutils.FetchStructFieldValueSet(dataValue)
 	var targetFields reflectutils.SStructFieldValueSet
@@ -62,15 +59,13 @@ func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, targe
 		targetFields = reflectutils.FetchStructFieldValueSet(targetValue)
 	}
 
-	now := timeutils.UtcNow()
-
 	primaries := make(map[string]interface{})
 	vars := make([]interface{}, 0)
 	versionFields := make([]string, 0)
 	updatedFields := make([]string, 0)
 	incFields := make([]string, 0)
 
-	for _, c := range t.Columns() {
+	for _, c := range t.columns {
 		k := c.Name()
 		v, _ := fields.GetInterface(k)
 		if c.IsPrimary() {
@@ -82,15 +77,17 @@ func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, targe
 			} else if c.IsText() {
 				primaries[k] = ""
 			} else {
-				return nil, ErrEmptyPrimaryKey
+				return ErrEmptyPrimaryKey
 			}
 			continue
 		}
-		if c.IsUpdatedAt() {
+		dtc, ok := c.(*SDateTimeColumn)
+		if ok && dtc.IsUpdatedAt {
 			updatedFields = append(updatedFields, k)
 			continue
 		}
-		if c.IsAutoVersion() {
+		nc, ok := c.(*SIntegerColumn)
+		if ok && nc.IsAutoVersion {
 			versionFields = append(versionFields, k)
 			continue
 		}
@@ -102,10 +99,10 @@ func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, targe
 	}
 
 	if len(vars) == 0 {
-		return nil, ErrNoDataToUpdate
+		return ErrNoDataToUpdate
 	}
 	if len(primaries) == 0 {
-		return nil, ErrEmptyPrimaryKey
+		return ErrEmptyPrimaryKey
 	}
 
 	var buf bytes.Buffer
@@ -123,8 +120,7 @@ func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, targe
 		buf.WriteString(fmt.Sprintf(", `%s` = `%s` + 1", versionField, versionField))
 	}
 	for _, updatedField := range updatedFields {
-		buf.WriteString(fmt.Sprintf(", `%s` = ?", updatedField))
-		vars = append(vars, now)
+		buf.WriteString(fmt.Sprintf(", `%s` = UTC_TIMESTAMP()", updatedField))
 	}
 
 	buf.WriteString(" WHERE ")
@@ -143,44 +139,22 @@ func (t *STableSpec) incrementInternalSql(diff interface{}, opcode string, targe
 		log.Infof("Update: %s %s", buf.String(), vars)
 	}
 
-	return &incrementSqlResult{
-		sql:       buf.String(),
-		vars:      vars,
-		primaries: primaries,
-	}, nil
-}
-
-func (t *STableSpec) incrementInternal(diff interface{}, opcode string, target interface{}) error {
-	if target == nil {
-		if reflect.ValueOf(diff).Kind() != reflect.Ptr {
-			return errors.Wrap(ErrNeedsPointer, "Incremental input must be a Pointer")
-		}
-	} else {
-		if reflect.ValueOf(target).Kind() != reflect.Ptr {
-			return errors.Wrap(ErrNeedsPointer, "Incremental update target must be a Pointer")
-		}
-	}
-
-	intResult, err := t.incrementInternalSql(diff, opcode, target)
-
-	results, err := t.Database().Exec(intResult.sql, intResult.vars...)
+	results, err := _db.Exec(buf.String(), vars...)
 	if err != nil {
-		return errors.Wrapf(err, "_db.Exec %s %#v", intResult.sql, intResult.vars)
+		return errors.Wrapf(err, "_db.Exec %s %#v", buf.String(), vars)
 	}
-	if t.Database().backend.CanSupportRowAffected() {
-		aCnt, err := results.RowsAffected()
-		if err != nil {
-			return errors.Wrap(err, "results.RowsAffected")
+	aCnt, err := results.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "results.RowsAffected")
+	}
+	if aCnt != 1 {
+		if aCnt == 0 {
+			return sql.ErrNoRows
 		}
-		if aCnt != 1 {
-			if aCnt == 0 {
-				return sql.ErrNoRows
-			}
-			return errors.Wrapf(ErrUnexpectRowCount, "affected rows %d != 1", aCnt)
-		}
+		return errors.Wrapf(ErrUnexpectRowCount, "affected rows %d != 1", aCnt)
 	}
 	q := t.Query()
-	for k, v := range intResult.primaries {
+	for k, v := range primaries {
 		q = q.Equals(k, v)
 	}
 	if target != nil {
