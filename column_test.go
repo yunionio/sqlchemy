@@ -3,6 +3,8 @@ package sqlchemy
 import (
 	"reflect"
 	"testing"
+
+	"yunion.io/x/jsonutils"
 )
 
 func TestBaseColumns(t *testing.T) {
@@ -64,6 +66,71 @@ func TestBaseColumns(t *testing.T) {
 		got := NewBaseColumn(c.name, c.sqlType, c.tags, c.isPointer)
 		if !reflect.DeepEqual(got, c.want) {
 			t.Errorf("want: %#v got: %#v", c.want, got)
+		}
+	}
+}
+
+func TestConvertFromString(t *testing.T) {
+	cases := []struct {
+		in   string
+		want interface{}
+	}{
+		{
+			in:   `{"name":"John"}`,
+			want: `{"name":"John"}`,
+		},
+		{
+			in:   "test",
+			want: `"test"`,
+		},
+		{
+			in:   "",
+			want: "null",
+		},
+	}
+	for _, c := range cases {
+		cc := SBaseCompoundColumn{}
+		got := cc.ConvertFromString(c.in)
+		if !reflect.DeepEqual(got, c.want) {
+			t.Errorf("want: %s got %s", jsonutils.Marshal(c.want), jsonutils.Marshal(got))
+		}
+	}
+}
+
+type sSerial struct {
+}
+
+func (s *sSerial) String() string {
+	return "test"
+}
+
+func (s *sSerial) IsZero() bool {
+	return false
+}
+
+func TestConvertFromValue(t *testing.T) {
+	cases := []struct {
+		in   interface{}
+		want interface{}
+	}{
+		{
+			in:   &sSerial{},
+			want: `test`,
+		},
+		{
+			in: struct {
+				Name string
+			}{
+				Name: "abc",
+			},
+			want: `{"name":"abc"}`,
+		},
+	}
+	for _, c := range cases {
+		cc := SBaseCompoundColumn{}
+		got := cc.ConvertFromValue(c.in)
+		if !reflect.DeepEqual(got, c.want) {
+			t.Errorf("want: %s got %s", jsonutils.Marshal(c.want), jsonutils.Marshal(got))
 		}
 	}
 }
