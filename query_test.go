@@ -292,7 +292,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(NewFunction(NewCase().When(IsTrue(t.Field("is_male")), NewStringField("MALE")).Else(NewStringField("FEMALE")), "Gender"))
 				return q
 			}(),
-			want: "SELECT CASE WHEN `t46`.`is_male` = 1 THEN \"MALE\" ELSE \"FEMALE\" AS `` END AS `Gender` FROM `testtable` AS `t46`",
+			want: "SELECT CASE WHEN `t46`.`is_male` = 1 THEN \"MALE\" ELSE \"FEMALE\" END AS `Gender` FROM `testtable` AS `t46`",
 		},
 		{
 			query: func() *SQuery {
@@ -421,6 +421,60 @@ func TestMapString2Struct(t *testing.T) {
 			if !reflect.DeepEqual(c.want, c.dest) {
 				t.Errorf("want: %#v got: %#v", c.want, c.dest)
 			}
+		}
+	}
+}
+
+func TestQueryString2(t *testing.T) {
+	SetupMockDatabaseBackend()
+	ResetTableID()
+
+	type TableStruct struct {
+		Id      int    `json:"id" primary:"true"`
+		Name    string `width:"16"`
+		IpStart string `width:"64"`
+		IpEnd   string `width:"64"`
+	}
+	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
+	cases := []struct {
+		query *SQuery
+		want  string
+		vars  int
+	}{
+		{
+			query: table.Instance().Query().Equals("id", 1),
+			want:  "SELECT `t1`.`id`, `t1`.`name`, `t1`.`ip_start`, `t1`.`ip_end` FROM `testtable` AS `t1` WHERE `t1`.`id` = ( ? )",
+			vars:  1,
+		},
+		{
+			query: func() *SQuery {
+				t := table.Instance()
+				q := t.Query()
+				q = q.Filter(Between(NewStringField("192.168.0.1"), q.Field("ip_start"), q.Field("ip_end")))
+				return q
+			}(),
+			want: "SELECT `t2`.`id`, `t2`.`name`, `t2`.`ip_start`, `t2`.`ip_end` FROM `testtable` AS `t2` WHERE \"192.168.0.1\" BETWEEN `t2`.`ip_start` AND `t2`.`ip_end`",
+			vars: 0,
+		},
+		{
+			query: func() *SQuery {
+				t := table.Instance()
+				q := t.Query()
+				q = q.Filter(Between(NewConstField("192.168.0.1"), q.Field("ip_start"), q.Field("ip_end")))
+				return q
+			}(),
+			want: "SELECT `t3`.`id`, `t3`.`name`, `t3`.`ip_start`, `t3`.`ip_end` FROM `testtable` AS `t3` WHERE \"192.168.0.1\" BETWEEN `t3`.`ip_start` AND `t3`.`ip_end`",
+			vars: 0,
+		},
+	}
+	for _, c := range cases {
+		got := c.query.String()
+		if got != c.want {
+			t.Errorf("want: %s got: %s", c.want, got)
+		}
+		vars := c.query.Variables()
+		if len(vars) != c.vars {
+			t.Errorf("want vars: %d got %d", c.vars, len(vars))
 		}
 	}
 }
