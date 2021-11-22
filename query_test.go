@@ -88,7 +88,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t9`.`id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? ) UNION SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t10`)",
+			want: "SELECT `t9`.`id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` FROM (SELECT `t54`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t54` UNION SELECT `t55`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t55`) AS `t10`)",
 			vars: 2,
 		},
 		{
@@ -303,7 +303,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t47`.`id` FROM `testtable` AS `t47` WHERE `t47`.`name` IN (SELECT `t48`.`name` FROM (SELECT `t47`.`name` FROM `testtable` AS `t47` WHERE `t47`.`id` = ( ? ) UNION ALL SELECT `t47`.`name` FROM `testtable` AS `t47` WHERE `t47`.`id` = ( ? )) AS `t48`)",
+			want: "SELECT `t47`.`id` FROM `testtable` AS `t47` WHERE `t47`.`name` IN (SELECT `t48`.`name` FROM (SELECT `t58`.`name` FROM (SELECT `t47`.`name` FROM `testtable` AS `t47` WHERE `t47`.`id` = ( ? )) AS `t58` UNION ALL SELECT `t59`.`name` FROM (SELECT `t47`.`name` FROM `testtable` AS `t47` WHERE `t47`.`id` = ( ? )) AS `t59`) AS `t48`)",
 			vars: 2,
 		},
 		{
