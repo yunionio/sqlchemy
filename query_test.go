@@ -88,7 +88,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t9`.`id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` FROM (SELECT `t54`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t54` UNION SELECT `t55`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t55`) AS `t10`)",
+			want: "SELECT `t9`.`id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` FROM (SELECT `t55`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t55` UNION SELECT `t56`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t56`) AS `t10`)",
 			vars: 2,
 		},
 		{
@@ -261,10 +261,11 @@ func TestQueryString(t *testing.T) {
 		{
 			query: func() *SQuery {
 				t := table.Instance()
-				q := t.Query(NewStringField("FEMALE").Label("Gender")).IsFalse("is_male")
+				subq := t.Query(NewStringField("FEMALE").Label("Gender")).IsFalse("is_male").SubQuery()
+				q := subq.Query(COUNT("count", subq.Field("Gender")))
 				return q
 			}(),
-			want: "SELECT \"FEMALE\" AS `Gender` FROM `testtable` AS `t43` WHERE `t43`.`is_male` = 0",
+			want: "SELECT COUNT(`t44`.`Gender`) AS `count` FROM (SELECT \"FEMALE\" AS `Gender` FROM `testtable` AS `t43` WHERE `t43`.`is_male` = 0) AS `t44`",
 		},
 		{
 			query: func() *SQuery {
@@ -272,7 +273,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(SUBSTR("name2", t.Field("name"), 0, 2)).GroupBy(t.Field("name"))
 				return q
 			}(),
-			want: "SELECT SUBSTR(`t44`.`name`, 0, 2) AS `name2` FROM `testtable` AS `t44` GROUP BY `t44`.`name`",
+			want: "SELECT SUBSTR(`t45`.`name`, 0, 2) AS `name2` FROM `testtable` AS `t45` GROUP BY `t45`.`name`",
 		},
 		{
 			query: func() *SQuery {
@@ -280,7 +281,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(CONCAT("name_age", t.Field("name"), CAST(t.Field("age"), "VARCHAR", "")))
 				return q
 			}(),
-			want: "SELECT CONCAT(`t45`.`name`,CAST(`t45`.`age` AS VARCHAR)) AS `name_age` FROM `testtable` AS `t45`",
+			want: "SELECT CONCAT(`t46`.`name`,CAST(`t46`.`age` AS VARCHAR)) AS `name_age` FROM `testtable` AS `t46`",
 		},
 		{
 			query: NewRawQuery("show create table `testtable`", "abc"),
@@ -292,7 +293,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(NewFunction(NewCase().When(IsTrue(t.Field("is_male")), NewStringField("MALE")).Else(NewStringField("FEMALE")), "Gender"))
 				return q
 			}(),
-			want: "SELECT CASE WHEN `t46`.`is_male` = 1 THEN \"MALE\" ELSE \"FEMALE\" END AS `Gender` FROM `testtable` AS `t46`",
+			want: "SELECT CASE WHEN `t47`.`is_male` = 1 THEN \"MALE\" ELSE \"FEMALE\" END AS `Gender` FROM `testtable` AS `t47`",
 		},
 		{
 			query: func() *SQuery {
@@ -303,7 +304,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t47`.`id` FROM `testtable` AS `t47` WHERE `t47`.`name` IN (SELECT `t48`.`name` FROM (SELECT `t58`.`name` FROM (SELECT `t47`.`name` FROM `testtable` AS `t47` WHERE `t47`.`id` = ( ? )) AS `t58` UNION ALL SELECT `t59`.`name` FROM (SELECT `t47`.`name` FROM `testtable` AS `t47` WHERE `t47`.`id` = ( ? )) AS `t59`) AS `t48`)",
+			want: "SELECT `t48`.`id` FROM `testtable` AS `t48` WHERE `t48`.`name` IN (SELECT `t49`.`name` FROM (SELECT `t59`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` = ( ? )) AS `t59` UNION ALL SELECT `t60`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` = ( ? )) AS `t60`) AS `t49`)",
 			vars: 2,
 		},
 		{
@@ -316,7 +317,7 @@ func TestQueryString(t *testing.T) {
 				q2 = q2.Equals("name", "John")
 				return q2
 			}(),
-			want: "SELECT `t50`.`id`, `t50`.`name`, `t50`.`age`, `t50`.`is_male` FROM `testtable` AS `t50` JOIN (SELECT `t50`.`name` FROM `testtable` AS `t50` WHERE `t50`.`id` = ( ? )) AS `t51` ON `t50`.`name` IN `t51`.`name` WHERE `t50`.`name` = ( ? )",
+			want: "SELECT `t51`.`id`, `t51`.`name`, `t51`.`age`, `t51`.`is_male` FROM `testtable` AS `t51` JOIN (SELECT `t51`.`name` FROM `testtable` AS `t51` WHERE `t51`.`id` = ( ? )) AS `t52` ON `t51`.`name` IN `t52`.`name` WHERE `t51`.`name` = ( ? )",
 			vars: 2,
 		},
 	}
