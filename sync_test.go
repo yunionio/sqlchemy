@@ -15,11 +15,12 @@
 package sqlchemy
 
 import (
+	"reflect"
 	"testing"
 	"time"
 )
 
-func TestSyncTable(t *testing.T) {
+func TestDiffCols(t *testing.T) {
 	SetupMockDatabaseBackend()
 
 	type TableStruct struct {
@@ -66,7 +67,7 @@ func TestSyncTable(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		remove, update, add := diffCols("testtable", c.cols1, c.cols2)
+		remove, update, add := DiffCols("testtable", c.cols1, c.cols2)
 		t.Logf("remove %d update %d add %d", len(remove), len(update), len(add))
 		if len(remove) != c.remove {
 			t.Errorf("remove want %d got %d", c.remove, len(remove))
@@ -77,5 +78,67 @@ func TestSyncTable(t *testing.T) {
 		if len(add) != c.add {
 			t.Errorf("add want %d got %d", c.add, len(add))
 		}
+	}
+}
+
+func TestDiffIndex(t *testing.T) {
+	cases := []struct {
+		index1 []STableIndex
+		index2 []STableIndex
+		remove []STableIndex
+		add    []STableIndex
+	}{
+		{
+			index1: []STableIndex{
+				NewTableIndex("ix_table_name", []string{"name"}, false),
+			},
+			index2: []STableIndex{
+				NewTableIndex("ix_table_name", []string{"name", "age"}, false),
+			},
+			remove: []STableIndex{
+				NewTableIndex("ix_table_name", []string{"name"}, false),
+			},
+			add: []STableIndex{
+				NewTableIndex("ix_table_name", []string{"name", "age"}, false),
+			},
+		},
+	}
+	for _, c := range cases {
+		add, remove := diffIndexes(c.index1, c.index2)
+		if !reflect.DeepEqual(add, c.add) {
+			t.Errorf("Add got %#v want %#v", add, c.add)
+		}
+		if !reflect.DeepEqual(remove, c.remove) {
+			t.Errorf("Remove got %#v want %#v", remove, c.remove)
+		}
+	}
+}
+
+func TestSync(t *testing.T) {
+	type TableStruct1 struct {
+		Id     uint64 `auto_increment:"true"`
+		Name   string `width:"64" charset:"utf8" index:"true"`
+		Age    int    `nullable:"true" default:"12"`
+		IsMale *bool  `nullable:"false" default:"true"`
+	}
+	type TableStruct2 struct {
+		Id     uint64 `auto_increment:"true"`
+		Name   string `width:"128" charset:"utf8"`
+		Age    uint   `nullable:"true" default:"10" index:"true"`
+		Gender string `width:"8" nullable:"false" default:"male"`
+	}
+
+	SetupMockDatabaseBackend()
+	ts1 := NewTableSpecFromStruct(TableStruct1{}, "table1")
+	ts2 := NewTableSpecFromStruct(TableStruct2{}, "table1")
+
+	changes := STableChanges{}
+	changes.RemoveColumns, changes.UpdatedColumns, changes.AddColumns = DiffCols(ts2.Name(), ts1.Columns(), ts2.Columns())
+	backend := &sMockBackend{}
+	sqls := backend.CommitTableChangeSQL(ts2, changes)
+	want := []string{}
+	if !reflect.DeepEqual(sqls, want) {
+		t.Errorf("Expect: %s", want)
+		t.Errorf("Got: %s", sqls)
 	}
 }
