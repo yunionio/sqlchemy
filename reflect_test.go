@@ -17,9 +17,13 @@ package sqlchemy
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"yunion.io/x/jsonutils"
 	"yunion.io/x/pkg/gotypes"
+	"yunion.io/x/pkg/tristate"
+	"yunion.io/x/pkg/util/reflectutils"
+	"yunion.io/x/pkg/util/timeutils"
 )
 
 type SerializableType struct {
@@ -112,6 +116,125 @@ func TestGetQuoteStringValue(t *testing.T) {
 		got := getQuoteStringValue(c.in)
 		if got != c.want {
 			t.Errorf("want %s got %s for %s", c.want, got, c.in)
+		}
+	}
+}
+
+type STag struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type STestStruct struct {
+	IntV int `json:"int_v"`
+
+	UIntV uint `json:"uint_v"`
+
+	BoolV *bool `json:"bool_v"`
+
+	FloatV float64 `json:"float_v"`
+
+	TristateV tristate.TriState `json:"tristate_v"`
+
+	IntA []int `json:"int_a"`
+
+	TagA []STag `json:"tag_a"`
+
+	MapA map[string]string `json:"map_a"`
+
+	TimeV time.Time `json:"time_v"`
+}
+
+var (
+	ts = &STestStruct{}
+)
+
+func TestSetValueBySQLString(t *testing.T) {
+	tsValue := reflect.Indirect(reflect.ValueOf(ts))
+	ss := reflectutils.FetchAllStructFieldValueSetForWrite(tsValue)
+
+	cases := []struct {
+		field  string
+		sqlstr string
+		want   interface{}
+	}{
+		{
+			field:  "int_v",
+			sqlstr: "1",
+			want:   1,
+		},
+		{
+			field:  "uint_v",
+			sqlstr: "1",
+			want:   uint(1),
+		},
+		{
+			field:  "bool_v",
+			sqlstr: "true",
+			want: func() *bool {
+				v := true
+				return &v
+			}(),
+		},
+		{
+			field:  "float_v",
+			sqlstr: "1.234",
+			want:   float64(1.234),
+		},
+		{
+			field:  "tristate_v",
+			sqlstr: "none",
+			want:   tristate.None,
+		},
+		{
+			field:  "int_a",
+			sqlstr: "[1,3,5,7,9]",
+			want:   []int{1, 3, 5, 7, 9},
+		},
+		{
+			field:  "tag_a",
+			sqlstr: `[{"key":"name","value":"John"},{"key":"gender","value":"male"}]`,
+			want: []STag{
+				{
+					Key:   "name",
+					Value: "John",
+				},
+				{
+					Key:   "gender",
+					Value: "male",
+				},
+			},
+		},
+		{
+			field:  "map_a",
+			sqlstr: `{"name":"John","gender":"male"}`,
+			want: map[string]string{
+				"name":   "John",
+				"gender": "male",
+			},
+		},
+		{
+			field:  "time_v",
+			sqlstr: "2021-10-01T00:00:00Z",
+			want: func() time.Time {
+				tm, _ := timeutils.ParseTimeStr("2021-10-01T00:00:00Z")
+				return tm
+			}(),
+		},
+	}
+	for _, c := range cases {
+		v, ok := ss.GetValue(c.field)
+		if !ok {
+			t.Errorf("GetValue %s not exist", c.field)
+		} else {
+			err := setValueBySQLString(v, c.sqlstr)
+			if err != nil {
+				t.Errorf("setValueBySQLString %s %s", c.field, err)
+			} else {
+				if !reflect.DeepEqual(v.Interface(), c.want) {
+					t.Errorf("str: %s got: %v want: %v", c.sqlstr, v, c.want)
+				}
+			}
 		}
 	}
 }
