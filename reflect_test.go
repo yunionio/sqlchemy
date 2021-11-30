@@ -136,6 +136,8 @@ type STestStruct struct {
 
 	FloatV float64 `json:"float_v"`
 
+	StrV string `json:"str_v"`
+
 	TristateV tristate.TriState `json:"tristate_v"`
 
 	IntA []int `json:"int_a"`
@@ -212,6 +214,11 @@ func TestSetValueBySQLString(t *testing.T) {
 			field:  "tristate_v",
 			sqlstr: "none",
 			want:   tristate.None,
+		},
+		{
+			field:  "str_v",
+			sqlstr: "abcdEF",
+			want:   "abcdEF",
 		},
 		{
 			field:  "int_a",
