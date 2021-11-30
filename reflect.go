@@ -26,6 +26,7 @@ import (
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
 	"yunion.io/x/pkg/util/timeutils"
+	"yunion.io/x/pkg/utils"
 )
 
 func getQuoteStringValue(dat interface{}) string {
@@ -98,12 +99,12 @@ func setValueBySQLString(value reflect.Value, val string) error {
 	}
 	switch value.Type() {
 	case tristate.TriStateType:
-		if val == "0" {
-			value.Set(tristate.TriStateFalseValue)
-		} else if val == "1" {
+		if val == "" || val == "none" || val == "null" {
+			value.Set(tristate.TriStateNoneValue)
+		} else if utils.ToBool(val) {
 			value.Set(tristate.TriStateTrueValue)
 		} else {
-			value.Set(tristate.TriStateNoneValue)
+			value.Set(tristate.TriStateFalseValue)
 		}
 		return nil
 	case gotypes.TimeType:
@@ -118,10 +119,10 @@ func setValueBySQLString(value reflect.Value, val string) error {
 	}
 	switch value.Kind() {
 	case reflect.Bool:
-		if val == "0" {
-			value.SetBool(false)
-		} else {
+		if utils.ToBool(val) {
 			value.SetBool(true)
+		} else {
+			value.SetBool(false)
 		}
 		return nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -149,12 +150,46 @@ func setValueBySQLString(value reflect.Value, val string) error {
 		value.SetString(val)
 		return nil
 	case reflect.Slice:
-		elemValue := reflect.New(value.Type().Elem()).Elem()
-		err := setValueBySQLString(elemValue, val)
+		jsonV, err := jsonutils.ParseString(val)
 		if err != nil {
-			return errors.Wrap(err, "reflect.Slice")
+			return errors.Wrapf(err, "jsonutils.ParseString %s", val)
 		}
-		value.Set(reflect.Append(value, elemValue))
+		jsonA, err := jsonV.GetArray()
+		if err != nil {
+			return errors.Wrap(err, "jsonV.GetArray")
+		}
+		for i := range jsonA {
+			elemValue := reflect.New(value.Type().Elem()).Elem()
+			jsonStr, _ := jsonA[i].GetString()
+			err := setValueBySQLString(elemValue, jsonStr)
+			if err != nil {
+				return errors.Wrapf(err, "TestSetValueBySQLString %s", jsonA[i].String())
+			}
+			value.Set(reflect.Append(value, elemValue))
+		}
+		return nil
+	case reflect.Map:
+		jsonV, err := jsonutils.ParseString(val)
+		if err != nil {
+			return errors.Wrapf(err, "jsonutils.ParseString %s", val)
+		}
+		jsonM, err := jsonV.GetMap()
+		if err != nil {
+			return errors.Wrapf(err, "jsonV.GetMap")
+		}
+		for k, jsonV := range jsonM {
+			elemValue := reflect.New(value.Type().Elem()).Elem()
+			jsonStr, _ := jsonV.GetString()
+			err := setValueBySQLString(elemValue, jsonStr)
+			if err != nil {
+				return errors.Wrapf(err, "TestSetValueBySQLString %s", jsonV.String())
+			}
+			if value.IsNil() {
+				mapValue := reflect.MakeMap(value.Type())
+				value.Set(mapValue)
+			}
+			value.SetMapIndex(reflect.ValueOf(k), elemValue)
+		}
 		return nil
 	default:
 		if valueType := value.Type(); valueType.Implements(gotypes.ISerializableType) {
@@ -170,7 +205,18 @@ func setValueBySQLString(value reflect.Value, val string) error {
 			}
 			return setValueBySQLString(value.Elem(), val)
 		} else {
-			return errors.Wrapf(ErrNotSupported, "not supported type: %s", valueType)
+			jsonV, err := jsonutils.ParseString(val)
+			if err != nil {
+				return errors.Wrapf(err, "%s not a json string: %s", val, err)
+			}
+			newVal := reflect.New(value.Type())
+			err = jsonV.Unmarshal(newVal.Interface())
+			if err != nil {
+				return errors.Wrap(err, "Unmarshal fail")
+			}
+			value.Set(reflect.Indirect(newVal))
+			return nil
+			// return errors.Wrapf(ErrNotSupported, "not supported type: %s", valueType)
 		}
 	}
 }
