@@ -26,7 +26,6 @@ import (
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
 	"yunion.io/x/pkg/util/timeutils"
-	"yunion.io/x/pkg/utils"
 )
 
 func getQuoteStringValue(dat interface{}) string {
@@ -99,12 +98,12 @@ func setValueBySQLString(value reflect.Value, val string) error {
 	}
 	switch value.Type() {
 	case tristate.TriStateType:
-		if val == "" || val == "none" || val == "null" {
-			value.Set(tristate.TriStateNoneValue)
-		} else if utils.ToBool(val) {
+		if val == "1" {
 			value.Set(tristate.TriStateTrueValue)
-		} else {
+		} else if val == "0" {
 			value.Set(tristate.TriStateFalseValue)
+		} else {
+			value.Set(tristate.TriStateNoneValue)
 		}
 		return nil
 	case gotypes.TimeType:
@@ -119,10 +118,10 @@ func setValueBySQLString(value reflect.Value, val string) error {
 	}
 	switch value.Kind() {
 	case reflect.Bool:
-		if utils.ToBool(val) {
-			value.SetBool(true)
-		} else {
+		if val == "0" {
 			value.SetBool(false)
+		} else {
+			value.SetBool(true)
 		}
 		return nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:

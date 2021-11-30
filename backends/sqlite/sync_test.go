@@ -48,8 +48,8 @@ func TestSync(t *testing.T) {
 		"PRAGMA encoding=\"UTF-8\"",
 		"CREATE TABLE IF NOT EXISTS `table1_tmp` (\n`age` INTEGER DEFAULT 10,\n`gender` TEXT NOT NULL DEFAULT 'male' COLLATE NOCASE,\n`id` INTEGER PRIMARY KEY NOT NULL,\n`name` TEXT COLLATE NOCASE\n)",
 		"INSERT INTO `table1_tmp` SELECT `age`, `gender`, `id`, `name` FROM `table1`",
-		"ALERT TABLE `table1` RENAME TO `table1_old`",
-		"ALERT TABLE `table1_tmp` RENAME TO `table1`",
+		"ALTER TABLE `table1` RENAME TO `table1_old`",
+		"ALTER TABLE `table1_tmp` RENAME TO `table1`",
 	}
 	if !reflect.DeepEqual(sqls, want) {
 		t.Errorf("Expect: %s", want)

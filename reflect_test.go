@@ -132,6 +132,8 @@ type STestStruct struct {
 
 	BoolV *bool `json:"bool_v"`
 
+	BoolV2 bool `json:"bool_v2"`
+
 	FloatV float64 `json:"float_v"`
 
 	TristateV tristate.TriState `json:"tristate_v"`
@@ -170,16 +172,41 @@ func TestSetValueBySQLString(t *testing.T) {
 		},
 		{
 			field:  "bool_v",
-			sqlstr: "true",
+			sqlstr: "1",
 			want: func() *bool {
 				v := true
 				return &v
 			}(),
 		},
 		{
+			field:  "bool_v2",
+			sqlstr: "2",
+			want:   true,
+		},
+		{
+			field:  "bool_v2",
+			sqlstr: "0",
+			want:   false,
+		},
+		{
 			field:  "float_v",
 			sqlstr: "1.234",
 			want:   float64(1.234),
+		},
+		{
+			field:  "tristate_v",
+			sqlstr: "0",
+			want:   tristate.False,
+		},
+		{
+			field:  "tristate_v",
+			sqlstr: "1",
+			want:   tristate.True,
+		},
+		{
+			field:  "tristate_v",
+			sqlstr: "2",
+			want:   tristate.None,
 		},
 		{
 			field:  "tristate_v",

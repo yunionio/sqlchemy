@@ -102,9 +102,9 @@ func (sqlite *SSqliteBackend) CommitTableChangeSQL(ts sqlchemy.ITableSpec, chang
 		sql := fmt.Sprintf("INSERT INTO `%s` SELECT %s FROM `%s`", newTableName, strings.Join(colNames, ", "), ts.Name())
 		ret = append(ret, sql)
 		// change name
-		sql = fmt.Sprintf("ALERT TABLE `%s` RENAME TO `%s`", ts.Name(), oldTableName)
+		sql = fmt.Sprintf("ALTER TABLE `%s` RENAME TO `%s`", ts.Name(), oldTableName)
 		ret = append(ret, sql)
-		sql = fmt.Sprintf("ALERT TABLE `%s` RENAME TO `%s`", newTableName, ts.Name())
+		sql = fmt.Sprintf("ALTER TABLE `%s` RENAME TO `%s`", newTableName, ts.Name())
 		ret = append(ret, sql)
 	}
 
