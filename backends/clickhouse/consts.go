@@ -20,4 +20,7 @@ const (
 
 	// TAG_ORDER defines fields of ORDER BY
 	TAG_ORDER = "clickhouse_order_by"
+
+	// TAG_TTL defines table TTL
+	TAG_TTL = "clickhouse_ttl"
 )
