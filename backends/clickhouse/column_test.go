@@ -79,6 +79,7 @@ var (
 	notNullTextCol = NewTextColumn("field", "String", map[string]string{sqlchemy.TAG_WIDTH: "16", sqlchemy.TAG_NULLABLE: "false"}, false)
 	defTextCol     = NewTextColumn("field", "String", map[string]string{sqlchemy.TAG_WIDTH: "16", sqlchemy.TAG_DEFAULT: "new!"}, false)
 	dateCol        = NewDateTimeColumn("field", nil, false)
+	ttlDateCol     = NewDateTimeColumn("field", map[string]string{TAG_TTL: "3m"}, false)
 	notNullDateCol = NewDateTimeColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
 	compCol        = NewCompoundColumn("field", nil, false)
 )
@@ -154,6 +155,10 @@ func TestColumns(t *testing.T) {
 		},
 		{
 			in:   &dateCol,
+			want: "`field` Nullable(DateTime)",
+		},
+		{
+			in:   &ttlDateCol,
 			want: "`field` Nullable(DateTime)",
 		},
 		{

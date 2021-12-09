@@ -30,7 +30,9 @@ func TestDiffCols(t *testing.T) {
 		IsMale    bool      `nullalbe:"true"`
 		CreatedAt time.Time `created_at:"true"`
 		UpdatedAt time.Time `updated_at:"true"`
-		Version   int64     `auto_version:"true"`
+		Version   int32     `auto_version:"true"`
+		DispName  string    `width:"10"`
+		Dept      string    `width:"10"`
 	}
 	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
 
@@ -41,6 +43,7 @@ func TestDiffCols(t *testing.T) {
 		CreatedAt time.Time `created_at:"true"`
 		UpdatedAt time.Time `updated_at:"true"`
 		Version   int64     `auto_version:"true"`
+		DispName  string    `width:"20"`
 	}
 	table2 := NewTableSpecFromStruct(TableStruct2{}, "testtable")
 
@@ -58,12 +61,14 @@ func TestDiffCols(t *testing.T) {
 		{
 			cols1:  table.Columns(),
 			cols2:  table2.Columns(),
-			remove: 1,
+			remove: 2,
+			update: 1,
 		},
 		{
-			cols1: table2.Columns(),
-			cols2: table.Columns(),
-			add:   1,
+			cols1:  table2.Columns(),
+			cols2:  table.Columns(),
+			add:    2,
+			update: 1,
 		},
 	}
 	for _, c := range cases {
@@ -102,6 +107,16 @@ func TestDiffIndex(t *testing.T) {
 				NewTableIndex("ix_table_name", []string{"name", "age"}, false),
 			},
 		},
+		{
+			index1: []STableIndex{
+				NewTableIndex("ix_table_name", []string{"name"}, false),
+			},
+			index2: []STableIndex{
+				NewTableIndex("ix_table_name", []string{"name"}, false),
+			},
+			remove: []STableIndex{},
+			add:    []STableIndex{},
+		},
 	}
 	for _, c := range cases {
 		add, remove := diffIndexes(c.index1, c.index2)
@@ -134,6 +149,7 @@ func TestSync(t *testing.T) {
 
 	changes := STableChanges{}
 	changes.RemoveColumns, changes.UpdatedColumns, changes.AddColumns = DiffCols(ts2.Name(), ts1.Columns(), ts2.Columns())
+	changes.OldColumns = ts1.Columns()
 	backend := &sMockBackend{}
 	sqls := backend.CommitTableChangeSQL(ts2, changes)
 	want := []string{}
