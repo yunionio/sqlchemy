@@ -16,6 +16,7 @@ package sqlchemy
 
 import (
 	"testing"
+	"time"
 )
 
 func TestUpdateSQL(t *testing.T) {
@@ -39,6 +40,65 @@ func TestUpdateSQL(t *testing.T) {
 	}
 	want := "UPDATE `testtable` SET `name` = ?, `version` = `version` + 1, `updated_at` = ? WHERE `id` = ?"
 	wantVars := 3
+	if want != result.sql {
+		t.Fatalf("SQL: want %s got %s", want, result.sql)
+	}
+	if wantVars != len(result.vars) {
+		t.Fatalf("Vars want %d got %d", wantVars, len(result.vars))
+	}
+}
+
+type SMetadata struct {
+	// 资源类型
+	// example: network
+	ObjType string `width:"40" charset:"ascii" index:"true" list:"user" get:"user"`
+
+	// 资源ID
+	// example: 87321a70-1ecb-422a-8b0c-c9aa632a46a7
+	ObjId string `width:"88" charset:"ascii" index:"true" list:"user" get:"user"`
+
+	// 资源组合ID
+	// example: network::87321a70-1ecb-422a-8b0c-c9aa632a46a7
+	Id string `width:"128" charset:"ascii" primary:"true" list:"user" get:"user"`
+
+	// 标签KEY
+	// exmaple: 部门
+	Key string `width:"64" charset:"utf8" primary:"true" list:"user" get:"user"`
+
+	// 标签值
+	// example: 技术部
+	Value string `charset:"utf8" list:"user" get:"user"`
+
+	// 更新时间
+	UpdatedAt time.Time `nullable:"false" updated_at:"true"`
+
+	// 是否被删除
+	Deleted bool `nullable:"false" default:"false" index:"true"`
+}
+
+func TestUpdatePrimaryKey(t *testing.T) {
+	SetupMockDatabaseBackend()
+
+	table := NewTableSpecFromStruct(SMetadata{}, "metadata_tbl")
+	dt := SMetadata{
+		ObjType: "server",
+		ObjId:   "0911ae37-4bcd-4bdd-8942-1ab9a4280ab5",
+		Id:      "server::0911ae37-4bcd-4bdd-8942-1ab9a4280ab5",
+		Key:     "projname",
+		Value:   "hwtest",
+	}
+	session, err := table.prepareUpdate(&dt)
+	if err != nil {
+		t.Fatalf("prepareUpdate fail %s", err)
+	}
+	dt.Key = "projName"
+	dt.Value = "testhw"
+	result, err := session.saveUpdateSql(&dt)
+	if err != nil {
+		t.Fatalf("saveUpdateSql fail %s", err)
+	}
+	want := "UPDATE `metadata_tbl` SET `key` = ?, `value` = ?, `updated_at` = ? WHERE `id` = ? AND `key` = ?"
+	wantVars := 5
 	if want != result.sql {
 		t.Fatalf("SQL: want %s got %s", want, result.sql)
 	}
