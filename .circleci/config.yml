@@ -5,15 +5,15 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.14
+      - image: circleci/golang:1.16
 
     working_directory: /go/src/yunion.io/x/sqlchemy
     steps:
       - checkout
-      - run: go get -v -t -d ./...
+      - run: GO111MODULE=off go get -v -t -d ./...
       - run:
           command: |
-            go test -v ./...
+            GO111MODULE=off go test -v ./...
 
 workflows:
   version: 2
