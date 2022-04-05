@@ -86,7 +86,7 @@ func (ud SUpdateDiff) jsonObj() jsonutils.JSONObject {
 }
 
 // UpdateDiffs is a map of SUpdateDiff whose key is the column name
-type UpdateDiffs []SUpdateDiff
+type UpdateDiffs map[string]SUpdateDiff
 
 // String of UpdateDiffs returns the string representation of UpdateDiffs
 func (uds UpdateDiffs) String() string {
@@ -97,6 +97,14 @@ func (uds UpdateDiffs) String() string {
 	return obj.String()
 }
 
+func updateDiffList2Map(diffs []SUpdateDiff) UpdateDiffs {
+	ret := make(map[string]SUpdateDiff)
+	for i := range diffs {
+		ret[diffs[i].col.Name()] = diffs[i]
+	}
+	return ret
+}
+
 type sPrimaryKeyValue struct {
 	key   string
 	value interface{}
@@ -105,7 +113,7 @@ type sPrimaryKeyValue struct {
 type sUpdateSQLResult struct {
 	sql       string
 	vars      []interface{}
-	setters   UpdateDiffs
+	setters   []SUpdateDiff
 	primaries []sPrimaryKeyValue
 }
 
@@ -125,7 +133,7 @@ func (us *SUpdateSession) saveUpdateSql(dt interface{}) (*sUpdateSQLResult, erro
 	versionFields := make([]string, 0)
 	updatedFields := make([]string, 0)
 	primaries := make([]sPrimaryKeyValue, 0)
-	setters := make(UpdateDiffs, 0)
+	setters := make([]SUpdateDiff, 0)
 	for _, c := range us.tableSpec.Columns() {
 		k := c.Name()
 		of, _ := ofields.GetInterface(k)
@@ -231,7 +239,7 @@ func (us *SUpdateSession) saveUpdate(dt interface{}) (UpdateDiffs, error) {
 		return nil, errors.Wrap(err, "execUpdateSql")
 	}
 
-	return sqlResult.setters, nil
+	return updateDiffList2Map(sqlResult.setters), nil
 }
 
 func (ts *STableSpec) execUpdateSql(dt interface{}, result *sUpdateSQLResult) error {
