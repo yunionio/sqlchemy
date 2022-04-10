@@ -70,3 +70,38 @@ func TestInsertSQL(t *testing.T) {
 		t.Errorf("want %s got %s", uuid, value.UserId)
 	}
 }
+
+type TableStruct2 struct {
+	Id        int       `json:"id" primary:"true"`
+	UserId    string    `width:"128" charset:"ascii" nullable:"false"`
+	Name      string    `width:"16"`
+	Age       int       `nullable:"true"`
+	IsMale    bool      `nullalbe:"true"`
+	CreatedAt time.Time `created_at:"true"`
+	UpdatedAt time.Time `updated_at:"true"`
+	Version   int64     `auto_version:"true"`
+}
+
+func TestInsertUpdateSQL(t *testing.T) {
+	SetupMockDatabaseBackend()
+
+	table := NewTableSpecFromStruct(TableStruct2{}, "testtable2")
+	value := TableStruct2{
+		Id:     12345,
+		Name:   "John",
+		Age:    20,
+		IsMale: true,
+	}
+	results, err := table.InsertSqlPrep(&value, true)
+	if err != nil {
+		t.Fatalf("insertSqlPref fail %s", err)
+	}
+	want := "INSERT INTO `testtable2` (`id`, `name`, `age`, `is_male`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `user_id` = NULL, `name` = ?, `age` = ?, `is_male` = ?, `updated_at` = ?, `version` = `version` + 1"
+	wantVars := 10
+	if results.Sql != want {
+		t.Errorf("SQL: want %s got %s", want, results.Sql)
+	}
+	if len(results.Values) != wantVars {
+		t.Errorf("VARs want %d got %d", wantVars, len(results.Values))
+	}
+}
