@@ -2,6 +2,7 @@ package sqlchemy
 
 import (
 	"fmt"
+	"strings"
 )
 
 type SFunctionField struct {
@@ -56,4 +57,29 @@ func SUM(name string, field IQueryField) IQueryField {
 func DISTINCT(name string, field IQueryField) IQueryField {
 	ff := NewFunctionField(name, "DISTINCT(%s)", field)
 	return &ff
+}
+
+func bc(name, op string, fields ...IQueryField) IQueryField {
+	exps := []string{}
+	for i := 0; i < len(fields); i++ {
+		exps = append(exps, "%s")
+	}
+	ff := NewFunctionField(name, strings.Join(exps, fmt.Sprintf(" %s ", op)), fields...)
+	return &ff
+}
+
+func ADD(name string, fields ...IQueryField) IQueryField {
+	return bc(name, "+", fields...)
+}
+
+func SUB(name string, fields ...IQueryField) IQueryField {
+	return bc(name, "-", fields...)
+}
+
+func MUL(name string, fields ...IQueryField) IQueryField {
+	return bc(name, "*", fields...)
+}
+
+func DIV(name string, fields ...IQueryField) IQueryField {
+	return bc(name, "/", fields...)
 }
