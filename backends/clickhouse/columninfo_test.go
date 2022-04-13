@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	"yunion.io/x/onecloud/pkg/util/stringutils2"
+	"yunion.io/x/pkg/sortedstring"
 )
 
 func TestParseCreateTable(t *testing.T) {
@@ -78,14 +78,14 @@ func TestParseCreateTable(t *testing.T) {
 	}
 	for _, c := range cases {
 		primaries, orderbys, partition, ttlStr := parseCreateTable(c.in)
-		sortedPrimaries := stringutils2.NewSortedStrings(primaries)
-		sortedOrderBys := stringutils2.NewSortedStrings(orderbys)
-		sortedPrimaries2 := stringutils2.NewSortedStrings(c.primaries)
-		sortedOrderBys2 := stringutils2.NewSortedStrings(c.orderbys)
-		if !stringutils2.Equals(sortedPrimaries, sortedPrimaries2) {
+		sortedPrimaries := sortedstring.NewSortedStrings(primaries)
+		sortedOrderBys := sortedstring.NewSortedStrings(orderbys)
+		sortedPrimaries2 := sortedstring.NewSortedStrings(c.primaries)
+		sortedOrderBys2 := sortedstring.NewSortedStrings(c.orderbys)
+		if !sortedstring.Equals(sortedPrimaries, sortedPrimaries2) {
 			t.Errorf("primaries mismatch: want: %s got: %s", sortedPrimaries2, sortedPrimaries)
 		}
-		if !stringutils2.Equals(sortedOrderBys, sortedOrderBys2) {
+		if !sortedstring.Equals(sortedOrderBys, sortedOrderBys2) {
 			t.Errorf("orderby mismatch: want: %s got: %s", sortedOrderBys2, sortedOrderBys)
 		}
 		if partition != c.partition {
