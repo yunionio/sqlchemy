@@ -10,10 +10,9 @@ jobs:
     working_directory: /go/src/yunion.io/x/sqlchemy
     steps:
       - checkout
-      - run: GO111MODULE=off go get -v -t -d ./...
       - run:
           command: |
-            GO111MODULE=off go test -v ./...
+            go test -v ./...
 
 workflows:
   version: 2
