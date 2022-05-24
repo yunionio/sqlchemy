@@ -134,6 +134,16 @@ func SUM(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "SUM(%s)", field)
 }
 
+// LOWER represents the SQL function SUM
+func LOWER(name string, field IQueryField) IQueryField {
+	return NewFunctionField(name, "LOWER(%s)", field)
+}
+
+// UPPER represents the SQL function SUM
+func UPPER(name string, field IQueryField) IQueryField {
+	return NewFunctionField(name, "UPPER(%s)", field)
+}
+
 // DISTINCT represents the SQL function DISTINCT
 func DISTINCT(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "DISTINCT(%s)", field)
@@ -142,6 +152,12 @@ func DISTINCT(name string, field IQueryField) IQueryField {
 // GROUP_CONCAT represents the SQL function GROUP_CONCAT
 func GROUP_CONCAT(name string, field IQueryField) IQueryField {
 	return NewFunctionField(name, "GROUP_CONCAT(%s)", field)
+}
+
+// GROUP_CONCAT2 represents the SQL function GROUP_CONCAT
+func GROUP_CONCAT2(name string, sep string, field IQueryField) IQueryField {
+	// return NewFunctionField(name, "GROUP_CONCAT(%s)", field)
+	return NewFunctionField(name, fmt.Sprintf("arrayStringConcat(groupUniqArray(%%s), '%s')", sep), field)
 }
 
 // REPLACE represents the SQL function REPLACE
