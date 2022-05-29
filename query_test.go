@@ -240,7 +240,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(GROUP_CONCAT("names", t.Field("name")))
 				return q
 			}(),
-			want: "SELECT GROUP_CONCAT(`t40`.`name`) AS `names` FROM `testtable` AS `t40`",
+			want: "SELECT GROUP_CONCAT(`t40`.`name` SEPARATOR ',') AS `names` FROM `testtable` AS `t40`",
 		},
 		{
 			query: func() *SQuery {
@@ -342,7 +342,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(GROUP_CONCAT2("names", ":", t.Field("name")))
 				return q
 			}(),
-			want: "SELECT arrayStringConcat(groupUniqArray(`t55`.`name`), ':') AS `names` FROM `testtable` AS `t55`",
+			want: "SELECT GROUP_CONCAT(`t55`.`name` SEPARATOR ':') AS `names` FROM `testtable` AS `t55`",
 		},
 	}
 	for _, c := range cases {
