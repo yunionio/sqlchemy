@@ -85,7 +85,7 @@ func (uq *SUnion) operator() string {
 	if uq.isAll {
 		return " UNION ALL "
 	} else {
-		return " UNION "
+		return " UNION DISTINCT "
 	}
 }
 

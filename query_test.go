@@ -88,7 +88,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t9`.`id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` FROM (SELECT `t55`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t55` UNION SELECT `t56`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t56`) AS `t10`)",
+			want: "SELECT `t9`.`id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` FROM (SELECT `t58`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t58` UNION DISTINCT SELECT `t59`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t59`) AS `t10`)",
 			vars: 2,
 		},
 		{
@@ -304,7 +304,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t48`.`id` FROM `testtable` AS `t48` WHERE `t48`.`name` IN (SELECT `t49`.`name` FROM (SELECT `t59`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` = ( ? )) AS `t59` UNION ALL SELECT `t60`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` = ( ? )) AS `t60`) AS `t49`)",
+			want: "SELECT `t48`.`id` FROM `testtable` AS `t48` WHERE `t48`.`name` IN (SELECT `t49`.`name` FROM (SELECT `t62`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` = ( ? )) AS `t62` UNION ALL SELECT `t63`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` = ( ? )) AS `t63`) AS `t49`)",
 			vars: 2,
 		},
 		{
@@ -319,6 +319,30 @@ func TestQueryString(t *testing.T) {
 			}(),
 			want: "SELECT `t51`.`id`, `t51`.`name`, `t51`.`age`, `t51`.`is_male` FROM `testtable` AS `t51` JOIN (SELECT `t51`.`name` FROM `testtable` AS `t51` WHERE `t51`.`id` = ( ? )) AS `t52` ON `t51`.`name` IN `t52`.`name` WHERE `t51`.`name` = ( ? )",
 			vars: 2,
+		},
+		{
+			query: func() *SQuery {
+				t := table.Instance()
+				q := t.Query(LOWER("lower_name", t.Field("name")))
+				return q
+			}(),
+			want: "SELECT LOWER(`t53`.`name`) AS `lower_name` FROM `testtable` AS `t53`",
+		},
+		{
+			query: func() *SQuery {
+				t := table.Instance()
+				q := t.Query(UPPER("upper_name", t.Field("name")))
+				return q
+			}(),
+			want: "SELECT UPPER(`t54`.`name`) AS `upper_name` FROM `testtable` AS `t54`",
+		},
+		{
+			query: func() *SQuery {
+				t := table.Instance()
+				q := t.Query(GROUP_CONCAT2("names", ":", t.Field("name")))
+				return q
+			}(),
+			want: "SELECT arrayStringConcat(groupUniqArray(`t55`.`name`), ':') AS `names` FROM `testtable` AS `t55`",
 		},
 	}
 	for _, c := range cases {
