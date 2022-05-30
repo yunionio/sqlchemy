@@ -19,7 +19,10 @@ import (
 )
 
 func TestConditions(t *testing.T) {
-	field := &SRawQueryField{"name"}
+	field := &SRawQueryField{
+		name: "name",
+		db:   nil,
+	}
 	cond1 := Equals(field, "zone1")
 	t.Logf("%s %s", cond1.WhereClause(), cond1.Variables())
 	cond2 := Equals(field, "zone2")
