@@ -63,11 +63,11 @@ func TestUpdateFieldSql(t *testing.T) {
 			t.Errorf("updateFieldSql Error %s", err)
 		} else {
 			t.Logf("primary: %s", results.primaries)
-			if results.sql != c.wantSql {
-				t.Errorf("want: %s got: %s", c.wantSql, results.sql)
+			if results.Sql != c.wantSql {
+				t.Errorf("want: %s got: %s", c.wantSql, results.Sql)
 			}
-			if len(results.vars) != c.vars {
-				t.Errorf("want vars: %d got %d", c.vars, len(results.vars))
+			if len(results.Vars) != c.vars {
+				t.Errorf("want vars: %d got %d", c.vars, len(results.Vars))
 			}
 		}
 	}

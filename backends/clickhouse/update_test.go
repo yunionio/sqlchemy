@@ -12,17 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlchemy
+package clickhouse
 
 import (
 	"testing"
 	"time"
+
+	"yunion.io/x/sqlchemy"
 )
 
-func TestUpdateSQL(t *testing.T) {
-	SetupMockDatabaseBackend()
+const (
+	uuid = "bfaf21ec-861e-4a7d-8739-7139588f0e00"
+)
 
-	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
+type TableStruct struct {
+	Id        int       `json:"id" primary:"true"`
+	UserId    string    `width:"128" charset:"ascii" nullable:"false"`
+	Name      string    `width:"16"`
+	Age       int       `nullable:"true"`
+	IsMale    bool      `nullalbe:"true"`
+	CreatedAt time.Time `created_at:"true"`
+	UpdatedAt time.Time `updated_at:"true"`
+	Version   int64     `auto_version:"true"`
+}
+
+func (s *TableStruct) BeforeInsert() {
+	s.UserId = uuid
+}
+
+func (s *TableStruct) BeforeUpdate() {
+	if len(s.Name) > 16 {
+		s.Name = s.Name[:14] + ".."
+	}
+}
+
+func TestUpdateSQL(t *testing.T) {
+	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.ClickhouseBackend)
+
+	table := sqlchemy.NewTableSpecFromStruct(TableStruct{}, "testtable")
 	dt := TableStruct{
 		Id:     12345,
 		Name:   "john",
@@ -38,7 +65,7 @@ func TestUpdateSQL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("saveUpdateSql fail %s", err)
 	}
-	want := "UPDATE `testtable` SET `name` = ?, `version` = `version` + 1, `updated_at` = ? WHERE `id` = ?"
+	want := "ALTER TABLE `testtable` UPDATE `name` = ?, `version` = `version` + 1, `updated_at` = ? WHERE `id` = ?"
 	wantVars := 3
 	if want != result.Sql {
 		t.Fatalf("SQL: want %s got %s", want, result.Sql)
@@ -77,9 +104,9 @@ type SMetadata struct {
 }
 
 func TestUpdatePrimaryKey(t *testing.T) {
-	SetupMockDatabaseBackend()
+	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.ClickhouseBackend)
 
-	table := NewTableSpecFromStruct(SMetadata{}, "metadata_tbl")
+	table := sqlchemy.NewTableSpecFromStruct(SMetadata{}, "metadata_tbl")
 	dt := SMetadata{
 		ObjType: "server",
 		ObjId:   "0911ae37-4bcd-4bdd-8942-1ab9a4280ab5",
@@ -97,7 +124,7 @@ func TestUpdatePrimaryKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("saveUpdateSql fail %s", err)
 	}
-	want := "UPDATE `metadata_tbl` SET `key` = ?, `value` = ?, `updated_at` = ? WHERE `id` = ? AND `key` = ?"
+	want := "ALTER TABLE `metadata_tbl` UPDATE `key` = ?, `value` = ?, `updated_at` = ? WHERE `id` = ? AND `key` = ?"
 	wantVars := 5
 	if want != result.Sql {
 		t.Fatalf("SQL: want %s got %s", want, result.Sql)

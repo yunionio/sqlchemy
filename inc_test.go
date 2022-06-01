@@ -58,11 +58,11 @@ func TestIncrementalSQL(t *testing.T) {
 		if err != nil {
 			t.Fatalf("incrementInternalSql fail %s", err)
 		}
-		if c.wantSQL != result.sql {
-			t.Fatalf("SQL increment want: %s got %s", c.wantSQL, result.sql)
+		if c.wantSQL != result.Sql {
+			t.Fatalf("SQL increment want: %s got %s", c.wantSQL, result.Sql)
 		}
-		if c.wantVars != len(result.vars) {
-			t.Fatalf("SQL increment want vars: %d got %d", c.wantVars, len(result.vars))
+		if c.wantVars != len(result.Vars) {
+			t.Fatalf("SQL increment want vars: %d got %d", c.wantVars, len(result.Vars))
 		}
 	}
 }
