@@ -58,8 +58,8 @@ func TestInsertSQL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("insertSqlPref fail %s", err)
 	}
-	want := "INSERT INTO `testtable` (`id`, `user_id`, `name`, `age`, `is_male`, `created_at`, `updated_at`, `version`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-	wantVars := 8
+	want := "INSERT INTO `testtable` (`id`, `user_id`, `name`, `age`, `is_male`, `created_at`, `updated_at`, `version`) VALUES (?, ?, ?, ?, ?, UTC_NOW(), UTC_NOW(), ?)"
+	wantVars := 6
 	if results.Sql != want {
 		t.Errorf("SQL: want %s got %s", want, results.Sql)
 	}
@@ -96,8 +96,8 @@ func TestInsertUpdateSQL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("insertSqlPref fail %s", err)
 	}
-	want := "INSERT INTO `testtable2` (`id`, `name`, `age`, `is_male`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `user_id` = NULL, `name` = ?, `age` = ?, `is_male` = ?, `updated_at` = ?, `version` = `version` + 1"
-	wantVars := 10
+	want := "INSERT INTO `testtable2` (`id`, `name`, `age`, `is_male`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, UTC_NOW(), UTC_NOW()) ON DUPLICATE KEY UPDATE `user_id` = NULL, `name` = ?, `age` = ?, `is_male` = ?, `updated_at` = UTC_NOW(), `version` = `version` + 1"
+	wantVars := 7
 	if results.Sql != want {
 		t.Errorf("SQL: want %s got %s", want, results.Sql)
 	}

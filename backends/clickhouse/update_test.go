@@ -65,8 +65,8 @@ func TestUpdateSQL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("saveUpdateSql fail %s", err)
 	}
-	want := "ALTER TABLE `testtable` UPDATE `name` = ?, `version` = `version` + 1, `updated_at` = ? WHERE `id` = ?"
-	wantVars := 3
+	want := "ALTER TABLE `testtable` UPDATE `name` = ?, `version` = `version` + 1, `updated_at` = NOW('UTC') WHERE `id` = ?"
+	wantVars := 2
 	if want != result.Sql {
 		t.Fatalf("SQL: want %s got %s", want, result.Sql)
 	}
@@ -124,8 +124,8 @@ func TestUpdatePrimaryKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("saveUpdateSql fail %s", err)
 	}
-	want := "ALTER TABLE `metadata_tbl` UPDATE `key` = ?, `value` = ?, `updated_at` = ? WHERE `id` = ? AND `key` = ?"
-	wantVars := 5
+	want := "ALTER TABLE `metadata_tbl` UPDATE `key` = ?, `value` = ?, `updated_at` = NOW('UTC') WHERE `id` = ? AND `key` = ?"
+	wantVars := 4
 	if want != result.Sql {
 		t.Fatalf("SQL: want %s got %s", want, result.Sql)
 	}
