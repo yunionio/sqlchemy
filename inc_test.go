@@ -44,13 +44,13 @@ func TestIncrementalSQL(t *testing.T) {
 	}{
 		{
 			opcode:   "+",
-			wantSQL:  "UPDATE `testtable` SET `age` = `age` + ?, `version` = `version` + 1, `updated_at` = ? WHERE `id` = ?",
-			wantVars: 3,
+			wantSQL:  "UPDATE `testtable` SET `age` = `age` + ?, `version` = `version` + 1, `updated_at` = UTC_NOW() WHERE `id` = ?",
+			wantVars: 2,
 		},
 		{
 			opcode:   "-",
-			wantSQL:  "UPDATE `testtable` SET `age` = `age` - ?, `version` = `version` + 1, `updated_at` = ? WHERE `id` = ?",
-			wantVars: 3,
+			wantSQL:  "UPDATE `testtable` SET `age` = `age` - ?, `version` = `version` + 1, `updated_at` = UTC_NOW() WHERE `id` = ?",
+			wantVars: 2,
 		},
 	}
 	for _, c := range cases {

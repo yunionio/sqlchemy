@@ -46,15 +46,15 @@ func TestUpdateFieldSql(t *testing.T) {
 				"age":     23,
 				"is_male": false,
 			},
-			wantSql: "UPDATE `testtable` SET `name` = ?, `age` = ?, `is_male` = ?, `version` = `version` + 1, `updated_at` = ? WHERE `id` = ?",
-			vars:    5,
+			wantSql: "UPDATE `testtable` SET `name` = ?, `age` = ?, `is_male` = ?, `version` = `version` + 1, `updated_at` = UTC_NOW() WHERE `id` = ?",
+			vars:    4,
 		},
 		{
 			fields: map[string]interface{}{
 				"name": "John",
 			},
-			wantSql: "UPDATE `testtable` SET `name` = ?, `version` = `version` + 1, `updated_at` = ? WHERE `id` = ?",
-			vars:    3,
+			wantSql: "UPDATE `testtable` SET `name` = ?, `version` = `version` + 1, `updated_at` = UTC_NOW() WHERE `id` = ?",
+			vars:    2,
 		},
 	}
 	for _, c := range cases {
