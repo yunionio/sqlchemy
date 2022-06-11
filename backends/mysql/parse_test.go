@@ -43,7 +43,7 @@ func TestParseCreateTable(t *testing.T) {
 	if len(cons) != 1 {
 		t.Errorf("fail to find constraints")
 	}
-	idxs := parseIndexes(tableDef)
+	idxs := parseIndexes(nil, tableDef)
 	if len(idxs) != 4 {
 		t.Errorf("fail to find indexes")
 	}
