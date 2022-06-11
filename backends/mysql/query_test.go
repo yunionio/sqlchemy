@@ -48,7 +48,7 @@ func TestQuery(t *testing.T) {
 		q2 := testTable.Query(testTable.Field("col0")).Equals("col1", 200)
 		uq := sqlchemy.Union(q1, q2)
 		q := uq.Query()
-		want := "SELECT `t2`.`col0` FROM (SELECT `t3`.`col0` FROM (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? )) AS `t3` UNION DISTINCT SELECT `t4`.`col0` FROM (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? )) AS `t4`) AS `t2`"
+		want := "SELECT `t2`.`col0` FROM (SELECT `t3`.`col0` FROM (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? )) AS `t3` UNION SELECT `t4`.`col0` FROM (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? )) AS `t4`) AS `t2`"
 		testGotWant(t, q.String(), want)
 	})
 

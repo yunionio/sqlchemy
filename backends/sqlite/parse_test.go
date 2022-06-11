@@ -22,7 +22,7 @@ func TestParseTableIndex(t *testing.T) {
 			Name: "index",
 			Sql:  c.in,
 		}
-		index, err := ti.parseTableIndex()
+		index, err := ti.parseTableIndex(nil)
 		if err != nil {
 			t.Errorf("parseTableIndex fail %s", err)
 		} else {
