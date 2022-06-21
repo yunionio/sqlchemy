@@ -125,6 +125,9 @@ func (c *SClickhouseBaseColumn) SetTTL(int, string) {
 }
 
 func NewClickhouseBaseColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SClickhouseBaseColumn {
+	// clickhouse not support primary key
+	tagmap, _, _ = utils.TagPop(tagmap, sqlchemy.TAG_PRIMARY)
+
 	var ok bool
 	var val string
 	partition := ""
