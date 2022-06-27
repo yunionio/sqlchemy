@@ -24,7 +24,7 @@ func TestQueryString(t *testing.T) {
 	}{
 		{
 			query: table.Instance().Query().Equals("id", 1),
-			want:  "SELECT `t1`.`id`, `t1`.`name`, `t1`.`age`, `t1`.`is_male` FROM `testtable` AS `t1` WHERE `t1`.`id` = ( ? )",
+			want:  "SELECT `t1`.`id`, `t1`.`name`, `t1`.`age`, `t1`.`is_male` FROM `testtable` AS `t1` WHERE `t1`.`id` =  ? ",
 			vars:  1,
 		},
 		{
@@ -34,7 +34,7 @@ func TestQueryString(t *testing.T) {
 				q = q.Equals("id", 2)
 				return q
 			}(),
-			want: "SELECT `t2`.`name` as `newname` FROM `testtable` AS `t2` WHERE `t2`.`id` = ( ? )",
+			want: "SELECT `t2`.`name` as `newname` FROM `testtable` AS `t2` WHERE `t2`.`id` =  ? ",
 			vars: 1,
 		},
 		{
@@ -43,7 +43,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(t.Field("name")).Equals("id", 2).Asc(t.Field("name")).Limit(10).Offset(2)
 				return q
 			}(),
-			want: "SELECT `t3`.`name` FROM `testtable` AS `t3` WHERE `t3`.`id` = ( ? ) ORDER BY `t3`.`name` ASC LIMIT 10 OFFSET 2",
+			want: "SELECT `t3`.`name` FROM `testtable` AS `t3` WHERE `t3`.`id` =  ?  ORDER BY `t3`.`name` ASC LIMIT 10 OFFSET 2",
 			vars: 1,
 		},
 		{
@@ -63,7 +63,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(t.Field("name")).In("id", q1.SubQuery())
 				return q
 			}(),
-			want: "SELECT `t5`.`name` FROM `testtable` AS `t5` WHERE `t5`.`id` IN (SELECT `t5`.`id` FROM `testtable` AS `t5` WHERE `t5`.`id` = ( ? ))",
+			want: "SELECT `t5`.`name` FROM `testtable` AS `t5` WHERE `t5`.`id` IN (SELECT `t5`.`id` FROM `testtable` AS `t5` WHERE `t5`.`id` =  ? )",
 			vars: 1,
 		},
 		{
@@ -76,7 +76,7 @@ func TestQueryString(t *testing.T) {
 				q2 = q2.NotEquals("name", "Hohn")
 				return q2
 			}(),
-			want: "SELECT `t7`.`id`, `t7`.`name`, `t7`.`age`, `t7`.`is_male` FROM `testtable` AS `t7` JOIN (SELECT `t7`.`id` FROM `testtable` AS `t7` WHERE `t7`.`id` = ( ? )) AS `t8` ON `t8`.`id` = `t7`.`id` WHERE `t7`.`name` <> ( ? )",
+			want: "SELECT `t7`.`id`, `t7`.`name`, `t7`.`age`, `t7`.`is_male` FROM `testtable` AS `t7` JOIN (SELECT `t7`.`id` FROM `testtable` AS `t7` WHERE `t7`.`id` =  ? ) AS `t8` ON `t8`.`id` = `t7`.`id` WHERE `t7`.`name` <>  ? ",
 			vars: 2,
 		},
 		{
@@ -88,7 +88,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t9`.`id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` FROM (SELECT `t58`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t58` UNION SELECT `t59`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` = ( ? )) AS `t59`) AS `t10`)",
+			want: "SELECT `t9`.`id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` FROM (SELECT `t62`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` =  ? ) AS `t62` UNION SELECT `t63`.`name` FROM (SELECT `t9`.`name` FROM `testtable` AS `t9` WHERE `t9`.`id` =  ? ) AS `t63`) AS `t10`)",
 			vars: 2,
 		},
 		{
@@ -101,27 +101,27 @@ func TestQueryString(t *testing.T) {
 		},
 		{
 			query: table.Instance().Query().Like("name", "%abc%"),
-			want:  "SELECT `t14`.`id`, `t14`.`name`, `t14`.`age`, `t14`.`is_male` FROM `testtable` AS `t14` WHERE `t14`.`name` LIKE ( ? )",
+			want:  "SELECT `t14`.`id`, `t14`.`name`, `t14`.`age`, `t14`.`is_male` FROM `testtable` AS `t14` WHERE `t14`.`name` LIKE  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().Contains("name", "abc"),
-			want:  "SELECT `t15`.`id`, `t15`.`name`, `t15`.`age`, `t15`.`is_male` FROM `testtable` AS `t15` WHERE `t15`.`name` LIKE ( ? )",
+			want:  "SELECT `t15`.`id`, `t15`.`name`, `t15`.`age`, `t15`.`is_male` FROM `testtable` AS `t15` WHERE `t15`.`name` LIKE  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().Startswith("name", "abc"),
-			want:  "SELECT `t16`.`id`, `t16`.`name`, `t16`.`age`, `t16`.`is_male` FROM `testtable` AS `t16` WHERE `t16`.`name` LIKE ( ? )",
+			want:  "SELECT `t16`.`id`, `t16`.`name`, `t16`.`age`, `t16`.`is_male` FROM `testtable` AS `t16` WHERE `t16`.`name` LIKE  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().Endswith("name", "abc"),
-			want:  "SELECT `t17`.`id`, `t17`.`name`, `t17`.`age`, `t17`.`is_male` FROM `testtable` AS `t17` WHERE `t17`.`name` LIKE ( ? )",
+			want:  "SELECT `t17`.`id`, `t17`.`name`, `t17`.`age`, `t17`.`is_male` FROM `testtable` AS `t17` WHERE `t17`.`name` LIKE  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().NotLike("name", "abc"),
-			want:  "SELECT `t18`.`id`, `t18`.`name`, `t18`.`age`, `t18`.`is_male` FROM `testtable` AS `t18` WHERE NOT (`t18`.`name` LIKE ( ? ))",
+			want:  "SELECT `t18`.`id`, `t18`.`name`, `t18`.`age`, `t18`.`is_male` FROM `testtable` AS `t18` WHERE NOT (`t18`.`name` LIKE  ? )",
 			vars:  1,
 		},
 		{
@@ -131,47 +131,47 @@ func TestQueryString(t *testing.T) {
 		},
 		{
 			query: table.Instance().Query().NotIn("name", []string{"abc", "123"}),
-			want:  "SELECT `t20`.`id`, `t20`.`name`, `t20`.`age`, `t20`.`is_male` FROM `testtable` AS `t20` WHERE NOT (`t20`.`name` IN ( ?, ? ))",
+			want:  "SELECT `t20`.`id`, `t20`.`name`, `t20`.`age`, `t20`.`is_male` FROM `testtable` AS `t20` WHERE `t20`.`name` NOT IN ( ?, ? )",
 			vars:  2,
 		},
 		{
 			query: table.Instance().Query().Between("name", "abc", "123"),
-			want:  "SELECT `t21`.`id`, `t21`.`name`, `t21`.`age`, `t21`.`is_male` FROM `testtable` AS `t21` WHERE `t21`.`name` BETWEEN ( ? ) AND ( ? )",
+			want:  "SELECT `t21`.`id`, `t21`.`name`, `t21`.`age`, `t21`.`is_male` FROM `testtable` AS `t21` WHERE `t21`.`name` BETWEEN  ?  AND  ? ",
 			vars:  2,
 		},
 		{
 			query: table.Instance().Query().NotBetween("name", "abc", "123"),
-			want:  "SELECT `t22`.`id`, `t22`.`name`, `t22`.`age`, `t22`.`is_male` FROM `testtable` AS `t22` WHERE NOT (`t22`.`name` BETWEEN ( ? ) AND ( ? ))",
+			want:  "SELECT `t22`.`id`, `t22`.`name`, `t22`.`age`, `t22`.`is_male` FROM `testtable` AS `t22` WHERE NOT (`t22`.`name` BETWEEN  ?  AND  ? )",
 			vars:  2,
 		},
 		{
 			query: table.Instance().Query().Equals("name", "abc"),
-			want:  "SELECT `t23`.`id`, `t23`.`name`, `t23`.`age`, `t23`.`is_male` FROM `testtable` AS `t23` WHERE `t23`.`name` = ( ? )",
+			want:  "SELECT `t23`.`id`, `t23`.`name`, `t23`.`age`, `t23`.`is_male` FROM `testtable` AS `t23` WHERE `t23`.`name` =  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().NotEquals("name", "abc"),
-			want:  "SELECT `t24`.`id`, `t24`.`name`, `t24`.`age`, `t24`.`is_male` FROM `testtable` AS `t24` WHERE `t24`.`name` <> ( ? )",
+			want:  "SELECT `t24`.`id`, `t24`.`name`, `t24`.`age`, `t24`.`is_male` FROM `testtable` AS `t24` WHERE `t24`.`name` <>  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().GE("age", 20),
-			want:  "SELECT `t25`.`id`, `t25`.`name`, `t25`.`age`, `t25`.`is_male` FROM `testtable` AS `t25` WHERE `t25`.`age` >= ( ? )",
+			want:  "SELECT `t25`.`id`, `t25`.`name`, `t25`.`age`, `t25`.`is_male` FROM `testtable` AS `t25` WHERE `t25`.`age` >=  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().LE("age", 20),
-			want:  "SELECT `t26`.`id`, `t26`.`name`, `t26`.`age`, `t26`.`is_male` FROM `testtable` AS `t26` WHERE `t26`.`age` <= ( ? )",
+			want:  "SELECT `t26`.`id`, `t26`.`name`, `t26`.`age`, `t26`.`is_male` FROM `testtable` AS `t26` WHERE `t26`.`age` <=  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().GT("age", 20),
-			want:  "SELECT `t27`.`id`, `t27`.`name`, `t27`.`age`, `t27`.`is_male` FROM `testtable` AS `t27` WHERE `t27`.`age` > ( ? )",
+			want:  "SELECT `t27`.`id`, `t27`.`name`, `t27`.`age`, `t27`.`is_male` FROM `testtable` AS `t27` WHERE `t27`.`age` >  ? ",
 			vars:  1,
 		},
 		{
 			query: table.Instance().Query().LT("age", 20),
-			want:  "SELECT `t28`.`id`, `t28`.`name`, `t28`.`age`, `t28`.`is_male` FROM `testtable` AS `t28` WHERE `t28`.`age` < ( ? )",
+			want:  "SELECT `t28`.`id`, `t28`.`name`, `t28`.`age`, `t28`.`is_male` FROM `testtable` AS `t28` WHERE `t28`.`age` <  ? ",
 			vars:  1,
 		},
 		{
@@ -304,7 +304,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t48`.`id` FROM `testtable` AS `t48` WHERE `t48`.`name` IN (SELECT `t49`.`name` FROM (SELECT `t62`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` = ( ? )) AS `t62` UNION ALL SELECT `t63`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` = ( ? )) AS `t63`) AS `t49`)",
+			want: "SELECT `t48`.`id` FROM `testtable` AS `t48` WHERE `t48`.`name` IN (SELECT `t49`.`name` FROM (SELECT `t66`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` =  ? ) AS `t66` UNION ALL SELECT `t67`.`name` FROM (SELECT `t48`.`name` FROM `testtable` AS `t48` WHERE `t48`.`id` =  ? ) AS `t67`) AS `t49`)",
 			vars: 2,
 		},
 		{
@@ -317,7 +317,7 @@ func TestQueryString(t *testing.T) {
 				q2 = q2.Equals("name", "John")
 				return q2
 			}(),
-			want: "SELECT `t51`.`id`, `t51`.`name`, `t51`.`age`, `t51`.`is_male` FROM `testtable` AS `t51` JOIN (SELECT `t51`.`name` FROM `testtable` AS `t51` WHERE `t51`.`id` = ( ? )) AS `t52` ON `t51`.`name` IN `t52`.`name` WHERE `t51`.`name` = ( ? )",
+			want: "SELECT `t51`.`id`, `t51`.`name`, `t51`.`age`, `t51`.`is_male` FROM `testtable` AS `t51` JOIN (SELECT `t51`.`name` FROM `testtable` AS `t51` WHERE `t51`.`id` =  ? ) AS `t52` ON `t51`.`name` IN `t52`.`name` WHERE `t51`.`name` =  ? ",
 			vars: 2,
 		},
 		{
@@ -343,6 +343,26 @@ func TestQueryString(t *testing.T) {
 				return q
 			}(),
 			want: "SELECT GROUP_CONCAT(`t55`.`name` SEPARATOR ':') AS `names` FROM `testtable` AS `t55`",
+		},
+		{
+			query: table.Instance().Query().In("name", []string{"abc"}),
+			want:  "SELECT `t56`.`id`, `t56`.`name`, `t56`.`age`, `t56`.`is_male` FROM `testtable` AS `t56` WHERE `t56`.`name` =  ? ",
+			vars:  1,
+		},
+		{
+			query: table.Instance().Query().NotIn("name", []string{"abc"}),
+			want:  "SELECT `t57`.`id`, `t57`.`name`, `t57`.`age`, `t57`.`is_male` FROM `testtable` AS `t57` WHERE `t57`.`name` <>  ? ",
+			vars:  1,
+		},
+		{
+			query: table.Instance().Query().In("name", []string{}),
+			want:  "SELECT `t58`.`id`, `t58`.`name`, `t58`.`age`, `t58`.`is_male` FROM `testtable` AS `t58` WHERE 0",
+			vars:  0,
+		},
+		{
+			query: table.Instance().Query().NotIn("name", []string{}),
+			want:  "SELECT `t59`.`id`, `t59`.`name`, `t59`.`age`, `t59`.`is_male` FROM `testtable` AS `t59` WHERE 1",
+			vars:  0,
 		},
 	}
 	for _, c := range cases {
@@ -468,7 +488,7 @@ func TestQueryString2(t *testing.T) {
 	}{
 		{
 			query: table.Instance().Query().Equals("id", 1),
-			want:  "SELECT `t1`.`id`, `t1`.`name`, `t1`.`ip_start`, `t1`.`ip_end` FROM `testtable` AS `t1` WHERE `t1`.`id` = ( ? )",
+			want:  "SELECT `t1`.`id`, `t1`.`name`, `t1`.`ip_start`, `t1`.`ip_end` FROM `testtable` AS `t1` WHERE `t1`.`id` =  ? ",
 			vars:  1,
 		},
 		{

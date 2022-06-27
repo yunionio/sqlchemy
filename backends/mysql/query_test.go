@@ -31,14 +31,14 @@ func TestQuery(t *testing.T) {
 	t.Run("query selected fields", func(t *testing.T) {
 		testReset()
 		q := testTable.Query(testTable.Field("col0")).Equals("col1", 100)
-		want := "SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? )"
+		want := "SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` =  ? "
 		testGotWant(t, q.String(), want)
 	})
 
 	t.Run("query selected fields from subquery", func(t *testing.T) {
 		testReset()
 		q := testTable.Query().SubQuery().Query(testTable.Field("col0")).Equals("col1", 100)
-		want := "SELECT `t1`.`col0` FROM (SELECT `t1`.`col1` FROM `test` AS `t1`) AS `t2` WHERE `t2`.`col1` = ( ? )"
+		want := "SELECT `t1`.`col0` FROM (SELECT `t1`.`col1` FROM `test` AS `t1`) AS `t2` WHERE `t2`.`col1` =  ? "
 		testGotWant(t, q.String(), want)
 	})
 
@@ -48,7 +48,7 @@ func TestQuery(t *testing.T) {
 		q2 := testTable.Query(testTable.Field("col0")).Equals("col1", 200)
 		uq := sqlchemy.Union(q1, q2)
 		q := uq.Query()
-		want := "SELECT `t2`.`col0` FROM (SELECT `t3`.`col0` FROM (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? )) AS `t3` UNION SELECT `t4`.`col0` FROM (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` = ( ? )) AS `t4`) AS `t2`"
+		want := "SELECT `t2`.`col0` FROM (SELECT `t3`.`col0` FROM (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` =  ? ) AS `t3` UNION SELECT `t4`.`col0` FROM (SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` =  ? ) AS `t4`) AS `t2`"
 		testGotWant(t, q.String(), want)
 	})
 
