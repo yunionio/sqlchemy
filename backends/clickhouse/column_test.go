@@ -155,15 +155,15 @@ func TestColumns(t *testing.T) {
 		},
 		{
 			in:   &dateCol,
-			want: "`field` Nullable(DateTime)",
+			want: "`field` Nullable(DateTime('UTC'))",
 		},
 		{
 			in:   &ttlDateCol,
-			want: "`field` Nullable(DateTime)",
+			want: "`field` Nullable(DateTime('UTC'))",
 		},
 		{
 			in:   &notNullDateCol,
-			want: "`field` DateTime",
+			want: "`field` DateTime('UTC')",
 		},
 		{
 			in:   &compCol,
