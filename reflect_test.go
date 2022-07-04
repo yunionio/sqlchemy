@@ -105,11 +105,15 @@ func TestGetQuoteStringValue(t *testing.T) {
 		},
 		{
 			in:   "abc",
-			want: "\"abc\"",
+			want: "'abc'",
 		},
 		{
 			in:   "123\"34",
-			want: "\"123\\\"34\"",
+			want: "'123\"34'",
+		},
+		{
+			in:   "123'34",
+			want: "'123\\'34'",
 		},
 	}
 	for _, c := range cases {

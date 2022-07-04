@@ -256,7 +256,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(NewConstField("MALE").Label("Gender")).IsTrue("is_male")
 				return q
 			}(),
-			want: "SELECT \"MALE\" AS `Gender` FROM `testtable` AS `t42` WHERE `t42`.`is_male` = 1",
+			want: "SELECT 'MALE' AS `Gender` FROM `testtable` AS `t42` WHERE `t42`.`is_male` = 1",
 		},
 		{
 			query: func() *SQuery {
@@ -265,7 +265,7 @@ func TestQueryString(t *testing.T) {
 				q := subq.Query(COUNT("count", subq.Field("Gender")))
 				return q
 			}(),
-			want: "SELECT COUNT(`t44`.`Gender`) AS `count` FROM (SELECT \"FEMALE\" AS `Gender` FROM `testtable` AS `t43` WHERE `t43`.`is_male` = 0) AS `t44`",
+			want: "SELECT COUNT(`t44`.`Gender`) AS `count` FROM (SELECT 'FEMALE' AS `Gender` FROM `testtable` AS `t43` WHERE `t43`.`is_male` = 0) AS `t44`",
 		},
 		{
 			query: func() *SQuery {
@@ -293,7 +293,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(NewFunction(NewCase().When(IsTrue(t.Field("is_male")), NewStringField("MALE")).Else(NewStringField("FEMALE")), "Gender"))
 				return q
 			}(),
-			want: "SELECT CASE WHEN `t47`.`is_male` = 1 THEN \"MALE\" ELSE \"FEMALE\" END AS `Gender` FROM `testtable` AS `t47`",
+			want: "SELECT CASE WHEN `t47`.`is_male` = 1 THEN 'MALE' ELSE 'FEMALE' END AS `Gender` FROM `testtable` AS `t47`",
 		},
 		{
 			query: func() *SQuery {
@@ -498,7 +498,7 @@ func TestQueryString2(t *testing.T) {
 				q = q.Filter(Between(NewStringField("192.168.0.1"), q.Field("ip_start"), q.Field("ip_end")))
 				return q
 			}(),
-			want: "SELECT `t2`.`id`, `t2`.`name`, `t2`.`ip_start`, `t2`.`ip_end` FROM `testtable` AS `t2` WHERE \"192.168.0.1\" BETWEEN `t2`.`ip_start` AND `t2`.`ip_end`",
+			want: "SELECT `t2`.`id`, `t2`.`name`, `t2`.`ip_start`, `t2`.`ip_end` FROM `testtable` AS `t2` WHERE '192.168.0.1' BETWEEN `t2`.`ip_start` AND `t2`.`ip_end`",
 			vars: 0,
 		},
 		{
@@ -508,7 +508,7 @@ func TestQueryString2(t *testing.T) {
 				q = q.Filter(Between(NewConstField("192.168.0.1"), q.Field("ip_start"), q.Field("ip_end")))
 				return q
 			}(),
-			want: "SELECT `t3`.`id`, `t3`.`name`, `t3`.`ip_start`, `t3`.`ip_end` FROM `testtable` AS `t3` WHERE \"192.168.0.1\" BETWEEN `t3`.`ip_start` AND `t3`.`ip_end`",
+			want: "SELECT `t3`.`id`, `t3`.`name`, `t3`.`ip_start`, `t3`.`ip_end` FROM `testtable` AS `t3` WHERE '192.168.0.1' BETWEEN `t3`.`ip_start` AND `t3`.`ip_end`",
 			vars: 0,
 		},
 	}
