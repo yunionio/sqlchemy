@@ -3,6 +3,7 @@ package sqlchemy
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"yunion.io/x/pkg/errors"
 )
@@ -510,6 +511,44 @@ func TestQueryString2(t *testing.T) {
 			}(),
 			want: "SELECT `t3`.`id`, `t3`.`name`, `t3`.`ip_start`, `t3`.`ip_end` FROM `testtable` AS `t3` WHERE '192.168.0.1' BETWEEN `t3`.`ip_start` AND `t3`.`ip_end`",
 			vars: 0,
+		},
+	}
+	for _, c := range cases {
+		got := c.query.String()
+		if got != c.want {
+			t.Errorf("want: %s got: %s", c.want, got)
+		}
+		vars := c.query.Variables()
+		if len(vars) != c.vars {
+			t.Errorf("want vars: %d got %d", c.vars, len(vars))
+		}
+	}
+}
+
+func TestQueryString3(t *testing.T) {
+	SetupMockDatabaseBackend()
+	ResetTableID()
+
+	type TableStruct struct {
+		Id        int       `json:"id" primary:"true"`
+		StartTime time.Time `json:"start_time"`
+		EndTime   time.Time `json:"end_time"`
+	}
+	table := NewTableSpecFromStruct(TableStruct{}, "testtable")
+	cases := []struct {
+		query *SQuery
+		want  string
+		vars  int
+	}{
+		{
+			query: func() *SQuery {
+				t := table.Instance()
+				q := t.Query()
+				q = q.Filter(GE(DATEDIFF("year", q.Field("start_time"), q.Field("end_time")), 1))
+				return q
+			}(),
+			want: "SELECT `t1`.`id`, `t1`.`start_time`, `t1`.`end_time` FROM `testtable` AS `t1` WHERE DATEDIFF('year',`t1`.`start_time`,`t1`.`end_time`) >=  ? ",
+			vars: 1,
 		},
 	}
 	for _, c := range cases {
