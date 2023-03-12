@@ -15,8 +15,11 @@
 package sqlite
 
 import (
+	"database/sql"
 	"reflect"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
 
 	"yunion.io/x/sqlchemy"
 )
@@ -34,8 +37,13 @@ func TestSync(t *testing.T) {
 		Age    uint   `nullable:"true" default:"10"`
 		Gender string `width:"8" nullable:"false" default:"male"`
 	}
-
-	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.SQLiteBackend)
+	dbConn, err := sql.Open("sqlite3", "file::memory:?cache=shared")
+	if err != nil {
+		t.Errorf("open sqlite memory db fail: %s", err)
+		return
+	}
+	defer dbConn.Close()
+	sqlchemy.SetDBWithNameBackend(dbConn, sqlchemy.DefaultDB, sqlchemy.SQLiteBackend)
 	ts1 := sqlchemy.NewTableSpecFromStruct(TableStruct1{}, "table1")
 	ts2 := sqlchemy.NewTableSpecFromStruct(TableStruct2{}, "table1")
 
