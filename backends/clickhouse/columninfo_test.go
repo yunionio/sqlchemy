@@ -26,21 +26,21 @@ func TestParseCreateTable(t *testing.T) {
 		in        string
 		orderbys  []string
 		primaries []string
-		partition string
+		partition []string
 		ttl       sColumnTTL
 	}{
 		{
 			in:        "CREATE TABLE test.testtable (`id` String) ENGINE = MergeTree PARTITION BY toYYYYMM(created_at) PRIMARY KEY (id, name) ORDER BY (id, name) SETTINGS index_granularity = 8192",
 			orderbys:  []string{"id", "name"},
 			primaries: []string{"id", "name"},
-			partition: "toYYYYMM(created_at)",
+			partition: []string{"toYYYYMM(created_at)"},
 			ttl:       sColumnTTL{},
 		},
 		{
 			in:        "CREATE TABLE test.testtable (`id` String) ENGINE = MergeTree PARTITION BY toYYYYMM(created_at) PRIMARY KEY id ORDER BY id SETTINGS index_granularity = 8192",
 			orderbys:  []string{"id"},
 			primaries: []string{"id"},
-			partition: "toYYYYMM(created_at)",
+			partition: []string{"toYYYYMM(created_at)"},
 			ttl:       sColumnTTL{},
 		},
 		{
@@ -55,7 +55,7 @@ func TestParseCreateTable(t *testing.T) {
 			SETTINGS index_granularity = 8192`,
 			orderbys:  []string{"day"},
 			primaries: []string{"day"},
-			partition: "toInt32(day / 100)",
+			partition: []string{"toInt32(day/100)"},
 			ttl: sColumnTTL{ColName: "created_at",
 				sTTL: sTTL{
 					Count: 3,
@@ -66,7 +66,7 @@ func TestParseCreateTable(t *testing.T) {
 			in:        "CREATE TABLE yunionlogger.action_tbl (`id` Int64, `obj_type` String, `obj_id` String, `obj_name` String, `action` String, `notes` Nullable(String), `tenant_id` Nullable(String), `tenant` Nullable(String), `project_domain_id` Nullable(String) DEFAULT CAST('default', 'Nullable(String)'), `project_domain` Nullable(String) DEFAULT CAST('Default', 'Nullable(String)'), `user_id` Nullable(String), `user` Nullable(String), `domain_id` Nullable(String), `domain` Nullable(String), `roles` Nullable(String), `ops_time` DateTime, `owner_domain_id` Nullable(String) DEFAULT CAST('default', 'Nullable(String)'), `owner_tenant_id` Nullable(String), `start_time` Nullable(DateTime), `success` Nullable(UInt8), `service` Nullable(String)) ENGINE = MergeTree PARTITION BY toInt64(id / 100000000000) PRIMARY KEY id ORDER BY id TTL ops_time + toIntervalMonth(6) SETTINGS index_granularity = 8192",
 			orderbys:  []string{"id"},
 			primaries: []string{"id"},
-			partition: "toInt64(id / 100000000000)",
+			partition: []string{"toInt64(id/100000000000)"},
 			ttl: sColumnTTL{
 				ColName: "ops_time",
 				sTTL: sTTL{
@@ -74,6 +74,13 @@ func TestParseCreateTable(t *testing.T) {
 					Unit:  "MONTH",
 				},
 			},
+		},
+		{
+			in:        "CREATE TABLE yunionmeter.payment_bills_tbl (`id` Nullable(String), `account` Nullable(String), `resource_type` Nullable(String), `product_detail` Nullable(String), `external_id` Nullable(String), `day` Int32 DEFAULT 0, `month` Nullable(Int32) DEFAULT 0) ENGINE = MergeTree PARTITION BY (account_id, toInt32(day / 100)) ORDER BY day SETTINGS index_granularity = 8192",
+			orderbys:  []string{"day"},
+			primaries: []string{},
+			partition: []string{"account_id", "toInt32(day/100)"},
+			ttl:       sColumnTTL{},
 		},
 	}
 	for _, c := range cases {
@@ -88,7 +95,7 @@ func TestParseCreateTable(t *testing.T) {
 		if !sortedstring.Equals(sortedOrderBys, sortedOrderBys2) {
 			t.Errorf("orderby mismatch: want: %s got: %s", sortedOrderBys2, sortedOrderBys)
 		}
-		if partition != c.partition {
+		if !sortedstring.Equals(partition, c.partition) {
 			t.Errorf("partition mismatch: want %s got %s", c.partition, partition)
 		}
 		if len(ttlStr) > 0 {
@@ -98,6 +105,42 @@ func TestParseCreateTable(t *testing.T) {
 			} else if !reflect.DeepEqual(ttlVal, c.ttl) {
 				t.Errorf("parseTTLExpression want %v got %v", c.ttl, ttlVal)
 			}
+		}
+	}
+}
+
+func TestParsePartitions(t *testing.T) {
+	cases := []struct {
+		in   string
+		want []string
+	}{
+		{
+			in: "(account_id, toInt32(day / 100))",
+			want: []string{
+				"account_id",
+				"toInt32(day/100)",
+			},
+		},
+		{
+			in: "(account_id, charge_type, project_type, (toYear(usage_start_time) * 100) + toMonth(usage_start_time))",
+			want: []string{
+				"(toYear(usage_start_time)*100)+toMonth(usage_start_time)",
+				"account_id",
+				"charge_type",
+				"project_type",
+			},
+		},
+		{
+			in: "toInt64(id / 100000000000)",
+			want: []string{
+				"toInt64(id/100000000000)",
+			},
+		},
+	}
+	for _, c := range cases {
+		got := parsePartitions(c.in)
+		if !sortedstring.Equals(got, c.want) {
+			t.Errorf("want: %s got %s", c.want, got)
 		}
 	}
 }

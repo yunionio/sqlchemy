@@ -28,6 +28,7 @@ func TestBaseColumns(t *testing.T) {
 				isNullable: true,
 				isPrimary:  false,
 				tags:       make(map[string]string),
+				colIndex:   -1,
 			},
 		},
 		{
@@ -43,6 +44,7 @@ func TestBaseColumns(t *testing.T) {
 				isNullable: false,
 				isPrimary:  true,
 				tags:       make(map[string]string),
+				colIndex:   -1,
 			},
 		},
 		{
@@ -59,6 +61,7 @@ func TestBaseColumns(t *testing.T) {
 				isPrimary:  true,
 				isIndex:    true,
 				tags:       make(map[string]string),
+				colIndex:   -1,
 			},
 		},
 	}
