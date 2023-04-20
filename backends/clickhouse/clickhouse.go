@@ -24,6 +24,7 @@ import (
 	"yunion.io/x/pkg/errors"
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
+	"yunion.io/x/pkg/util/stringutils"
 	"yunion.io/x/pkg/utils"
 
 	"yunion.io/x/sqlchemy"
@@ -190,7 +191,7 @@ func (click *SClickhouseBackend) FetchTableColumnSpecs(ts sqlchemy.ITableSpec) (
 				clickSpec.SetOrderBy(true)
 			}
 			for _, part := range partitions {
-				if strings.Contains(part, clickSpec.Name()) {
+				if stringutils.ContainsWord(part, clickSpec.Name()) {
 					clickSpec.SetPartitionBy(part)
 				}
 			}
