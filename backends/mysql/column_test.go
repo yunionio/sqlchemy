@@ -59,8 +59,8 @@ func TestBadColumns(t *testing.T) {
 }
 
 var (
-	triCol         = NewTristateColumn("field", nil, false)
-	notNullTriCol  = NewTristateColumn("field", nil, false)
+	triCol         = NewTristateColumn("", "field", nil, false)
+	notNullTriCol  = NewTristateColumn("", "field", nil, false)
 	boolCol        = NewBooleanColumn("field", nil, false)
 	notNullBoolCol = NewBooleanColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
 	intCol         = NewIntegerColumn("field", "INT", false, nil, false)
