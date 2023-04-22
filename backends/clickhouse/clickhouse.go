@@ -207,7 +207,7 @@ func (click *SClickhouseBackend) FetchTableColumnSpecs(ts sqlchemy.ITableSpec) (
 func (click *SClickhouseBackend) GetColumnSpecByFieldType(table *sqlchemy.STableSpec, fieldType reflect.Type, fieldname string, tagmap map[string]string, isPointer bool) sqlchemy.IColumnSpec {
 	switch fieldType {
 	case tristate.TriStateType:
-		col := NewTristateColumn(fieldname, tagmap, isPointer)
+		col := NewTristateColumn(table.Name(), fieldname, tagmap, isPointer)
 		return &col
 	case gotypes.TimeType:
 		col := NewDateTimeColumn(fieldname, tagmap, isPointer)

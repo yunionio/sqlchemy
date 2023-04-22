@@ -26,8 +26,8 @@ import (
 )
 
 var (
-	triCol         = NewTristateColumn("field", nil, false)
-	notNullTriCol  = NewTristateColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
+	triCol         = NewTristateColumn("", "field", nil, false)
+	notNullTriCol  = NewTristateColumn("", "field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
 	boolCol        = NewBooleanColumn("field", nil, false)
 	notNullBoolCol = NewBooleanColumn("field", map[string]string{sqlchemy.TAG_NULLABLE: "false"}, false)
 	integerCol     = NewIntegerColumn("field", nil, false)
