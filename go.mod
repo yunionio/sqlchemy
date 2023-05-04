@@ -10,7 +10,7 @@ require (
 	golang.org/x/text v0.3.7
 	yunion.io/x/jsonutils v0.0.0-20220106020632-953b71a4c3a8
 	yunion.io/x/log v1.0.0
-	yunion.io/x/pkg v1.0.0
+	yunion.io/x/pkg v1.0.1-0.20230427104242-202edd119017
 )
 
 require (
@@ -19,8 +19,8 @@ require (
 	github.com/golang-plus/errors v1.0.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/mattn/go-colorable v0.1.2 // indirect
-	github.com/mattn/go-isatty v0.0.12 // indirect
+	github.com/mattn/go-colorable v0.1.9 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.6.0 // indirect
