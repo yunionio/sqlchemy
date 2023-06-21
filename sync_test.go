@@ -117,6 +117,16 @@ func TestDiffIndex(t *testing.T) {
 			remove: []STableIndex{},
 			add:    []STableIndex{},
 		},
+		{
+			index1: []STableIndex{
+				NewTableIndex(nil, []string{"name", "deleted"}, false),
+			},
+			index2: []STableIndex{
+				NewTableIndex(nil, []string{"deleted", "name"}, false),
+			},
+			remove: []STableIndex{},
+			add:    []STableIndex{},
+		},
 	}
 	for _, c := range cases {
 		add, remove := diffIndexes(c.index1, c.index2)
