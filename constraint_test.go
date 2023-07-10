@@ -40,7 +40,7 @@ func TestFetchColumns(t *testing.T) {
 	}
 	for _, c := range cases {
 		got := FetchColumns(c.in)
-		index := NewTableIndex(nil, c.want, false)
+		index := NewTableIndex(nil, "", c.want, false)
 		if !index.IsIdentical(got...) {
 			t.Errorf("want: %s got: %s", c.want, got)
 		}
