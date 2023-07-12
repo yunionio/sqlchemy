@@ -14,7 +14,9 @@
 
 package mysql
 
-import "testing"
+import (
+	"testing"
+)
 
 const tableDef = `CREATE TABLE ` + "`" + `image_properties` + "`" + ` (
   ` + "`" + `id` + "`" + ` varchar(128) CHARACTER SET ascii NOT NULL,
@@ -33,9 +35,15 @@ const tableDef = `CREATE TABLE ` + "`" + `image_properties` + "`" + ` (
   UNIQUE KEY ` + "`" + `image_id` + "`" + ` (` + "`" + `image_id` + "`" + `,` + "`" + `name` + "`" + `),
   UNIQUE KEY ` + "`" + `ix_image_properties_image_id_name` + "`" + ` (` + "`" + `image_id` + "`" + `,` + "`" + `name` + "`" + `),
   KEY ` + "`" + `ix_image_properties_image_id` + "`" + ` (` + "`" + `image_id` + "`" + `(10)),
-  KEY ` + "`" + `ix_image_properties_deleted` + "`" + ` (` + "`" + `deleted` + "`" + `),
+  KEY ` + "`" + `ix_image_properties_deleted` + "`" + ` (` + "`" + `deleted` + "`" + `,` + "`" + `image_id` + "`" + `,` + "`" + `name` + "`" + `),
+  KEY ` + "`" + `ix_image_properties_deleted_sorted` + "`" + ` (` + "`" + `image_id` + "`" + `,` + "`" + `deleted` + "`" + `,` + "`" + `name` + "`" + `),
   CONSTRAINT ` + "`" + `image_properties_ibfk_1` + "`" + ` FOREIGN KEY (` + "`" + `image_id` + "`" + `) REFERENCES ` + "`" + `images` + "`" + ` (` + "`" + `id` + "`" + `)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8`
+
+type expectIndex struct {
+	Name string
+	Cols []string
+}
 
 func TestParseCreateTable(t *testing.T) {
 	t.Logf("%s", tableDef)
@@ -44,7 +52,40 @@ func TestParseCreateTable(t *testing.T) {
 		t.Errorf("fail to find constraints")
 	}
 	idxs := parseIndexes(nil, tableDef)
-	if len(idxs) != 4 {
+	if len(idxs) != 5 {
 		t.Errorf("fail to find indexes")
+	} else {
+		expects := []struct {
+			Name string
+			Cols []string
+		}{
+			{
+				Name: "image_id",
+				Cols: []string{"image_id", "name"},
+			},
+			{
+				Name: "ix_image_properties_image_id_name",
+				Cols: []string{"image_id", "name"},
+			},
+			{
+				Name: "ix_image_properties_image_id",
+				Cols: []string{"image_id"},
+			},
+			{
+				Name: "ix_image_properties_deleted",
+				Cols: []string{"deleted", "image_id", "name"},
+			},
+			{
+				Name: "ix_image_properties_deleted_sorted",
+				Cols: []string{"name", "image_id", "deleted"},
+			},
+		}
+		for i := range expects {
+			if idxs[i].Name() != expects[i].Name {
+				t.Errorf("expect name %s got name %s", expects[i].Name, idxs[i].Name())
+			} else if !idxs[i].IsIdentical(expects[i].Cols...) {
+				t.Errorf("expect column %s got name %s", expects[i].Cols, idxs[i].QuotedColumns())
+			}
+		}
 	}
 }

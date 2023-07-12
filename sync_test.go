@@ -95,34 +95,34 @@ func TestDiffIndex(t *testing.T) {
 	}{
 		{
 			index1: []STableIndex{
-				NewTableIndex(nil, []string{"name"}, false),
+				NewTableIndex(nil, "", []string{"name"}, false),
 			},
 			index2: []STableIndex{
-				NewTableIndex(nil, []string{"name", "age"}, false),
+				NewTableIndex(nil, "", []string{"name", "age"}, false),
 			},
 			remove: []STableIndex{
-				NewTableIndex(nil, []string{"name"}, false),
+				NewTableIndex(nil, "", []string{"name"}, false),
 			},
 			add: []STableIndex{
-				NewTableIndex(nil, []string{"name", "age"}, false),
+				NewTableIndex(nil, "", []string{"name", "age"}, false),
 			},
 		},
 		{
 			index1: []STableIndex{
-				NewTableIndex(nil, []string{"name"}, false),
+				NewTableIndex(nil, "", []string{"name"}, false),
 			},
 			index2: []STableIndex{
-				NewTableIndex(nil, []string{"name"}, false),
+				NewTableIndex(nil, "", []string{"name"}, false),
 			},
 			remove: []STableIndex{},
 			add:    []STableIndex{},
 		},
 		{
 			index1: []STableIndex{
-				NewTableIndex(nil, []string{"name", "deleted"}, false),
+				NewTableIndex(nil, "", []string{"name", "deleted"}, false),
 			},
 			index2: []STableIndex{
-				NewTableIndex(nil, []string{"deleted", "name"}, false),
+				NewTableIndex(nil, "", []string{"deleted", "name"}, false),
 			},
 			remove: []STableIndex{},
 			add:    []STableIndex{},
