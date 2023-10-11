@@ -15,6 +15,7 @@
 package sqlchemy
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -68,6 +69,31 @@ func Test_likeEscape(t *testing.T) {
 			if got := likeEscape(tt.args.s); got != tt.want {
 				println(len(got), len(tt.want))
 				t.Errorf("likeEscape() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_Regexp(t *testing.T) {
+	field := &SRawQueryField{
+		name: "status",
+		db:   nil,
+	}
+	cases := []struct {
+		name string
+		cond ICondition
+		want string
+	}{
+		{
+			name: "^running$",
+			cond: Regexp(field, "^running$"),
+			want: "status REGEXP  ? [^running$]",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := fmt.Sprintf("%s%s", c.cond.WhereClause(), c.cond.Variables()); got != c.want {
+				t.Errorf("want: %v, got: %v", c.want, got)
 			}
 		})
 	}
