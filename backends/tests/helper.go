@@ -1,4 +1,4 @@
-package mysql
+package tests
 
 import (
 	"testing"
@@ -16,15 +16,23 @@ var (
 	testTable     *sqlchemy.STable
 )
 
-func testReset() {
+func GetTestTableSpec() *sqlchemy.STableSpec {
+	return testTableSpec
+}
+
+func GetTestTable() *sqlchemy.STable {
+	return testTable
+}
+
+func BackendTestReset(backend sqlchemy.DBBackendName) {
 	sqlchemy.ResetTableID()
 
-	sqlchemy.SetDefaultDB(nil)
+	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, backend)
 	testTableSpec = sqlchemy.NewTableSpecFromStruct(testQueryTable{}, "test")
 	testTable = testTableSpec.Instance()
 }
 
-func testGotWant(t *testing.T, got, want string) {
+func AssertGotWant(t *testing.T, got, want string) {
 	if got != want {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}

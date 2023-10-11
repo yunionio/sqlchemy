@@ -18,7 +18,18 @@ import (
 	"testing"
 
 	"yunion.io/x/sqlchemy"
+	"yunion.io/x/sqlchemy/backends/tests"
 )
+
+var (
+	testTable   *sqlchemy.STable
+	testGotWant = tests.AssertGotWant
+)
+
+func testReset() {
+	tests.BackendTestReset(sqlchemy.MySQLBackend)
+	testTable = tests.GetTestTable()
+}
 
 func TestQuery(t *testing.T) {
 	t.Run("query all fields", func(t *testing.T) {
@@ -32,6 +43,13 @@ func TestQuery(t *testing.T) {
 		testReset()
 		q := testTable.Query(testTable.Field("col0")).Equals("col1", 100)
 		want := "SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` =  ? "
+		testGotWant(t, q.String(), want)
+	})
+
+	t.Run("query regexp field", func(t *testing.T) {
+		testReset()
+		q := testTable.Query(testTable.Field("col0")).Regexp("col1", "^ab$")
+		want := "SELECT `t1`.`col0` FROM `test` AS `t1` WHERE `t1`.`col1` REGEXP  ? "
 		testGotWant(t, q.String(), want)
 	})
 
