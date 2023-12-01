@@ -1,0 +1,44 @@
+name: Building and test for PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.18'
+
+    - name: Install check tools
+      shell: bash
+      run: |
+        set -o xtrace
+        git clone --branch yun --depth 4 https://github.com/yousong/tools && cd tools
+        go build ./cmd/goimports && sudo cp goimports /usr/bin/ && cd .. && rm -rf tools
+        git clone --depth 4 https://github.com/yousong/y18n && cd y18n
+        go build . && sudo cp y18n /usr/bin && cd .. && rm -rf y18n
+
+    
+    - name: Run go test
+      shell: bash
+      run: |
+        set -o xtrace
+        echo $GITHUB_WORKSPACE
+        go test -v ./...
+
+    # - name: Run coverage
+    #   run: |
+    #     echo $GITHUB_WORKSPACE
+    #     mkdir -p $(dirname $GITHUB_WORKSPACE)/go/src/yunion.io/x
+    #     cp -r $GITHUB_WORKSPACE $(dirname $GITHUB_WORKSPACE)/go/src/yunion.io/x/
+    #     cd $(dirname $GITHUB_WORKSPACE)/go/src/yunion.io/x/sqlchemy
+    #     GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go get
+    #     GOPATH=$(dirname $GITHUB_WORKSPACE)/go GO111MODULE=off go test -race -coverprofile=coverage.out -covermode=atomic
+    #     dir
+    #     bash <(curl -s https://codecov.io/bash)
