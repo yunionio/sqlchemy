@@ -26,16 +26,18 @@ import (
 
 func TestSync(t *testing.T) {
 	type TableStruct1 struct {
-		Id     uint64 `auto_increment:"true"`
-		Name   string `width:"64" charset:"utf8"`
-		Age    int    `nullable:"true" default:"12"`
-		IsMale *bool  `nullable:"false" default:"true"`
+		Id       uint64 `auto_increment:"true"`
+		Name     string `width:"64" charset:"utf8"`
+		Age      int    `nullable:"true" default:"12"`
+		IsMale   *bool  `nullable:"false" default:"true"`
+		TenantId string `width:"32" charset:"ascii"`
 	}
 	type TableStruct2 struct {
-		Id     uint64 `auto_increment:"true"`
-		Name   string `width:"128" charset:"utf8"`
-		Age    uint   `nullable:"true" default:"10"`
-		Gender string `width:"8" nullable:"false" default:"male"`
+		Id        uint64 `auto_increment:"true"`
+		Name      string `width:"128" charset:"utf8"`
+		Age       uint   `nullable:"true" default:"10"`
+		Gender    string `width:"8" nullable:"false" default:"male"`
+		ProjectId string `width:"32" charset:"ascii" old_name:"tenant_id"`
 	}
 	dbConn, err := sql.Open("sqlite3", "file::memory:?cache=shared")
 	if err != nil {
@@ -54,8 +56,8 @@ func TestSync(t *testing.T) {
 	want := []string{
 		"ALTER TABLE `table1` ADD COLUMN `gender` TEXT NOT NULL DEFAULT 'male' COLLATE NOCASE",
 		"PRAGMA encoding=\"UTF-8\"",
-		"CREATE TABLE IF NOT EXISTS `table1_tmp` (\n`age` INTEGER DEFAULT 10,\n`gender` TEXT NOT NULL DEFAULT 'male' COLLATE NOCASE,\n`id` INTEGER PRIMARY KEY NOT NULL,\n`name` TEXT COLLATE NOCASE\n)",
-		"INSERT INTO `table1_tmp` SELECT `age`, `gender`, `id`, `name` FROM `table1`",
+		"CREATE TABLE IF NOT EXISTS `table1_tmp` (\n`age` INTEGER DEFAULT 10,\n`gender` TEXT NOT NULL DEFAULT 'male' COLLATE NOCASE,\n`id` INTEGER PRIMARY KEY NOT NULL,\n`name` TEXT COLLATE NOCASE,\n`project_id` TEXT COLLATE NOCASE\n)",
+		"INSERT INTO `table1_tmp`(`age`, `gender`, `id`, `name`, `project_id`) SELECT `age`, `gender`, `id`, `name`, `tenant_id` FROM `table1`",
 		"ALTER TABLE `table1` RENAME TO `table1_old`",
 		"ALTER TABLE `table1_tmp` RENAME TO `table1`",
 	}

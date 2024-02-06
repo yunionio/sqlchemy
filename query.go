@@ -236,6 +236,10 @@ func (tq *SQuery) Offset(offset int) *SQuery {
 	return tq
 }
 
+func (tq *SQuery) FieldCount() int {
+	return len(tq.fields)
+}
+
 // QueryFields of SQuery returns fields in SELECT clause of a query
 func (tq *SQuery) QueryFields() []IQueryField {
 	if len(tq.fields) > 0 {
