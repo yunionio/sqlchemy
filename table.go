@@ -104,6 +104,8 @@ type STableSpec struct {
 	extraOptions TableExtraOptions
 
 	sDBReferer
+
+	IsLinked bool
 }
 
 // STable is an instance of table for query, system will automatically give a alias to this table
@@ -148,6 +150,7 @@ func NewTableSpecFromISpecWithDBName(spec ITableSpec, name string, dbName DBName
 			dbName: dbName,
 		},
 		extraOptions: extraOpts,
+		IsLinked:     true,
 	}
 	return table
 }
