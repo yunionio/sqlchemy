@@ -354,10 +354,11 @@ func (tbl *STable) Variables() []interface{} {
 
 // Expression implementation of STableField for IQueryField
 func (c *STableField) Expression() string {
+	alias := c.spec.Name()
 	if len(c.alias) > 0 {
-		return fmt.Sprintf("`%s`.`%s` as `%s`", c.table.Alias(), c.spec.Name(), c.alias)
+		alias = c.alias
 	}
-	return fmt.Sprintf("`%s`.`%s`", c.table.Alias(), c.spec.Name())
+	return fmt.Sprintf("`%s`.`%s` AS `%s`", c.table.Alias(), c.spec.Name(), alias)
 }
 
 // Name implementation of STableField for IQueryField
