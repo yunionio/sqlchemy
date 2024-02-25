@@ -32,7 +32,7 @@ func TestParseTableIndex(t *testing.T) {
 			if index.Name() != c.name {
 				t.Errorf("want name: %s != got %s", c.name, index.Name())
 			} else if !index.IsIdentical(c.want...) {
-				t.Errorf("want: %s != got: %s", c.want, index.QuotedColumns())
+				t.Errorf("want: %s != got: %s", c.want, index.QuotedColumns("`"))
 			}
 		}
 	}

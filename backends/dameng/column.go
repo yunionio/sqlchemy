@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysql
+package dameng
 
 import (
 	"bytes"
@@ -34,9 +34,9 @@ import (
 
 func columnDefinitionBuffer(c sqlchemy.IColumnSpec) bytes.Buffer {
 	var buf bytes.Buffer
-	buf.WriteByte('`')
+	buf.WriteByte('"')
 	buf.WriteString(c.Name())
-	buf.WriteByte('`')
+	buf.WriteByte('"')
 	buf.WriteByte(' ')
 	buf.WriteString(c.ColType())
 
@@ -44,10 +44,6 @@ func columnDefinitionBuffer(c sqlchemy.IColumnSpec) bytes.Buffer {
 	if len(extra) > 0 {
 		buf.WriteString(" ")
 		buf.WriteString(extra)
-	}
-
-	if !c.IsNullable() {
-		buf.WriteString(" NOT NULL")
 	}
 
 	def := c.Default()
@@ -67,6 +63,10 @@ func columnDefinitionBuffer(c sqlchemy.IColumnSpec) bytes.Buffer {
 		if c.IsText() {
 			buf.WriteByte('\'')
 		}
+	}
+
+	if !c.IsNullable() {
+		buf.WriteString(" NOT NULL")
 	}
 
 	return buf
@@ -195,7 +195,7 @@ type SIntegerColumn struct {
 	isAutoVersion bool
 
 	// Is this column a unsigned integer?
-	isUnsigned bool
+	// isUnsigned bool
 
 	// If this column is an autoincrement column, AutoIncrementOffset records the initial offset
 	autoIncrementOffset int64
@@ -209,7 +209,7 @@ func (c *SIntegerColumn) IsNumeric() bool {
 // ExtraDefs implementation of SIntegerColumn for IColumnSpec
 func (c *SIntegerColumn) ExtraDefs() string {
 	if c.isAutoIncrement {
-		return "AUTO_INCREMENT"
+		return fmt.Sprintf("IDENTITY(%d, %d)", c.autoIncrementOffset, 1)
 	}
 	return ""
 }
@@ -234,22 +234,8 @@ func (c *SIntegerColumn) IsZero(val interface{}) bool {
 
 // ConvertFromString implementation of SBooleanColumn for IColumnSpec
 func (c *SIntegerColumn) ConvertFromString(str string) interface{} {
-	if c.isUnsigned {
-		val, _ := strconv.ParseUint(str, 10, 64)
-		return val
-	} else {
-		val, _ := strconv.ParseInt(str, 10, 64)
-		return val
-	}
-}
-
-// ColType implementation of SIntegerColumn for IColumnSpec
-func (c *SIntegerColumn) ColType() string {
-	str := (&c.SBaseWidthColumn).ColType()
-	if c.isUnsigned {
-		str += " UNSIGNED"
-	}
-	return str
+	val, _ := strconv.ParseInt(str, 10, 64)
+	return val
 }
 
 func (c *SIntegerColumn) IsAutoVersion() bool {
@@ -273,7 +259,7 @@ func (c *SIntegerColumn) SetAutoIncrementOffset(offset int64) {
 }
 
 // NewIntegerColumn return an instance of SIntegerColumn
-func NewIntegerColumn(name string, sqltype string, unsigned bool, tagmap map[string]string, isPointer bool) SIntegerColumn {
+func NewIntegerColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SIntegerColumn {
 	autoinc := false
 	autoincBase := int64(0)
 	tagmap, v, ok := utils.TagPop(tagmap, sqlchemy.TAG_AUTOINCREMENT)
@@ -296,7 +282,6 @@ func NewIntegerColumn(name string, sqltype string, unsigned bool, tagmap map[str
 		isAutoIncrement:     autoinc,
 		autoIncrementOffset: autoincBase,
 		isAutoVersion:       autover,
-		isUnsigned:          unsigned,
 	}
 	if autoinc {
 		c.SetPrimary(true) // autoincrement column must be primary key
@@ -430,32 +415,13 @@ func NewDecimalColumn(name string, tagmap map[string]string, isPointer bool) SDe
 // STextColumn represents a text type of column
 type STextColumn struct {
 	sqlchemy.SBaseWidthColumn
-	Charset string
 }
 
 // IsSupportDefault implementation of STextColumn for IColumnSpec
 func (c *STextColumn) IsSupportDefault() bool {
 	// https://stackoverflow.com/questions/3466872/why-cant-a-text-column-have-a-default-value-in-mysql
 	// MySQL does not support default for TEXT/BLOB
-	if c.SBaseColumn.ColType() == "VARCHAR" {
-		return true
-	}
-	return false
-}
-
-// ColType implementation of STextColumn for IColumnSpec
-func (c *STextColumn) ColType() string {
-	var charset string
-	var collate string
-	switch c.Charset {
-	case "ascii":
-		charset = "ascii"
-		collate = "ascii_general_ci"
-	case "utf8":
-		charset = "utf8mb4"
-		collate = "utf8mb4_unicode_ci"
-	}
-	return fmt.Sprintf("%s CHARACTER SET '%s' COLLATE '%s'", c.SBaseWidthColumn.ColType(), charset, collate)
+	return c.SBaseColumn.ColType() == "VARCHAR"
 }
 
 // IsText implementation of STextColumn for IColumnSpec
@@ -470,9 +436,6 @@ func (c *STextColumn) IsSearchable() bool {
 
 // IsAscii implementation of STextColumn for IColumnSpec
 func (c *STextColumn) IsAscii() bool {
-	if c.Charset == "ascii" {
-		return true
-	}
 	return false
 }
 
@@ -501,21 +464,17 @@ func (c *STextColumn) IsString() bool {
 
 // NewTextColumn return an instance of STextColumn
 func NewTextColumn(name string, sqlType string, tagmap map[string]string, isPointer bool) STextColumn {
-	tagmap, charset, _ := utils.TagPop(tagmap, sqlchemy.TAG_CHARSET)
-	if len(charset) == 0 {
-		charset = "utf8"
-	} else if charset != "utf8" && charset != "ascii" {
-		panic(fmt.Sprintf("Unsupported charset %s for %s", charset, name))
-	}
 	return STextColumn{
 		SBaseWidthColumn: sqlchemy.NewBaseWidthColumn(name, sqlType, tagmap, isPointer),
-		Charset:          charset,
 	}
 }
 
 // STimeTypeColumn represents a Detetime type of column, e.g. DateTime
 type STimeTypeColumn struct {
 	sqlchemy.SBaseColumn
+
+	// timestamp precision of nanoseconds, 0-6
+	precision int
 }
 
 // IsText implementation of STimeTypeColumn for IColumnSpec
@@ -539,6 +498,11 @@ func (c *STimeTypeColumn) IsZero(val interface{}) bool {
 	return bVal.IsZero()
 }
 
+// ColType implementation of SIntegerColumn for IColumnSpec
+func (c *STimeTypeColumn) ColType() string {
+	return fmt.Sprintf("%s(%d)", (&c.SBaseColumn).ColType(), c.precision)
+}
+
 // ConvertFromString implementation of SBooleanColumn for IColumnSpec
 func (c *STimeTypeColumn) ConvertFromString(str string) interface{} {
 	tm, _ := timeutils.ParseTimeStr(str)
@@ -547,8 +511,18 @@ func (c *STimeTypeColumn) ConvertFromString(str string) interface{} {
 
 // NewTimeTypeColumn return an instance of STimeTypeColumn
 func NewTimeTypeColumn(name string, typeStr string, tagmap map[string]string, isPointer bool) STimeTypeColumn {
+	tagmap, v, ok := utils.TagPop(tagmap, sqlchemy.TAG_PRECISION)
+	prec := 6
+	if ok {
+		prec, _ = strconv.Atoi(v)
+		if prec > 6 || prec <= 0 {
+			log.Warningf("datetime field %s precision %d change to 6", name, prec)
+			prec = 6
+		}
+	}
 	dc := STimeTypeColumn{
-		sqlchemy.NewBaseColumn(name, typeStr, tagmap, isPointer),
+		SBaseColumn: sqlchemy.NewBaseColumn(name, typeStr, tagmap, isPointer),
+		precision:   prec,
 	}
 	return dc
 }
@@ -589,8 +563,9 @@ func NewDateTimeColumn(name string, tagmap map[string]string, isPointer bool) SD
 		updatedAt = utils.ToBool(v)
 	}
 	dtc := SDateTimeColumn{
-		NewTimeTypeColumn(name, "DATETIME", tagmap, isPointer),
-		createdAt, updatedAt,
+		STimeTypeColumn: NewTimeTypeColumn(name, "TIMESTAMP", tagmap, isPointer),
+		isCreatedAt:     createdAt,
+		isUpdatedAt:     updatedAt,
 	}
 	return dtc
 }

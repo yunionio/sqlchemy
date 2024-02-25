@@ -84,7 +84,7 @@ func TestParseCreateTable(t *testing.T) {
 			if idxs[i].Name() != expects[i].Name {
 				t.Errorf("expect name %s got name %s", expects[i].Name, idxs[i].Name())
 			} else if !idxs[i].IsIdentical(expects[i].Cols...) {
-				t.Errorf("expect column %s got name %s", expects[i].Cols, idxs[i].QuotedColumns())
+				t.Errorf("expect column %s got name %s", expects[i].Cols, idxs[i].QuotedColumns("`"))
 			}
 		}
 	}

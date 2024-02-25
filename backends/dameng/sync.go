@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysql
+package dameng
 
 import (
 	"fmt"
@@ -22,11 +22,11 @@ import (
 	"yunion.io/x/sqlchemy"
 )
 
-func (mysql *SMySQLBackend) CommitTableChangeSQL(ts sqlchemy.ITableSpec, changes sqlchemy.STableChanges) []string {
+func (mysql *SDamengBackend) CommitTableChangeSQL(ts sqlchemy.ITableSpec, changes sqlchemy.STableChanges) []string {
 	ret := make([]string, 0)
 
 	for _, idx := range changes.RemoveIndexes {
-		sql := fmt.Sprintf("DROP INDEX `%s` ON `%s`", idx.Name(), ts.Name())
+		sql := fmt.Sprintf(`DROP INDEX "%s" ON "%s"`, idx.Name(), ts.Name())
 		ret = append(ret, sql)
 		log.Infof("%s;", sql)
 	}
@@ -75,7 +75,7 @@ func (mysql *SMySQLBackend) CommitTableChangeSQL(ts sqlchemy.ITableSpec, changes
 
 	/* IGNORE DROP STATEMENT */
 	for _, col := range changes.RemoveColumns {
-		sql := fmt.Sprintf("DROP COLUMN `%s`", col.Name())
+		sql := fmt.Sprintf(`DROP COLUMN "%s"`, col.Name())
 		log.Debugf("skip ALTER TABLE %s %s;", ts.Name(), sql)
 		// alters = append(alters, sql)
 		// ignore drop statement
@@ -119,13 +119,14 @@ func (mysql *SMySQLBackend) CommitTableChangeSQL(ts sqlchemy.ITableSpec, changes
 			}
 		}
 		if len(primaries) > 0 {
-			sql := fmt.Sprintf("ADD PRIMARY KEY(%s)", strings.Join(primaries, ", "))
+			pkName := fmt.Sprintf("PK_%s_%s", ts.Name(), strings.Join(primaries, "_"))
+			sql := fmt.Sprintf("ADD CONSTRAINT %s PRIMARY KEY(%s)", pkName, strings.Join(primaries, ", "))
 			alters = append(alters, sql)
 		}
 	}
 
 	if len(alters) > 0 {
-		sql := fmt.Sprintf("ALTER TABLE `%s` %s;", ts.Name(), strings.Join(alters, ", "))
+		sql := fmt.Sprintf(`ALTER TABLE "%s" %s;`, ts.Name(), strings.Join(alters, ", "))
 		ret = append(ret, sql)
 	}
 
@@ -139,5 +140,5 @@ func (mysql *SMySQLBackend) CommitTableChangeSQL(ts sqlchemy.ITableSpec, changes
 }
 
 func createIndexSQL(ts sqlchemy.ITableSpec, idx sqlchemy.STableIndex) string {
-	return fmt.Sprintf("CREATE INDEX `%s` ON `%s` (%s)", idx.Name(), ts.Name(), strings.Join(idx.QuotedColumns("`"), ","))
+	return fmt.Sprintf(`CREATE INDEX "%s" ON "%s" (%s)`, idx.Name(), ts.Name(), strings.Join(idx.QuotedColumns(`"`), ","))
 }

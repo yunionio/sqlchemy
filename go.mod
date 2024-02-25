@@ -14,9 +14,11 @@ require (
 )
 
 require (
+	gitee.com/chunanyong/dm v1.8.14 // indirect
 	github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang-plus/errors v1.0.0 // indirect
+	github.com/golang/snappy v0.0.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect

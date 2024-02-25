@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlchemy
+package dameng
 
 import (
-	"bytes"
-	"text/template"
+	"github.com/go-sql-driver/mysql"
 )
 
-var (
-	templateTbl = make(map[string]*template.Template)
+const (
+	mysqlErrorTableNotExist = 0x47a
 )
 
-func TemplateEval(temp string, variables interface{}) string {
-	if eval, ok := templateTbl[temp]; !ok {
-		eval = template.Must(template.New(temp).Parse(temp))
-		templateTbl[temp] = eval
+func isMysqlError(err error, code uint16) bool {
+	if myErr, ok := err.(*mysql.MySQLError); ok {
+		return myErr.Number == code
 	}
-	buf := new(bytes.Buffer)
-	templateTbl[temp].Execute(buf, variables)
-	return buf.String()
+	return false
 }

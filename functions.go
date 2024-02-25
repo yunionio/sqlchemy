@@ -44,20 +44,30 @@ type SFunctionFieldBase struct {
 	alias string
 }
 
+func (ff *SFunctionFieldBase) getQuoteChar() string {
+	qChar := ""
+	if ff.database() != nil {
+		qChar = ff.database().backend.QuoteChar()
+	}
+	return qChar
+}
+
 // Reference implementation of SFunctionFieldBase for IQueryField
 func (ff *SFunctionFieldBase) Reference() string {
 	if len(ff.alias) == 0 {
 		// log.Warningf("reference a function field without alias! %s", ff.expression())
 		return ff.expression()
 	}
-	return fmt.Sprintf("`%s`", ff.alias)
+	qChar := ff.getQuoteChar()
+	return fmt.Sprintf("%s%s%s", qChar, ff.alias, qChar)
 }
 
 // Expression implementation of SFunctionFieldBase for IQueryField
 func (ff *SFunctionFieldBase) Expression() string {
 	if len(ff.alias) > 0 {
+		qChar := ff.getQuoteChar()
 		// add alias
-		return fmt.Sprintf("%s AS `%s`", ff.expression(), ff.alias)
+		return fmt.Sprintf("%s AS %s%s%s", ff.expression(), qChar, ff.alias, qChar)
 	}
 	// no alias
 	return ff.expression()
@@ -196,7 +206,7 @@ func (s *SConstField) Expression() string {
 	if len(name) == 0 {
 		return s.Reference()
 	} else {
-		return fmt.Sprintf("%s AS `%s`", s.Reference(), name)
+		return fmt.Sprintf("%s AS %s", s.Reference(), name)
 	}
 }
 
@@ -245,7 +255,7 @@ func (s *SStringField) Expression() string {
 	if len(name) == 0 {
 		return s.Reference()
 	} else {
-		return fmt.Sprintf("%s AS `%s`", s.Reference(), name)
+		return fmt.Sprintf("%s AS %s", s.Reference(), name)
 	}
 }
 

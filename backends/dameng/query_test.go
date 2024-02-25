@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysql
+package dameng
 
 import (
 	"testing"
@@ -27,7 +27,7 @@ var (
 )
 
 func testReset() {
-	tests.BackendTestReset(sqlchemy.MySQLBackend)
+	tests.BackendTestReset(sqlchemy.DamengBackend)
 	testTable = tests.GetTestTable()
 }
 
@@ -35,28 +35,28 @@ func TestQuery(t *testing.T) {
 	t.Run("query all fields", func(t *testing.T) {
 		testReset()
 		q := testTable.Query()
-		want := "SELECT `t1`.`col0` AS `col0`, `t1`.`col1` AS `col1` FROM `test` AS `t1`"
+		want := `SELECT "t1"."col0" AS "col0", "t1"."col1" AS "col1" FROM "test" AS "t1"`
 		testGotWant(t, q.String(), want)
 	})
 
 	t.Run("query selected fields", func(t *testing.T) {
 		testReset()
 		q := testTable.Query(testTable.Field("col0")).Equals("col1", 100)
-		want := "SELECT `t1`.`col0` AS `col0` FROM `test` AS `t1` WHERE `t1`.`col1` =  ? "
+		want := `SELECT "t1"."col0" AS "col0" FROM "test" AS "t1" WHERE "t1"."col1" =  ? `
 		testGotWant(t, q.String(), want)
 	})
 
 	t.Run("query regexp field", func(t *testing.T) {
 		testReset()
 		q := testTable.Query(testTable.Field("col0")).Regexp("col1", "^ab$")
-		want := "SELECT `t1`.`col0` AS `col0` FROM `test` AS `t1` WHERE `t1`.`col1` REGEXP  ? "
+		want := `SELECT "t1"."col0" AS "col0" FROM "test" AS "t1" WHERE "t1"."col1" REGEXP  ? `
 		testGotWant(t, q.String(), want)
 	})
 
 	t.Run("query selected fields from subquery", func(t *testing.T) {
 		testReset()
 		q := testTable.Query().SubQuery().Query(testTable.Field("col0")).Equals("col1", 100)
-		want := "SELECT `t1`.`col0` AS `col0` FROM (SELECT `t1`.`col1` AS `col1` FROM `test` AS `t1`) AS `t2` WHERE `t2`.`col1` =  ? "
+		want := `SELECT "t1"."col0" AS "col0" FROM (SELECT "t1"."col1" AS "col1" FROM "test" AS "t1") AS "t2" WHERE "t2"."col1" =  ? `
 		testGotWant(t, q.String(), want)
 	})
 
@@ -66,7 +66,7 @@ func TestQuery(t *testing.T) {
 		q2 := testTable.Query(testTable.Field("col0")).Equals("col1", 200)
 		uq := sqlchemy.Union(q1, q2)
 		q := uq.Query()
-		want := "SELECT `t2`.`col0` AS `col0` FROM (SELECT `t3`.`col0` AS `col0` FROM (SELECT `t1`.`col0` AS `col0` FROM `test` AS `t1` WHERE `t1`.`col1` =  ? ) AS `t3` UNION SELECT `t4`.`col0` AS `col0` FROM (SELECT `t1`.`col0` AS `col0` FROM `test` AS `t1` WHERE `t1`.`col1` =  ? ) AS `t4`) AS `t2`"
+		want := `SELECT "t2"."col0" AS "col0" FROM (SELECT "t3"."col0" AS "col0" FROM (SELECT "t1"."col0" AS "col0" FROM "test" AS "t1" WHERE "t1"."col1" =  ? ) AS "t3" UNION SELECT "t4"."col0" AS "col0" FROM (SELECT "t1"."col0" AS "col0" FROM "test" AS "t1" WHERE "t1"."col1" =  ? ) AS "t4") AS "t2"`
 		testGotWant(t, q.String(), want)
 	})
 
@@ -74,7 +74,7 @@ func TestQuery(t *testing.T) {
 		testReset()
 		q := testTable.Query(sqlchemy.SUM("total", testTable.Field("col1")), testTable.Field("col0")).GroupBy(testTable.Field("col0"))
 		q = q.Asc(q.Field("total"))
-		want := "SELECT SUM(`t1`.`col1`) AS `total`, `t1`.`col0` AS `col0` FROM `test` AS `t1` GROUP BY `t1`.`col0` ORDER BY `total` ASC"
+		want := `SELECT SUM("t1"."col1") AS "total", "t1"."col0" AS "col0" FROM "test" AS "t1" GROUP BY "t1"."col0" ORDER BY "total" ASC`
 		testGotWant(t, q.String(), want)
 	})
 }
@@ -87,6 +87,6 @@ func TestCountQuery(t *testing.T) {
 	q.Limit(8)
 	q.Offset(10)
 	cq := q.CountQuery()
-	want := "SELECT COUNT(*) AS count FROM (SELECT `t1`.`col0` AS `col0`, `t1`.`col1` AS `col1` FROM `test` AS `t1` GROUP BY `t1`.`col0`) AS `t2`"
+	want := `SELECT COUNT(*) AS count FROM (SELECT "t1"."col0" AS "col0", "t1"."col1" AS "col1" FROM "test" AS "t1" GROUP BY "t1"."col0") AS "t2"`
 	testGotWant(t, cq.String(), want)
 }
