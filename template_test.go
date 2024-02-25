@@ -46,7 +46,7 @@ func TestTemplateEvel(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		got := templateEval(c.In, c.Var)
+		got := TemplateEval(c.In, c.Var)
 		if got != c.Want {
 			t.Errorf("want: %s != got: %s", c.Want, got)
 		}

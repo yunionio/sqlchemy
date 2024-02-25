@@ -230,3 +230,11 @@ func (bb *SBaseBackend) UPPER(name string, field IQueryField) IQueryField {
 func (bb *SBaseBackend) DATEDIFF(unit string, field1, field2 IQueryField) IQueryField {
 	return NewFunctionField("", fmt.Sprintf("DATEDIFF('%s',%s,%s)", unit, "%s", "%s"), field1, field2)
 }
+
+func (bb *SBaseBackend) QuoteChar() string {
+	return "`"
+}
+
+func (bb *SBaseBackend) PrepareInsertOrUpdateSQL(ts ITableSpec, insertColNames []string, insertFields []string, onPrimaryCols []string, updateSetCols []string, insertValues []interface{}, updateValues []interface{}) (string, []interface{}) {
+	return "", nil
+}

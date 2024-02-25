@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package clickhouse
+package dameng
 
 import (
 	"testing"
@@ -22,7 +22,7 @@ import (
 )
 
 func insertSqlPrep(v interface{}, update bool) (string, []interface{}, error) {
-	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.ClickhouseBackend)
+	sqlchemy.SetDBWithNameBackend(nil, sqlchemy.DefaultDB, sqlchemy.DamengBackend)
 	ts := sqlchemy.NewTableSpecFromStruct(v, "vv")
 	results, err := ts.InsertSqlPrep(v, update)
 	if err != nil {
@@ -41,12 +41,10 @@ func TestInsertAutoIncrement(t *testing.T) {
 		{
 			value: &struct {
 				RowId int `auto_increment:"true"`
-			}{
-				RowId: 12345,
-			},
+			}{},
 			update:  false,
-			wantSQL: "INSERT INTO `vv` (`row_id`) VALUES (?)",
-			wantVar: 1,
+			wantSQL: `INSERT INTO "vv" () VALUES ()`,
+			wantVar: 0,
 		},
 		{
 			value: &struct {
@@ -56,9 +54,9 @@ func TestInsertAutoIncrement(t *testing.T) {
 				RowId: 1,
 				Name:  "a",
 			},
-			update:  false,
-			wantSQL: "INSERT INTO `vv` (`row_id`, `name`) VALUES (?, ?)",
-			wantVar: 2,
+			update:  true,
+			wantSQL: `MERGE INTO "vv" T1 USING (SELECT ? AS "row_id", ? AS "name" FROM DUAL) T2 ON (T1."row_id"=T2."row_id") WHEN NOT MATCHED THEN INSERT("row_id", "name") VALUES (?, ?) WHEN MATCHED THEN UPDATE T1.name = ?`,
+			wantVar: 5,
 		},
 	}
 	for _, c := range cases {
@@ -75,6 +73,20 @@ func TestInsertAutoIncrement(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestInsertMultiAutoIncrement(t *testing.T) {
+	defer func() {
+		v := recover()
+		if v == nil {
+			t.Errorf("should panic with multiple auto_increment fields")
+		}
+	}()
+	_, _, err := insertSqlPrep(&struct {
+		RowId  int `auto_increment:"true"`
+		RowId2 int `auto_increment:"true"`
+	}{}, false)
+	t.Errorf("should panic but it continues: err: %s", err)
 }
 
 func TestInsertWithPointerValue(t *testing.T) {

@@ -12,23 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlchemy
+package dameng
 
 import (
-	"bytes"
-	"text/template"
+	"fmt"
+
+	"yunion.io/x/sqlchemy"
 )
 
-var (
-	templateTbl = make(map[string]*template.Template)
-)
-
-func TemplateEval(temp string, variables interface{}) string {
-	if eval, ok := templateTbl[temp]; !ok {
-		eval = template.Must(template.New(temp).Parse(temp))
-		templateTbl[temp] = eval
-	}
-	buf := new(bytes.Buffer)
-	templateTbl[temp].Execute(buf, variables)
-	return buf.String()
+// GROUP_CONCAT2 represents the SQL function GROUP_CONCAT
+func (mysql *SDamengBackend) GROUP_CONCAT2(name string, sep string, field sqlchemy.IQueryField) sqlchemy.IQueryField {
+	return sqlchemy.NewFunctionField(name, fmt.Sprintf("GROUP_CONCAT(%%s SEPARATOR '%s')", sep), field)
 }

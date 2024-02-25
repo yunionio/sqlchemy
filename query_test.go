@@ -257,7 +257,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(NewConstField("MALE").Label("Gender")).IsTrue("is_male")
 				return q
 			}(),
-			want: "SELECT 'MALE' AS `Gender` FROM `testtable` AS `t42` WHERE `t42`.`is_male` = 1",
+			want: "SELECT 'MALE' AS Gender FROM `testtable` AS `t42` WHERE `t42`.`is_male` = 1",
 		},
 		{
 			query: func() *SQuery {
@@ -266,7 +266,7 @@ func TestQueryString(t *testing.T) {
 				q := subq.Query(COUNT("count", subq.Field("Gender")))
 				return q
 			}(),
-			want: "SELECT COUNT(`t44`.`Gender`) AS `count` FROM (SELECT 'FEMALE' AS `Gender` FROM `testtable` AS `t43` WHERE `t43`.`is_male` = 0) AS `t44`",
+			want: "SELECT COUNT(`t44`.`Gender`) AS `count` FROM (SELECT 'FEMALE' AS Gender FROM `testtable` AS `t43` WHERE `t43`.`is_male` = 0) AS `t44`",
 		},
 		{
 			query: func() *SQuery {

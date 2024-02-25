@@ -12,23 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlchemy
-
-import (
-	"bytes"
-	"text/template"
-)
-
-var (
-	templateTbl = make(map[string]*template.Template)
-)
-
-func TemplateEval(temp string, variables interface{}) string {
-	if eval, ok := templateTbl[temp]; !ok {
-		eval = template.Must(template.New(temp).Parse(temp))
-		templateTbl[temp] = eval
-	}
-	buf := new(bytes.Buffer)
-	templateTbl[temp].Execute(buf, variables)
-	return buf.String()
-}
+package dameng // import "yunion.io/x/sqlchemy/backends/dameng"

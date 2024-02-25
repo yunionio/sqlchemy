@@ -102,6 +102,8 @@ func queryString(tq *SQuery, tmpFields ...IQueryField) string {
 		return tq.rawSql
 	}
 
+	qChar := tq.database().backend.QuoteChar()
+
 	var buf bytes.Buffer
 	buf.WriteString("SELECT ")
 	if tq.distinct {
@@ -142,12 +144,12 @@ func queryString(tq *SQuery, tmpFields ...IQueryField) string {
 		buf.WriteString(fields[i].Expression())
 	}
 	buf.WriteString(" FROM ")
-	buf.WriteString(fmt.Sprintf("%s AS `%s`", tq.from.Expression(), tq.from.Alias()))
+	buf.WriteString(fmt.Sprintf("%s AS %s%s%s", tq.from.Expression(), qChar, tq.from.Alias(), qChar))
 	for _, join := range tq.joins {
 		buf.WriteByte(' ')
 		buf.WriteString(string(join.jointype))
 		buf.WriteByte(' ')
-		buf.WriteString(fmt.Sprintf("%s AS `%s`", join.from.Expression(), join.from.Alias()))
+		buf.WriteString(fmt.Sprintf("%s AS %s%s%s", join.from.Expression(), qChar, join.from.Alias(), qChar))
 		whereCls := join.condition.WhereClause()
 		if len(whereCls) > 0 {
 			buf.WriteString(" ON ")
