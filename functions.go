@@ -21,6 +21,14 @@ import (
 	"yunion.io/x/log"
 )
 
+// IFunctionQueryField is a special type of field that is an aggregate function
+type IFunctionQueryField interface {
+	IQueryField
+
+	// is this an aggregate function?
+	IsAggregate() bool
+}
+
 // IFunction is the interface for a SQL embedded function, such as MIN, MAX, NOW, etc.
 type IFunction interface {
 	expression() string
@@ -42,6 +50,8 @@ func NewFunction(ifunc IFunction, name string) IQueryField {
 type SFunctionFieldBase struct {
 	IFunction
 	alias string
+
+	aggregate bool
 }
 
 func (ff *SFunctionFieldBase) getQuoteChar() string {
@@ -94,6 +104,10 @@ func (ff *SFunctionFieldBase) Variables() []interface{} {
 	return ff.variables()
 }
 
+func (ff *SFunctionFieldBase) IsAggregate() bool {
+	return ff.aggregate
+}
+
 type sExprFunction struct {
 	fields   []IQueryField
 	function string
@@ -102,7 +116,12 @@ type sExprFunction struct {
 func (ff *sExprFunction) expression() string {
 	fieldRefs := make([]interface{}, 0)
 	for _, f := range ff.fields {
-		fieldRefs = append(fieldRefs, f.Reference())
+		switch tf := f.(type) {
+		case *SFunctionFieldBase:
+			fieldRefs = append(fieldRefs, tf.expression())
+		default:
+			fieldRefs = append(fieldRefs, tf.Reference())
+		}
 	}
 	return fmt.Sprintf(ff.function, fieldRefs...)
 }
@@ -132,7 +151,7 @@ func (ff *sExprFunction) queryFields() []IQueryField {
 }
 
 // NewFunctionField returns an instance of query field by calling a SQL embedded function
-func NewFunctionField(name string, funcexp string, fields ...IQueryField) IQueryField {
+func NewFunctionField(name string, isAggr bool, funcexp string, fields ...IQueryField) IQueryField {
 	funcBase := &sExprFunction{
 		fields:   fields,
 		function: funcexp,
@@ -140,6 +159,7 @@ func NewFunctionField(name string, funcexp string, fields ...IQueryField) IQuery
 	return &SFunctionFieldBase{
 		IFunction: funcBase,
 		alias:     name,
+		aggregate: isAggr,
 	}
 }
 
@@ -238,6 +258,11 @@ func (s *SConstField) Variables() []interface{} {
 	return nil
 }
 
+// IsAggregate implementation of SConstField for IFunctionQueryField
+func (s *SConstField) IsAggregate() bool {
+	return true
+}
+
 // NewConstField returns an instance of SConstField
 func NewConstField(variable interface{}) *SConstField {
 	return &SConstField{constVar: variable}
@@ -285,6 +310,11 @@ func (s *SStringField) database() *SDatabase {
 // Variables implementation of SStringField for IQueryField
 func (s *SStringField) Variables() []interface{} {
 	return nil
+}
+
+// IsAggregate implementation of SStringField for IFunctionQueryField
+func (s *SStringField) IsAggregate() bool {
+	return true
 }
 
 // NewStringField returns an instance of SStringField
@@ -353,7 +383,7 @@ func bc(name, op string, fields ...IQueryField) IQueryField {
 	for i := 0; i < len(fields); i++ {
 		exps = append(exps, "%s")
 	}
-	return NewFunctionField(name, strings.Join(exps, fmt.Sprintf(" %s ", op)), fields...)
+	return NewFunctionField(name, false, strings.Join(exps, fmt.Sprintf(" %s ", op)), fields...)
 }
 
 func ADD(name string, fields ...IQueryField) IQueryField {
@@ -377,5 +407,5 @@ func DATEDIFF(unit string, field1, field2 IQueryField) IQueryField {
 }
 
 func ABS(name string, field IQueryField) IQueryField {
-	return NewFunctionField(name, "ABS(%s)", field)
+	return NewFunctionField(name, false, "ABS(%s)", field)
 }

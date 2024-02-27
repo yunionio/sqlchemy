@@ -55,7 +55,7 @@ func TestInsertAutoIncrement(t *testing.T) {
 				Name:  "a",
 			},
 			update:  true,
-			wantSQL: `MERGE INTO "vv" T1 USING (SELECT ? AS "row_id", ? AS "name" FROM DUAL) T2 ON (T1."row_id"=T2."row_id") WHEN NOT MATCHED THEN INSERT("row_id", "name") VALUES (?, ?) WHEN MATCHED THEN UPDATE T1.name = ?`,
+			wantSQL: `MERGE INTO "vv" T1 USING (SELECT ? AS "row_id", ? AS "name" FROM DUAL) T2 ON (T1."row_id"=T2."row_id") WHEN NOT MATCHED THEN INSERT("row_id", "name") VALUES (?, ?) WHEN MATCHED THEN UPDATE SET "T1"."name" = ?`,
 			wantVar: 5,
 		},
 	}

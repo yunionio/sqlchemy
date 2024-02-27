@@ -26,6 +26,7 @@ import (
 	"yunion.io/x/pkg/gotypes"
 	"yunion.io/x/pkg/tristate"
 	"yunion.io/x/pkg/util/regutils"
+	"yunion.io/x/pkg/utils"
 
 	"yunion.io/x/sqlchemy"
 )
@@ -79,11 +80,13 @@ func (dameng *SDamengBackend) UpdateSQLTemplate() string {
 }
 
 func (dameng *SDamengBackend) PrepareInsertOrUpdateSQL(ts sqlchemy.ITableSpec, insertColNames []string, insertFields []string, onPrimaryCols []string, updateSetCols []string, insertValues []interface{}, updateValues []interface{}) (string, []interface{}) {
-	sqlTemp := `MERGE INTO "{{ .Table }}" T1 USING (SELECT {{ .SelectValues }} FROM DUAL) T2 ON ({{ .OnConditions }}) WHEN NOT MATCHED THEN INSERT({{ .Columns }}) VALUES ({{ .Values }}) WHEN MATCHED THEN UPDATE {{ .SetValues }}`
+	sqlTemp := `MERGE INTO "{{ .Table }}" T1 USING (SELECT {{ .SelectValues }} FROM DUAL) T2 ON ({{ .OnConditions }}) WHEN NOT MATCHED THEN INSERT({{ .Columns }}) VALUES ({{ .Values }}) WHEN MATCHED THEN UPDATE SET {{ .SetValues }}`
 	selectValues := make([]string, 0, len(insertColNames))
 	onConditions := make([]string, 0, len(onPrimaryCols))
-	for _, colname := range insertColNames {
-		selectValues = append(selectValues, fmt.Sprintf("? AS %s", colname))
+
+	for i := range insertColNames {
+		colName := strings.Trim(insertColNames[i], "'\"")
+		selectValues = append(selectValues, fmt.Sprintf("%s AS \"%s\"", insertFields[i], colName))
 	}
 	for _, primary := range onPrimaryCols {
 		onConditions = append(onConditions, fmt.Sprintf("T1.%s=T2.%s", primary, primary))
@@ -93,9 +96,9 @@ func (dameng *SDamengBackend) PrepareInsertOrUpdateSQL(ts sqlchemy.ITableSpec, i
 		equalPos := strings.Index(setCol, "=")
 		key := strings.TrimSpace(setCol[0:equalPos])
 		val := strings.TrimSpace(setCol[equalPos+1:])
-		key = strings.Trim(key, "`\"")
-		key = fmt.Sprintf("T1.%s", key)
-		updateSetCols[i] = fmt.Sprintf("%s = %s", key, val)
+		tkey := fmt.Sprintf("\"T1\".%s", key)
+		val = strings.ReplaceAll(val, key, tkey)
+		updateSetCols[i] = fmt.Sprintf("%s = %s", tkey, val)
 	}
 	values := make([]interface{}, 0, len(insertValues)*2+len(updateValues))
 	values = append(values, insertValues...)
@@ -137,14 +140,14 @@ func (dameng *SDamengBackend) GetCreateSQLs(ts sqlchemy.ITableSpec) []string {
 	for _, c := range ts.Columns() {
 		cols = append(cols, c.DefinitionString())
 		if c.IsPrimary() {
-			primaries = append(primaries, fmt.Sprintf("`%s`", c.Name()))
+			primaries = append(primaries, fmt.Sprintf(`"%s"`, c.Name()))
 		}
 	}
 	if len(primaries) > 0 {
 		cols = append(cols, fmt.Sprintf("NOT CLUSTER PRIMARY KEY (%s)", strings.Join(primaries, ", ")))
 	}
 	sqls := []string{
-		fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (\n%s\n)", ts.Name(), strings.Join(cols, ",\n")),
+		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (%s);`, ts.Name(), strings.Join(cols, ", ")),
 	}
 	for _, idx := range ts.Indexes() {
 		sqls = append(sqls, createIndexSQL(ts, idx))
@@ -183,19 +186,21 @@ func (dameng *SDamengBackend) FetchIndexesAndConstraints(ts sqlchemy.ITableSpec)
 	return retIdxes, nil, nil
 }
 
-func getTextSqlType(tagmap map[string]string) string {
+func getTextSqlType(tagmap map[string]string) (string, map[string]string) {
 	var width int
 	var sqltype string
-	widthStr := tagmap[sqlchemy.TAG_WIDTH]
+	tagmap, widthStr, _ := utils.TagPop(tagmap, sqlchemy.TAG_WIDTH)
+	// widthStr := tagmap[sqlchemy.TAG_WIDTH]
 	if len(widthStr) > 0 && regutils.MatchInteger(widthStr) {
 		width, _ = strconv.Atoi(widthStr)
 	}
 	if width == 0 || width > 975 {
 		sqltype = "TEXT"
 	} else {
+		tagmap[sqlchemy.TAG_WIDTH] = widthStr
 		sqltype = "VARCHAR"
 	}
-	return sqltype
+	return sqltype, tagmap
 }
 
 func (dameng *SDamengBackend) GetColumnSpecByFieldType(table *sqlchemy.STableSpec, fieldType reflect.Type, fieldname string, tagmap map[string]string, isPointer bool) sqlchemy.IColumnSpec {
@@ -209,7 +214,8 @@ func (dameng *SDamengBackend) GetColumnSpecByFieldType(table *sqlchemy.STableSpe
 	}
 	switch fieldType.Kind() {
 	case reflect.String:
-		col := NewTextColumn(fieldname, getTextSqlType(tagmap), tagmap, isPointer)
+		sqltype, tagmap := getTextSqlType(tagmap)
+		col := NewTextColumn(fieldname, sqltype, tagmap, isPointer)
 		return &col
 	case reflect.Int, reflect.Int32:
 		col := NewIntegerColumn(fieldname, "INT", tagmap, isPointer)
@@ -250,11 +256,13 @@ func (dameng *SDamengBackend) GetColumnSpecByFieldType(table *sqlchemy.STableSpe
 		col := NewFloatColumn(fieldname, colType, tagmap, isPointer)
 		return &col
 	case reflect.Map, reflect.Slice:
-		col := NewCompoundColumn(fieldname, getTextSqlType(tagmap), tagmap, isPointer)
+		sqltype, tagmap := getTextSqlType(tagmap)
+		col := NewCompoundColumn(fieldname, sqltype, tagmap, isPointer)
 		return &col
 	}
 	if fieldType.Implements(gotypes.ISerializableType) {
-		col := NewCompoundColumn(fieldname, getTextSqlType(tagmap), tagmap, isPointer)
+		sqltype, tagmap := getTextSqlType(tagmap)
+		col := NewCompoundColumn(fieldname, sqltype, tagmap, isPointer)
 		return &col
 	}
 	return nil
