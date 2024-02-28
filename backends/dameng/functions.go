@@ -22,5 +22,5 @@ import (
 
 // GROUP_CONCAT2 represents the SQL function GROUP_CONCAT
 func (mysql *SDamengBackend) GROUP_CONCAT2(name string, sep string, field sqlchemy.IQueryField) sqlchemy.IQueryField {
-	return sqlchemy.NewFunctionField(name, fmt.Sprintf("GROUP_CONCAT(%%s SEPARATOR '%s')", sep), field)
+	return sqlchemy.NewFunctionField(name, true, fmt.Sprintf("REPLACE(WM_CONCAT(%%s), ',', '%s')", sep), field)
 }

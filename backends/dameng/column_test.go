@@ -16,10 +16,12 @@ package dameng
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"yunion.io/x/jsonutils"
 	"yunion.io/x/pkg/tristate"
+	"yunion.io/x/pkg/util/timeutils"
 	"yunion.io/x/sqlchemy"
 )
 
@@ -40,21 +42,6 @@ func TestBadColumns(t *testing.T) {
 			},
 			isPtr,
 		)
-	})
-	t.Run("text with default", func(t *testing.T) {
-		defer wantPanic(t, "ERROR 1101 (42000): BLOB/TEXT column 'xxx' can't have a default value")
-		col := NewTextColumn(
-			"bad",
-			"TEXT",
-			map[string]string{
-				"default": "off",
-			},
-			isPtr,
-		)
-		def := col.DefinitionString()
-		if def != "" {
-			t.Fatal("should have paniced")
-		}
 	})
 }
 
@@ -93,7 +80,7 @@ func TestColumns(t *testing.T) {
 		},
 		{
 			in:   &notNullBoolCol,
-			want: `"field" TINYINT NOT NULL`,
+			want: `"field" TINYINT DEFAULT 0 NOT NULL`,
 		},
 		{
 			in:   &intCol,
@@ -113,7 +100,7 @@ func TestColumns(t *testing.T) {
 		},
 		{
 			in:   &notNullTextCol,
-			want: `"field" VARCHAR(16) NOT NULL`,
+			want: `"field" VARCHAR(16) DEFAULT '' NOT NULL`,
 		},
 		{
 			in:   &defTextCol,
@@ -124,8 +111,11 @@ func TestColumns(t *testing.T) {
 			want: `"field" TIMESTAMP(6)`,
 		},
 		{
-			in:   &notNullDateCol,
-			want: `"field" TIMESTAMP(6) NOT NULL`,
+			in: &notNullDateCol,
+			want: func() string {
+				tm, _ := timeutils.ParseTimeStr("")
+				return fmt.Sprintf(`"field" TIMESTAMP(6) DEFAULT '%s' NOT NULL`, timeutils.MysqlTime(tm))
+			}(),
 		},
 		{
 			in:   &compCol,

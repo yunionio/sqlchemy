@@ -47,9 +47,9 @@ func columnDefinitionBuffer(c sqlchemy.IColumnSpec) bytes.Buffer {
 	}
 
 	def := c.Default()
-	defOk := c.IsSupportDefault()
-	if def != "" {
-		if !defOk {
+	if hasDefault(c) {
+		// if c is NOT NULL, default value must be set
+		if !c.IsSupportDefault() {
 			panic(fmt.Errorf("column %q type %q does not support having default value: %q",
 				c.Name(), c.ColType(), def,
 			))
@@ -70,6 +70,10 @@ func columnDefinitionBuffer(c sqlchemy.IColumnSpec) bytes.Buffer {
 	}
 
 	return buf
+}
+
+func hasDefault(c sqlchemy.IColumnSpec) bool {
+	return (c.Default() != "" || !c.IsNullable()) && !c.IsAutoIncrement()
 }
 
 // SBooleanColumn represents a boolean type column, which is a int(1) for mysql, with value of true or false
@@ -186,7 +190,7 @@ func NewTristateColumn(table, name string, tagmap map[string]string, isPointer b
 
 // SIntegerColumn represents an integer type of column, with value of integer
 type SIntegerColumn struct {
-	sqlchemy.SBaseWidthColumn
+	sqlchemy.SBaseColumn
 
 	// Is this column an autoincrement colmn
 	isAutoIncrement bool
@@ -261,7 +265,7 @@ func (c *SIntegerColumn) SetAutoIncrementOffset(offset int64) {
 // NewIntegerColumn return an instance of SIntegerColumn
 func NewIntegerColumn(name string, sqltype string, tagmap map[string]string, isPointer bool) SIntegerColumn {
 	autoinc := false
-	autoincBase := int64(0)
+	autoincBase := int64(1)
 	tagmap, v, ok := utils.TagPop(tagmap, sqlchemy.TAG_AUTOINCREMENT)
 	if ok {
 		base, err := strconv.ParseInt(v, 10, 64)
@@ -278,7 +282,7 @@ func NewIntegerColumn(name string, sqltype string, tagmap map[string]string, isP
 		autover = utils.ToBool(v)
 	}
 	c := SIntegerColumn{
-		SBaseWidthColumn:    sqlchemy.NewBaseWidthColumn(name, sqltype, tagmap, isPointer),
+		SBaseColumn:         sqlchemy.NewBaseColumn(name, sqltype, tagmap, isPointer),
 		isAutoIncrement:     autoinc,
 		autoIncrementOffset: autoincBase,
 		isAutoVersion:       autover,
@@ -419,9 +423,7 @@ type STextColumn struct {
 
 // IsSupportDefault implementation of STextColumn for IColumnSpec
 func (c *STextColumn) IsSupportDefault() bool {
-	// https://stackoverflow.com/questions/3466872/why-cant-a-text-column-have-a-default-value-in-mysql
-	// MySQL does not support default for TEXT/BLOB
-	return c.SBaseColumn.ColType() == "VARCHAR"
+	return true // c.SBaseColumn.ColType() == "VARCHAR"
 }
 
 // IsText implementation of STextColumn for IColumnSpec

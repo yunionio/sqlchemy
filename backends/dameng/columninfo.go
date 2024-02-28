@@ -15,12 +15,14 @@
 package dameng
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/binary"
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"yunion.io/x/log"
+	"yunion.io/x/pkg/errors"
 
 	"yunion.io/x/sqlchemy"
 )
@@ -37,7 +39,10 @@ type sSqlColumnInfo struct {
 	CharacterSetName string `json:"CHARACTER_SET_NAME"`
 	DataDefault      string `json:"DATA_DEFAULT"`
 	IsPrimary        bool   `json:"is_primary"`
-	IsAutoIncrement  bool   `json:"is_auto_increment"`
+
+	IsAutoIncrement     bool   `json:"is_auto_increment"`
+	AutoIncrementOffset uint64 `json:"auto_increment_offset"`
+	AutoIncrementStep   uint64 `json:"auto_increment_step"`
 }
 
 func fetchTableColInfo(ts sqlchemy.ITableSpec) (map[string]*sSqlColumnInfo, error) {
@@ -51,6 +56,7 @@ func fetchTableColInfo(ts sqlchemy.ITableSpec) (map[string]*sSqlColumnInfo, erro
 	ret := make(map[string]*sSqlColumnInfo)
 	for i := range infos {
 		infos[i].TableName = ts.Name()
+		infos[i].ColumnName = strings.ToLower(infos[i].ColumnName)
 		ret[infos[i].ColumnName] = &infos[i]
 	}
 
@@ -68,13 +74,13 @@ func fetchTableColInfo(ts sqlchemy.ITableSpec) (map[string]*sSqlColumnInfo, erro
 		}
 	}
 
-	autoIncCol, err := fetchTableAutoIncrementCol(ts)
+	autoIncInfo, err := fetchTableAutoIncrementCol(ts)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetchTableAutoIncrementCol")
-	}
-
-	if len(autoIncCol) > 0 {
-		ret[autoIncCol].IsAutoIncrement = true
+	} else if autoIncInfo != nil {
+		ret[autoIncInfo.Name].IsAutoIncrement = true
+		ret[autoIncInfo.Name].AutoIncrementOffset = autoIncInfo.Offset
+		ret[autoIncInfo.Name].AutoIncrementStep = autoIncInfo.Step
 	}
 
 	return ret, nil
@@ -101,6 +107,8 @@ func fetchTableIndexes(ts sqlchemy.ITableSpec) (map[string]sDamengTableIndex, er
 	}
 	ret := make(map[string]sDamengTableIndex)
 	for _, info := range infos {
+		info.IndexName = strings.ToLower(info.IndexName)
+		info.ColumnName = strings.ToLower(info.ColumnName)
 		if idx, ok := ret[info.IndexName]; ok {
 			idx.colnames = append(idx.colnames, info.ColumnName)
 			ret[info.IndexName] = idx
@@ -115,28 +123,51 @@ func fetchTableIndexes(ts sqlchemy.ITableSpec) (map[string]sDamengTableIndex, er
 	return ret, nil
 }
 
-func fetchTableAutoIncrementCol(ts sqlchemy.ITableSpec) (string, error) {
-	type sColName struct {
-		Name string `json:"NAME"`
-	}
-	sqlStr := fmt.Sprintf("SELECT a.NAME from SYSCOLUMNS a, SYSOBJECTS c WHERE a.INFO2 & 0x01 = 0x01 AND a.ID=c.ID and c.NAME='%s' AND c.SCHID=CURRENT_SCHID", ts.Name())
-	query := ts.Database().NewRawQuery(sqlStr, "name")
-	result := sColName{}
-	err := query.First(&result)
+func fetchTableAutoIncrementCol(ts sqlchemy.ITableSpec) (*sDamengAutoIncrementInfo, error) {
+	sqlStr := fmt.Sprintf("SELECT a.NAME, c.INFO6 from SYSCOLUMNS a, SYSOBJECTS c WHERE a.INFO2 & 0x01 = 0x01 AND a.ID=c.ID and c.NAME='%s' AND c.SCHID=CURRENT_SCHID", ts.Name())
+	query := ts.Database().NewRawQuery(sqlStr, "name", "info6")
+	row := query.Row()
+	name := ""
+	info6 := make([]byte, 0)
+	err := row.Scan(&name, &info6)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
-			return "", nil
+			return nil, nil
 		} else {
-			return "", errors.Wrap(err, "Query")
+			return nil, errors.Wrap(err, "Query")
 		}
 	}
-	return result.Name, nil
+	return decodeInfo6(name, info6)
+}
+
+type sDamengAutoIncrementInfo struct {
+	Name   string
+	Offset uint64
+	Step   uint64
+	Dummy  uint64
+}
+
+func decodeInfo6(name string, binHex []byte) (*sDamengAutoIncrementInfo, error) {
+	buf := bytes.NewReader(binHex)
+	var pi [3]uint64
+	for i := range pi {
+		err := binary.Read(buf, binary.LittleEndian, &pi[i])
+		if err != nil {
+			return nil, errors.Wrap(err, "binary.LittleEndian.Read")
+		}
+	}
+	return &sDamengAutoIncrementInfo{
+		Name:   strings.ToLower(name),
+		Offset: pi[0],
+		Step:   pi[1],
+		Dummy:  pi[2],
+	}, nil
 }
 
 func (info *sSqlColumnInfo) toColumnSpec() sqlchemy.IColumnSpec {
 	tagmap := make(map[string]string)
 
-	typeStr := info.DataType
+	typeStr := strings.ToUpper(info.DataType)
 	if info.Nullable == "Y" {
 		tagmap[sqlchemy.TAG_NULLABLE] = "true"
 	} else {
@@ -148,17 +179,25 @@ func (info *sSqlColumnInfo) toColumnSpec() sqlchemy.IColumnSpec {
 		tagmap[sqlchemy.TAG_PRIMARY] = "false"
 	}
 	if info.DataDefault != "NULL" && len(info.DataDefault) > 0 {
-		info.DataDefault = strings.Trim(info.DataDefault, "'\"")
 		tagmap[sqlchemy.TAG_DEFAULT] = info.DataDefault
 	}
 	if typeStr == "VARCHAR" || typeStr == "CHAR" || typeStr == "CHARACTER" {
 		tagmap[sqlchemy.TAG_WIDTH] = fmt.Sprintf("%d", info.DataLength)
+		if val, ok := tagmap[sqlchemy.TAG_DEFAULT]; ok {
+			tagmap[sqlchemy.TAG_DEFAULT] = strings.Trim(val, "'\"")
+		}
 		c := NewTextColumn(info.ColumnName, typeStr, tagmap, false)
 		return &c
 	} else if typeStr == "TEXT" || typeStr == "LONGVARCHAR" || typeStr == "CLOB" || typeStr == "BLOB" {
+		if val, ok := tagmap[sqlchemy.TAG_DEFAULT]; ok {
+			tagmap[sqlchemy.TAG_DEFAULT] = strings.Trim(val, "'\"")
+		}
 		c := NewTextColumn(info.ColumnName, typeStr, tagmap, false)
 		return &c
 	} else if strings.HasSuffix(typeStr, "INT") {
+		if val, ok := tagmap[sqlchemy.TAG_DEFAULT]; ok {
+			tagmap[sqlchemy.TAG_DEFAULT] = strings.Trim(val, "()")
+		}
 		if typeStr == "TINYINT" {
 			if info.Nullable == "Y" {
 				c := NewTristateColumn(info.TableName, info.ColumnName, tagmap, false)
@@ -174,23 +213,39 @@ func (info *sSqlColumnInfo) toColumnSpec() sqlchemy.IColumnSpec {
 			}
 		} else {
 			if info.IsAutoIncrement {
-				tagmap[sqlchemy.TAG_AUTOINCREMENT] = "true"
+				if info.AutoIncrementOffset > 0 {
+					tagmap[sqlchemy.TAG_AUTOINCREMENT] = fmt.Sprintf("%d", info.AutoIncrementOffset)
+				} else {
+					tagmap[sqlchemy.TAG_AUTOINCREMENT] = "true"
+				}
 			}
 			c := NewIntegerColumn(info.ColumnName, typeStr, tagmap, false)
 			return &c
 		}
 	} else if typeStr == "REAL" || typeStr == "FLOAT" || typeStr == "DOUBLE" || typeStr == "DOUBLE PRECISION" {
+		if val, ok := tagmap[sqlchemy.TAG_DEFAULT]; ok {
+			tagmap[sqlchemy.TAG_DEFAULT] = strings.Trim(val, "()")
+		}
 		c := NewFloatColumn(info.ColumnName, typeStr, tagmap, false)
 		return &c
 	} else if typeStr == "NUMERIC" || typeStr == "NUMBER" || typeStr == "DECIMAL" || typeStr == "DEC" {
+		if val, ok := tagmap[sqlchemy.TAG_DEFAULT]; ok {
+			tagmap[sqlchemy.TAG_DEFAULT] = strings.Trim(val, "()")
+		}
 		tagmap[sqlchemy.TAG_WIDTH] = fmt.Sprintf("%d", info.DataPrecision)
 		tagmap[sqlchemy.TAG_PRECISION] = fmt.Sprintf("%d", info.DataScale)
 		c := NewDecimalColumn(info.ColumnName, tagmap, false)
 		return &c
 	} else if typeStr == "TIMESTAMP" || typeStr == "DATATIME" {
+		if val, ok := tagmap[sqlchemy.TAG_DEFAULT]; ok {
+			tagmap[sqlchemy.TAG_DEFAULT] = strings.Trim(val, "'\"")
+		}
 		c := NewDateTimeColumn(info.ColumnName, tagmap, false)
 		return &c
 	} else if typeStr == "TIME" || typeStr == "DATE" {
+		if val, ok := tagmap[sqlchemy.TAG_DEFAULT]; ok {
+			tagmap[sqlchemy.TAG_DEFAULT] = strings.Trim(val, "'\"")
+		}
 		c := NewTimeTypeColumn(info.ColumnName, typeStr, tagmap, false)
 		return &c
 	} else {

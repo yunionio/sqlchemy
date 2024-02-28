@@ -16,6 +16,8 @@ package dameng
 
 import (
 	"testing"
+
+	"yunion.io/x/jsonutils"
 )
 
 func TestToColumnSpec(t *testing.T) {
@@ -130,6 +132,37 @@ func TestToColumnSpec(t *testing.T) {
 			t.Errorf("fail to convert column spec")
 		} else {
 			t.Logf("column %s", got.DefinitionString())
+		}
+	}
+}
+
+func TestDecodeInfo6(t *testing.T) {
+	cases := []struct {
+		name  string
+		info6 []byte
+		want  sDamengAutoIncrementInfo
+	}{
+		{
+			name: "ROW_ID",
+			info6: []byte{
+				0x11, 0x5B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0xBA, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			},
+			want: sDamengAutoIncrementInfo{
+				Name:   "row_id",
+				Offset: 23313,
+				Step:   1978,
+				Dummy:  1,
+			},
+		},
+	}
+	for _, c := range cases {
+		got, err := decodeInfo6(c.name, c.info6)
+		if err != nil {
+			t.Errorf("decodeInfo6 error %s", err)
+		} else if jsonutils.Marshal(got).String() != jsonutils.Marshal(c.want).String() {
+			t.Errorf("want: %s got %s", jsonutils.Marshal(c.want).String(), jsonutils.Marshal(got).String())
 		}
 	}
 }

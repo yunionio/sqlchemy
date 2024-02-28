@@ -89,7 +89,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t9`.`id` AS `id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` AS `name` FROM (SELECT `t62`.`name` AS `name` FROM (SELECT `t9`.`name` AS `name` FROM `testtable` AS `t9` WHERE `t9`.`id` =  ? ) AS `t62` UNION SELECT `t63`.`name` AS `name` FROM (SELECT `t9`.`name` AS `name` FROM `testtable` AS `t9` WHERE `t9`.`id` =  ? ) AS `t63`) AS `t10`)",
+			want: "SELECT `t9`.`id` AS `id` FROM `testtable` AS `t9` WHERE `t9`.`name` IN (SELECT `t10`.`name` AS `name` FROM (SELECT `t63`.`name` AS `name` FROM (SELECT `t9`.`name` AS `name` FROM `testtable` AS `t9` WHERE `t9`.`id` =  ? ) AS `t63` UNION SELECT `t64`.`name` AS `name` FROM (SELECT `t9`.`name` AS `name` FROM `testtable` AS `t9` WHERE `t9`.`id` =  ? ) AS `t64`) AS `t10`)",
 			vars: 2,
 		},
 		{
@@ -185,7 +185,7 @@ func TestQueryString(t *testing.T) {
 		},
 		{
 			query: table.Instance().Query().IsEmpty("name"),
-			want:  "SELECT `t31`.`id` AS `id`, `t31`.`name` AS `name`, `t31`.`age` AS `age`, `t31`.`is_male` AS `is_male` FROM `testtable` AS `t31` WHERE LENGTH(`t31`.`name`) = 0",
+			want:  "SELECT `t31`.`id` AS `id`, `t31`.`name` AS `name`, `t31`.`age` AS `age`, `t31`.`is_male` AS `is_male` FROM `testtable` AS `t31` WHERE LENGTH(`t31`.`name`) = 0 OR LENGTH(`t31`.`name`) IS NULL",
 		},
 		{
 			query: table.Instance().Query().IsNotEmpty("name"),
@@ -193,7 +193,7 @@ func TestQueryString(t *testing.T) {
 		},
 		{
 			query: table.Instance().Query().IsNullOrEmpty("name"),
-			want:  "SELECT `t33`.`id` AS `id`, `t33`.`name` AS `name`, `t33`.`age` AS `age`, `t33`.`is_male` AS `is_male` FROM `testtable` AS `t33` WHERE `t33`.`name` IS NULL OR LENGTH(`t33`.`name`) = 0",
+			want:  "SELECT `t33`.`id` AS `id`, `t33`.`name` AS `name`, `t33`.`age` AS `age`, `t33`.`is_male` AS `is_male` FROM `testtable` AS `t33` WHERE `t33`.`name` IS NULL OR LENGTH(`t33`.`name`) = 0 OR LENGTH(`t33`.`name`) IS NULL",
 		},
 		{
 			query: table.Instance().Query().IsTrue("is_male"),
@@ -247,9 +247,10 @@ func TestQueryString(t *testing.T) {
 			query: func() *SQuery {
 				t := table.Instance()
 				q := t.Query(REPLACE("new_name", t.Field("name"), "abc", "123")).GroupBy(t.Field("name"))
+				q = q.AppendField(t.Field("name"))
 				return q
 			}(),
-			want: "SELECT REPLACE(`t41`.`name`, \"abc\", \"123\") AS `new_name` FROM `testtable` AS `t41` GROUP BY `t41`.`name`",
+			want: "SELECT MAX(REPLACE(`t41`.`name`, \"abc\", \"123\")) AS `new_name`, `t41`.`name` AS `name` FROM `testtable` AS `t41` GROUP BY `t41`.`name`",
 		},
 		{
 			query: func() *SQuery {
@@ -274,7 +275,7 @@ func TestQueryString(t *testing.T) {
 				q := t.Query(SUBSTR("name2", t.Field("name"), 0, 2)).GroupBy(t.Field("name"))
 				return q
 			}(),
-			want: "SELECT SUBSTR(`t45`.`name`, 0, 2) AS `name2` FROM `testtable` AS `t45` GROUP BY `t45`.`name`",
+			want: "SELECT MAX(SUBSTR(`t45`.`name`, 0, 2)) AS `name2` FROM `testtable` AS `t45` GROUP BY `t45`.`name`",
 		},
 		{
 			query: func() *SQuery {
@@ -305,7 +306,7 @@ func TestQueryString(t *testing.T) {
 				q3 := t.Query(t.Field("id")).In("name", uq.Query().SubQuery())
 				return q3
 			}(),
-			want: "SELECT `t48`.`id` AS `id` FROM `testtable` AS `t48` WHERE `t48`.`name` IN (SELECT `t49`.`name` AS `name` FROM (SELECT `t66`.`name` AS `name` FROM (SELECT `t48`.`name` AS `name` FROM `testtable` AS `t48` WHERE `t48`.`id` =  ? ) AS `t66` UNION ALL SELECT `t67`.`name` AS `name` FROM (SELECT `t48`.`name` AS `name` FROM `testtable` AS `t48` WHERE `t48`.`id` =  ? ) AS `t67`) AS `t49`)",
+			want: "SELECT `t48`.`id` AS `id` FROM `testtable` AS `t48` WHERE `t48`.`name` IN (SELECT `t49`.`name` AS `name` FROM (SELECT `t67`.`name` AS `name` FROM (SELECT `t48`.`name` AS `name` FROM `testtable` AS `t48` WHERE `t48`.`id` =  ? ) AS `t67` UNION ALL SELECT `t68`.`name` AS `name` FROM (SELECT `t48`.`name` AS `name` FROM `testtable` AS `t48` WHERE `t48`.`id` =  ? ) AS `t68`) AS `t49`)",
 			vars: 2,
 		},
 		{
@@ -365,11 +366,21 @@ func TestQueryString(t *testing.T) {
 			want:  "SELECT `t59`.`id` AS `id`, `t59`.`name` AS `name`, `t59`.`age` AS `age`, `t59`.`is_male` AS `is_male` FROM `testtable` AS `t59` WHERE 1",
 			vars:  0,
 		},
+		{
+			query: func() *SQuery {
+				t := table.Instance()
+				q := t.Query(SUM("total_age", t.Field("age")), t.Field("name"), t.Field("id")).GroupBy(t.Field("name"))
+				return q
+			}(),
+			want: "SELECT SUM(`t60`.`age`) AS `total_age`, `t60`.`name` AS `name`, MAX(`t60`.`id`) AS `id` FROM `testtable` AS `t60` GROUP BY `t60`.`name`",
+			vars: 0,
+		},
 	}
 	for _, c := range cases {
 		got := c.query.String()
 		if got != c.want {
-			t.Errorf("want: %s got: %s", c.want, got)
+			t.Errorf("want: %s", c.want)
+			t.Errorf(" got: %s", got)
 		}
 		vars := c.query.Variables()
 		if len(vars) != c.vars {

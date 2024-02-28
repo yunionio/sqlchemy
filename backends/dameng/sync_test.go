@@ -44,7 +44,8 @@ func TestSync(t *testing.T) {
 	backend := &SDamengBackend{}
 	sqls := backend.CommitTableChangeSQL(ts2, changes)
 	want := []string{
-		`ALTER TABLE "table1" MODIFY COLUMN "name" VARCHAR(128), ADD COLUMN "gender" VARCHAR(8) DEFAULT 'male' NOT NULL;`,
+		`ALTER TABLE "table1" MODIFY ("name" VARCHAR(128))`,
+		`ALTER TABLE "table1" ADD "gender" VARCHAR(8) DEFAULT 'male' NOT NULL`,
 	}
 	if !reflect.DeepEqual(sqls, want) {
 		t.Errorf("Expect: %s", want)

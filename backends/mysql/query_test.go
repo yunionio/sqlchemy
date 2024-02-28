@@ -87,6 +87,6 @@ func TestCountQuery(t *testing.T) {
 	q.Limit(8)
 	q.Offset(10)
 	cq := q.CountQuery()
-	want := "SELECT COUNT(*) AS count FROM (SELECT `t1`.`col0` AS `col0`, `t1`.`col1` AS `col1` FROM `test` AS `t1` GROUP BY `t1`.`col0`) AS `t2`"
+	want := "SELECT COUNT(*) AS count FROM (SELECT `t1`.`col0` AS `col0`, MAX(`t1`.`col1`) AS `col1` FROM `test` AS `t1` GROUP BY `t1`.`col0`) AS `t2`"
 	testGotWant(t, cq.String(), want)
 }
