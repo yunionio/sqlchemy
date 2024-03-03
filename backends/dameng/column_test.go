@@ -16,12 +16,10 @@ package dameng
 
 import (
 	"database/sql"
-	"fmt"
 	"testing"
 
 	"yunion.io/x/jsonutils"
 	"yunion.io/x/pkg/tristate"
-	"yunion.io/x/pkg/util/timeutils"
 	"yunion.io/x/sqlchemy"
 )
 
@@ -111,11 +109,8 @@ func TestColumns(t *testing.T) {
 			want: `"field" TIMESTAMP(6)`,
 		},
 		{
-			in: &notNullDateCol,
-			want: func() string {
-				tm, _ := timeutils.ParseTimeStr("")
-				return fmt.Sprintf(`"field" TIMESTAMP(6) DEFAULT '%s' NOT NULL`, timeutils.MysqlTime(tm))
-			}(),
+			in:   &notNullDateCol,
+			want: `"field" TIMESTAMP(6) NOT NULL`,
 		},
 		{
 			in:   &compCol,
