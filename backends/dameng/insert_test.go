@@ -59,10 +59,10 @@ func TestInsertAutoIncrement(t *testing.T) {
 			wantVar: 5,
 		},
 	}
-	for _, c := range cases {
+	for i, c := range cases {
 		sql, vals, err := insertSqlPrep(c.value, c.update)
 		if err != nil {
-			t.Errorf("prepare sql failed: %s", err)
+			t.Errorf("case [%d] prepare sql failed: %s", i, err)
 		} else {
 			if sql != c.wantSQL {
 				t.Errorf("sql want %s got %s", c.wantSQL, sql)
