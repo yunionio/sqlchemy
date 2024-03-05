@@ -9,6 +9,7 @@ import (
 type testQueryTable struct {
 	Col0 string
 	Col1 int
+	Col2 string
 }
 
 var (

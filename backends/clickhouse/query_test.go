@@ -11,7 +11,7 @@ func TestQuery(t *testing.T) {
 	t.Run("query all fields", func(t *testing.T) {
 		tests.BackendTestReset(sqlchemy.ClickhouseBackend)
 		q := tests.GetTestTable().Query()
-		want := "SELECT `t1`.`col0` AS `col0`, `t1`.`col1` AS `col1` FROM `test` AS `t1`"
+		want := "SELECT `t1`.`col0` AS `col0`, `t1`.`col1` AS `col1`, `t1`.`col2` AS `col2` FROM `test` AS `t1`"
 		tests.AssertGotWant(t, q.String(), want)
 	})
 
