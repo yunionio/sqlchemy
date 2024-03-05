@@ -35,7 +35,7 @@ func TestQuery(t *testing.T) {
 	t.Run("query all fields", func(t *testing.T) {
 		testReset()
 		q := testTable.Query()
-		want := `SELECT "t1"."col0" AS "col0", "t1"."col1" AS "col1" FROM "test" AS "t1"`
+		want := `SELECT "t1"."col0" AS "col0", "t1"."col1" AS "col1", "t1"."col2" AS "col2" FROM "test" AS "t1"`
 		testGotWant(t, q.String(), want)
 	})
 
@@ -77,6 +77,28 @@ func TestQuery(t *testing.T) {
 		want := `SELECT SUM("t1"."col1") AS "total", "t1"."col0" AS "col0" FROM "test" AS "t1" GROUP BY "t1"."col0" ORDER BY "total" ASC`
 		testGotWant(t, q.String(), want)
 	})
+
+	t.Run("query GROUP_CONCAT2 func", func(t *testing.T) {
+		testReset()
+		q := testTable.Query(sqlchemy.SUM("total", testTable.Field("col1")), sqlchemy.GROUP_CONCAT("all_col2", testTable.Field("col2")), testTable.Field("col0")).GroupBy(testTable.Field("col0"))
+		q = q.Asc(q.Field("total"))
+		want := `SELECT SUM("t1"."col1") AS "total", WM_CONCAT("t1"."col2") AS "all_col2", "t1"."col0" AS "col0" FROM "test" AS "t1" GROUP BY "t1"."col0" ORDER BY "total" ASC`
+		testGotWant(t, q.String(), want)
+	})
+
+	t.Run("query INET_ATON func", func(t *testing.T) {
+		testReset()
+		q := testTable.Query(testTable.Field("col1"), sqlchemy.INET_ATON(testTable.Field("col0")).Label("ipaddr"))
+		want := `SELECT "t1"."col1" AS "col1", TO_NUMBER(SUBSTR("t1"."col0",1,INSTR("t1"."col0",'.')-1))*POWER(256,3)+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.')+1,INSTR("t1"."col0",'.',1,2)-INSTR("t1"."col0",'.')-1))*POWER(256,2)+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.',1,2)+1,INSTR("t1"."col0",'.',1,3)-INSTR("t1"."col0",'.',1,2)-1))*256+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.',1,3)+1)) AS "ipaddr" FROM "test" AS "t1"`
+		testGotWant(t, q.String(), want)
+	})
+
+	t.Run("query INET_ATON func by group", func(t *testing.T) {
+		testReset()
+		q := testTable.Query(testTable.Field("col1").Label("number"), sqlchemy.INET_ATON(testTable.Field("col0")).Label("ipaddr"), sqlchemy.NewConstField(123456).Label("gateway")).GroupBy(testTable.Field("col0"))
+		want := `SELECT MAX("t1"."col1") AS "number", MAX(TO_NUMBER(SUBSTR("t1"."col0",1,INSTR("t1"."col0",'.')-1))*POWER(256,3)+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.')+1,INSTR("t1"."col0",'.',1,2)-INSTR("t1"."col0",'.')-1))*POWER(256,2)+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.',1,2)+1,INSTR("t1"."col0",'.',1,3)-INSTR("t1"."col0",'.',1,2)-1))*256+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.',1,3)+1))) AS "ipaddr", 123456 AS "gateway" FROM "test" AS "t1" GROUP BY "t1"."col0"`
+		testGotWant(t, q.String(), want)
+	})
 }
 
 func TestCountQuery(t *testing.T) {
@@ -87,6 +109,6 @@ func TestCountQuery(t *testing.T) {
 	q.Limit(8)
 	q.Offset(10)
 	cq := q.CountQuery()
-	want := `SELECT COUNT(*) AS count FROM (SELECT "t1"."col0" AS "col0", MAX("t1"."col1") AS "col1" FROM "test" AS "t1" GROUP BY "t1"."col0") AS "t2"`
+	want := `SELECT COUNT(*) AS "count" FROM (SELECT "t1"."col0" AS "col0", MAX("t1"."col1") AS "col1", MAX("t1"."col2") AS "col2" FROM "test" AS "t1" GROUP BY "t1"."col0") AS "t2"`
 	testGotWant(t, cq.String(), want)
 }
