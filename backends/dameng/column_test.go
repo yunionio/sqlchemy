@@ -106,11 +106,11 @@ func TestColumns(t *testing.T) {
 		},
 		{
 			in:   &dateCol,
-			want: `"field" TIMESTAMP(6)`,
+			want: `"field" TIMESTAMP(0)`,
 		},
 		{
 			in:   &notNullDateCol,
-			want: `"field" TIMESTAMP(6) NOT NULL`,
+			want: `"field" TIMESTAMP(0) NOT NULL`,
 		},
 		{
 			in:   &compCol,
