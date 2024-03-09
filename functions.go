@@ -172,6 +172,11 @@ func SUM(name string, field IQueryField) IQueryField {
 	return getFieldBackend(field).SUM(name, field)
 }
 
+// AVG represents the SQL function SUM
+func AVG(name string, field IQueryField) IQueryField {
+	return getFieldBackend(field).AVG(name, field)
+}
+
 // LOWER represents the SQL function SUM
 func LOWER(name string, field IQueryField) IQueryField {
 	return getFieldBackend(field).LOWER(name, field)
