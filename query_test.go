@@ -292,7 +292,7 @@ func TestQueryString(t *testing.T) {
 		{
 			query: func() *SQuery {
 				t := table.Instance()
-				q := t.Query(NewFunction(NewCase().When(IsTrue(t.Field("is_male")), NewStringField("MALE")).Else(NewStringField("FEMALE")), "Gender"))
+				q := t.Query(NewFunction(NewCase().When(IsTrue(t.Field("is_male")), NewStringField("MALE")).Else(NewStringField("FEMALE")), "Gender", false))
 				return q
 			}(),
 			want: "SELECT CASE WHEN `t47`.`is_male` = 1 THEN 'MALE' ELSE 'FEMALE' END AS `Gender` FROM `testtable` AS `t47`",
@@ -591,7 +591,7 @@ func getInstance(tableName string, reset bool) *SQuery {
 	cols := table.Columns()
 	for i := range cols {
 		if cols[i].Name() == "amount" {
-			amountField := NewFunction(NewCase().When(Equals(q.Field("brand"), "AWS"), MUL("", q.Field("amount"), NewConstField(6.0))).Else(q.Field("amount")), "amount")
+			amountField := NewFunction(NewCase().When(Equals(q.Field("brand"), "AWS"), MUL("", q.Field("amount"), NewConstField(6.0))).Else(q.Field("amount")), "amount", false)
 			q = q.AppendField(amountField)
 		}
 	}
