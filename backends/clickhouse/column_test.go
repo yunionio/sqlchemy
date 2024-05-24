@@ -123,19 +123,19 @@ func TestColumns(t *testing.T) {
 		},
 		{
 			in:   &decimal32Col,
-			want: "`field` Nullable(Decimal32(9, 8))",
+			want: "`field` Nullable(Decimal32(8))",
 		},
 		{
 			in:   &decimal64Col,
-			want: "`field` Nullable(Decimal64(18, 8))",
+			want: "`field` Nullable(Decimal64(8))",
 		},
 		{
 			in:   &decimal128Col,
-			want: "`field` Nullable(Decimal128(38, 8))",
+			want: "`field` Nullable(Decimal128(8))",
 		},
 		{
 			in:   &decimal256Col,
-			want: "`field` Nullable(Decimal256(76, 8))",
+			want: "`field` Nullable(Decimal256(8))",
 		},
 		{
 			in:   &textCol,
