@@ -32,11 +32,11 @@ func TestQueryString(t *testing.T) {
 			query: func() *SQuery {
 				t := table.Instance()
 				q := t.Query(t.Field("name", "newname"))
-				q = q.Equals("id", 2)
+				q = q.Equals("id", 2).Equals("name", "john")
 				return q
 			}(),
-			want: "SELECT `t2`.`name` AS `newname` FROM `testtable` AS `t2` WHERE `t2`.`id` =  ? ",
-			vars: 1,
+			want: "SELECT `t2`.`name` AS `newname` FROM `testtable` AS `t2` WHERE (`t2`.`id` =  ? ) AND (`t2`.`name` =  ? )",
+			vars: 2,
 		},
 		{
 			query: func() *SQuery {
