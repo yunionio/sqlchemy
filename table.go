@@ -166,18 +166,21 @@ func (ts *STableSpec) Expression() string {
 	return fmt.Sprintf("%s%s%s", qChar, ts.name, qChar)
 }
 
-func (ts *STableSpec) SyncColumnIndexes() error {
+func (ts *STableSpec) GetSyncedColumns() ([]IColumnSpec, error) {
 	if !ts.Exists() {
-		return errors.Wrap(errors.ErrNotFound, "table not exists")
+		return nil, errors.Wrap(errors.ErrNotFound, "table not exists")
 	}
+
+	columns := make([]IColumnSpec, len(ts._columns))
+	copy(columns, ts._columns)
 
 	cols, err := ts.Database().backend.FetchTableColumnSpecs(ts)
 	if err != nil {
-		return errors.Wrap(err, "FetchTableColumnSpecs")
+		return nil, errors.Wrap(err, "FetchTableColumnSpecs")
 	}
-	if len(cols) != len(ts._columns) {
+	if len(cols) != len(columns) {
 		colsName := map[string]bool{}
-		for _, col := range ts._columns {
+		for _, col := range columns {
 			colsName[col.Name()] = true
 		}
 		removed := []string{}
@@ -186,7 +189,7 @@ func (ts *STableSpec) SyncColumnIndexes() error {
 				removed = append(removed, col.Name())
 			}
 		}
-		return errors.Wrapf(errors.ErrInvalidStatus, "ts %s col %d != actual col %d need remove columns %s", ts.Name(), len(ts._columns), len(cols), removed)
+		return nil, errors.Wrapf(errors.ErrInvalidStatus, "ts %s col %d != actual col %d need remove columns %s", ts.Name(), len(columns), len(cols), removed)
 	}
 	for i := range cols {
 		cols[i].SetColIndex(i)
@@ -195,24 +198,24 @@ func (ts *STableSpec) SyncColumnIndexes() error {
 	sort.Slice(cols, func(i, j int) bool {
 		return compareColumnSpec(cols[i], cols[j]) < 0
 	})
-	sort.Slice(ts._columns, func(i, j int) bool {
-		return compareColumnSpec(ts._columns[i], ts._columns[j]) < 0
+	sort.Slice(columns, func(i, j int) bool {
+		return compareColumnSpec(columns[i], columns[j]) < 0
 	})
 	// compare columns and assign colindex
-	for i := range ts._columns {
-		comp := compareColumnSpec(cols[i], ts._columns[i])
+	for i := range columns {
+		comp := compareColumnSpec(cols[i], columns[i])
 		if comp != 0 {
-			return errors.Wrapf(errors.ErrInvalidStatus, "colname %s != %s", cols[i].Name(), ts._columns[i].Name())
+			return nil, errors.Wrapf(errors.ErrInvalidStatus, "colname %s != %s", cols[i].Name(), columns[i].Name())
 		}
-		ts._columns[i].SetColIndex(cols[i].GetColIndex())
+		columns[i].SetColIndex(cols[i].GetColIndex())
 	}
 
 	// sort columns according to colindex
-	sort.Slice(ts._columns, func(i, j int) bool {
-		return compareColumnIndex(ts._columns[i], ts._columns[j]) < 0
+	sort.Slice(columns, func(i, j int) bool {
+		return compareColumnIndex(columns[i], columns[j]) < 0
 	})
 
-	return nil
+	return columns, nil
 }
 
 // Clone makes a clone of a table, so we may create a new table of the same schema
@@ -225,12 +228,16 @@ func (ts *STableSpec) Clone(name string, autoIncOffset int64) *STableSpec {
 func (ts *STableSpec) CloneWithSyncColumnOrder(name string, autoIncOffset int64, syncColOrder bool) (*STableSpec, error) {
 	if ts.Exists() && syncColOrder {
 		// if table exists, sync column index
-		err := ts.SyncColumnIndexes()
+		columns, err := ts.GetSyncedColumns()
 		if err != nil {
-			return nil, errors.Wrap(err, "SyncColumnIndexes")
+			return nil, errors.Wrapf(err, "GetSyncedColumns")
 		}
+		return ts.clone(name, autoIncOffset, columns)
 	}
-	columns := ts.Columns()
+	return ts.clone(name, autoIncOffset, ts.Columns())
+}
+
+func (ts *STableSpec) clone(name string, autoIncOffset int64, columns []IColumnSpec) (*STableSpec, error) {
 	newCols := make([]IColumnSpec, len(columns))
 	for i := range newCols {
 		col := columns[i]
