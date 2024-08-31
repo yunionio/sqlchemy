@@ -7,9 +7,9 @@ import (
 )
 
 type testQueryTable struct {
-	Col0 string
+	Col0 string `width:"128" charset:"utf8" nullable:"false"`
 	Col1 int
-	Col2 string
+	Col2 string `charset:"utf8" length:"medium" nullable:"false"`
 }
 
 var (
