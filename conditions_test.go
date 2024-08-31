@@ -19,9 +19,11 @@ import (
 )
 
 func TestConditions(t *testing.T) {
+	SetupMockDatabaseBackend()
+
 	field := &SRawQueryField{
 		name: "name",
-		db:   nil,
+		db:   GetDefaultDB(),
 	}
 	cond1 := Equals(field, "zone1")
 	t.Logf("%s %s", cond1.WhereClause(), cond1.Variables())
