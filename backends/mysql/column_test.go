@@ -223,7 +223,7 @@ func TestConvertString(t *testing.T) {
 		},
 		{
 			in:   "23",
-			want: int64(23),
+			want: 23,
 			col:  &intCol,
 		},
 		{

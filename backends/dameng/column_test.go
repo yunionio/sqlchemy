@@ -17,6 +17,7 @@ package dameng
 import (
 	"database/sql"
 	"testing"
+	"time"
 
 	"yunion.io/x/jsonutils"
 	"yunion.io/x/pkg/tristate"
@@ -166,6 +167,11 @@ func TestConvertValue(t *testing.T) {
 			want: `{}`,
 			col:  &compCol,
 		},
+		{
+			in:   "2025-03-27 12:00:00",
+			want: time.Date(2025, 3, 27, 12, 0, 0, 0, time.UTC),
+			col:  &dateCol,
+		},
 	}
 	for _, c := range cases {
 		got := c.col.ConvertFromValue(c.in)
@@ -207,12 +213,12 @@ func TestConvertString(t *testing.T) {
 		},
 		{
 			in:   "23",
-			want: int64(23),
+			want: 23,
 			col:  &intCol,
 		},
 		{
 			in:   "0.01",
-			want: 0.01,
+			want: float32(0.01),
 			col:  &floatCol,
 		},
 	}
