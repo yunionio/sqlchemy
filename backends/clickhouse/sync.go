@@ -164,7 +164,7 @@ func (clickhouse *SClickhouseBackend) CommitTableChangeSQL(ts sqlchemy.ITableSpe
 	if oldTtlSpec != newTtlSpec {
 		if oldTtlSpec.Count > 0 && newTtlSpec.Count == 0 {
 			// remove
-			sql := fmt.Sprintf("REMOVE TTL")
+			sql := "REMOVE TTL"
 			alters = append(alters, sql)
 		} else {
 			// alter

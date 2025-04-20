@@ -17,6 +17,7 @@ package clickhouse
 import (
 	"database/sql"
 	"testing"
+	"time"
 
 	"yunion.io/x/jsonutils"
 	"yunion.io/x/pkg/tristate"
@@ -267,6 +268,11 @@ func TestConvertString(t *testing.T) {
 			in:   "0.01",
 			want: float32(0.01),
 			col:  &float32Col,
+		},
+		{
+			in:   "2025-03-27 12:00:00",
+			want: time.Date(2025, 3, 27, 12, 0, 0, 0, time.UTC),
+			col:  &dateCol,
 		},
 	}
 	for _, c := range cases {
