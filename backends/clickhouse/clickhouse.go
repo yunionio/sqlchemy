@@ -183,7 +183,7 @@ func (click *SClickhouseBackend) GetCreateSQLs(ts sqlchemy.ITableSpec) []string 
 			createSql += fmt.Sprintf("\nTTL `%s` + INTERVAL %d %s", ttlCol.Name(), ttlCount, ttlUnit)
 		}
 		// set default time zone of table to UTC
-		createSql += "\nSETTINGS index_granularity=8192, allow_nullable_key=1"
+		createSql += "\nSETTINGS index_granularity=8192"
 	}
 	return []string{
 		createSql,
