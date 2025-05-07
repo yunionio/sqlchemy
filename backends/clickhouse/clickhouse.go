@@ -123,16 +123,16 @@ func (click *SClickhouseBackend) GetCreateSQLs(ts sqlchemy.ITableSpec) []string 
 	var ttlCol IClickhouseColumnSpec
 	for _, c := range ts.Columns() {
 		cols = append(cols, c.DefinitionString())
+		if c.IsPrimary() {
+			primaries = append(primaries, fmt.Sprintf("`%s`", c.Name()))
+		}
 		if cc, ok := c.(IClickhouseColumnSpec); ok {
+			if cc.IsOrderBy() {
+				orderbys = append(orderbys, fmt.Sprintf("`%s`", c.Name()))
+			}
 			partition := cc.PartitionBy()
 			if len(partition) > 0 && !utils.IsInStringArray(partition, partitions) {
 				partitions = append(partitions, partition)
-			}
-			if c.IsPrimary() && len(partition) == 0 {
-				primaries = append(primaries, fmt.Sprintf("`%s`", c.Name()))
-			}
-			if cc.IsOrderBy() && len(partition) == 0 {
-				orderbys = append(orderbys, fmt.Sprintf("`%s`", c.Name()))
 			}
 			ttlC, ttlU := cc.GetTTL()
 			if ttlC > 0 && len(ttlU) > 0 {
