@@ -276,3 +276,128 @@ func TestSetValueBySQLString(t *testing.T) {
 		}
 	}
 }
+
+func TestConvertValueToTime(t *testing.T) {
+	cases := []struct {
+		in   interface{}
+		want time.Time
+	}{
+		{
+			in: "2021-10-01T00:00:00Z",
+			want: func() time.Time {
+				tm, _ := timeutils.ParseTimeStr("2021-10-01T00:00:00Z")
+				return tm
+			}(),
+		},
+	}
+	for _, c := range cases {
+		got := ConvertValueToTime(c.in)
+		if got != c.want {
+			t.Errorf("want %s got %s for %s", c.want, got, c.in)
+		}
+	}
+}
+
+func TestConvertValueToBool(t *testing.T) {
+	cases := []struct {
+		in   interface{}
+		want bool
+	}{
+		{
+			in:   "0",
+			want: false,
+		},
+		{
+			in:   "1",
+			want: true,
+		},
+		{
+			in:   tristate.True,
+			want: true,
+		},
+		{
+			in:   tristate.False,
+			want: false,
+		},
+		{
+			in:   tristate.None,
+			want: false,
+		},
+	}
+	for _, c := range cases {
+		got := ConvertValueToBool(c.in)
+		if got != c.want {
+			t.Errorf("want %v got %v for %s", c.want, got, c.in)
+		}
+	}
+}
+
+func TestConvertValueToTriState(t *testing.T) {
+	cases := []struct {
+		in   interface{}
+		want tristate.TriState
+	}{
+		{
+			in:   "0",
+			want: tristate.False,
+		},
+		{
+			in:   "1",
+			want: tristate.True,
+		},
+		{
+			in:   "2",
+			want: tristate.False,
+		},
+		{
+			in:   "none",
+			want: tristate.None,
+		},
+		{
+			in:   "true",
+			want: tristate.True,
+		},
+		{
+			in:   "false",
+			want: tristate.False,
+		},
+		{
+			in:   tristate.False,
+			want: tristate.False,
+		},
+		{
+			in:   tristate.True,
+			want: tristate.True,
+		},
+		{
+			in:   tristate.None,
+			want: tristate.None,
+		},
+		{
+			in:   nil,
+			want: tristate.None,
+		},
+		{
+			in:   1,
+			want: tristate.True,
+		},
+		{
+			in:   0,
+			want: tristate.False,
+		},
+		{
+			in:   uint8(1),
+			want: tristate.True,
+		},
+		{
+			in:   uint8(0),
+			want: tristate.False,
+		},
+	}
+	for _, c := range cases {
+		got := ConvertValueToTriState(c.in)
+		if got != c.want {
+			t.Errorf("want %s got %s for %s", c.want, got, c.in)
+		}
+	}
+}
