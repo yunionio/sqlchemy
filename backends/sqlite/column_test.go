@@ -17,10 +17,12 @@ package sqlite
 import (
 	"database/sql"
 	"testing"
+	"time"
 
 	"yunion.io/x/jsonutils"
 
 	"yunion.io/x/pkg/tristate"
+	"yunion.io/x/pkg/util/timeutils"
 
 	"yunion.io/x/sqlchemy"
 )
@@ -197,6 +199,64 @@ func TestConvertString(t *testing.T) {
 		got := c.col.ConvertFromString(c.in)
 		if got != c.want {
 			t.Errorf("%s [%s] want: %#v got: %#v", c.col.DefinitionString(), c.in, c.want, got)
+		}
+	}
+}
+
+func TestIdempotentConvertValue(t *testing.T) {
+	cases := []struct {
+		in   interface{}
+		want interface{}
+		col  sqlchemy.IColumnSpec
+	}{
+		{
+			in:   tristate.False,
+			want: 0,
+			col:  &triCol,
+		},
+		{
+			in:   tristate.True,
+			want: 1,
+			col:  &triCol,
+		},
+		{
+			in:   tristate.None,
+			want: sql.NullInt32{},
+			col:  &triCol,
+		},
+		{
+			in:   true,
+			want: 1,
+			col:  &boolCol,
+		},
+		{
+			in:   false,
+			want: 0,
+			col:  &boolCol,
+		},
+		{
+			in:   "0",
+			want: 0,
+			col:  &boolCol,
+		},
+		{
+			in:   "1",
+			want: 1,
+			col:  &boolCol,
+		},
+		{
+			in: "2025-05-31T12:00:00Z",
+			want: func() time.Time {
+				tm, _ := timeutils.ParseTimeStr("2025-05-31T12:00:00Z")
+				return tm
+			}(),
+			col: &dateCol,
+		},
+	}
+	for _, c := range cases {
+		got := c.col.ConvertFromValue(c.col.ConvertFromValue(c.in))
+		if got != c.want {
+			t.Errorf("%s [%#v] want: %#v got: %#v", c.col.DefinitionString(), c.in, c.want, got)
 		}
 	}
 }
