@@ -103,14 +103,21 @@ func TestQuery(t *testing.T) {
 	t.Run("query INET_ATON func", func(t *testing.T) {
 		testReset()
 		q := testTable.Query(testTable.Field("col1"), sqlchemy.INET_ATON(testTable.Field("col0")).Label("ipaddr"))
-		want := `SELECT "t1"."col1" AS "col1", TO_NUMBER(SUBSTR("t1"."col0",1,INSTR("t1"."col0",'.')-1))*POWER(256,3)+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.')+1,INSTR("t1"."col0",'.',1,2)-INSTR("t1"."col0",'.')-1))*POWER(256,2)+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.',1,2)+1,INSTR("t1"."col0",'.',1,3)-INSTR("t1"."col0",'.',1,2)-1))*256+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.',1,3)+1)) AS "ipaddr" FROM "test" AS "t1"`
+		want := `SELECT "t1"."col1" AS "col1", HEX(SF_INET_SORT("t1"."col0")) AS "ipaddr" FROM "test" AS "t1"`
 		testGotWant(t, q.String(), want)
 	})
 
 	t.Run("query INET_ATON func by group", func(t *testing.T) {
 		testReset()
 		q := testTable.Query(testTable.Field("col1").Label("number"), sqlchemy.INET_ATON(testTable.Field("col0")).Label("ipaddr"), sqlchemy.NewConstField(123456).Label("gateway")).GroupBy(testTable.Field("col0"))
-		want := `SELECT MAX("t1"."col1") AS "number", MAX(TO_NUMBER(SUBSTR("t1"."col0",1,INSTR("t1"."col0",'.')-1))*POWER(256,3)+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.')+1,INSTR("t1"."col0",'.',1,2)-INSTR("t1"."col0",'.')-1))*POWER(256,2)+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.',1,2)+1,INSTR("t1"."col0",'.',1,3)-INSTR("t1"."col0",'.',1,2)-1))*256+TO_NUMBER(SUBSTR("t1"."col0",INSTR("t1"."col0",'.',1,3)+1))) AS "ipaddr", 123456 AS "gateway" FROM "test" AS "t1" GROUP BY "t1"."col0"`
+		want := `SELECT MAX("t1"."col1") AS "number", MAX(HEX(SF_INET_SORT("t1"."col0"))) AS "ipaddr", 123456 AS "gateway" FROM "test" AS "t1" GROUP BY "t1"."col0"`
+		testGotWant(t, q.String(), want)
+	})
+
+	t.Run("query INET6_ATON func", func(t *testing.T) {
+		testReset()
+		q := testTable.Query(testTable.Field("col1"), sqlchemy.INET6_ATON(testTable.Field("col0")).Label("ipaddr"))
+		want := `SELECT "t1"."col1" AS "col1", HEX(SF_INET_SORT("t1"."col0")) AS "ipaddr" FROM "test" AS "t1"`
 		testGotWant(t, q.String(), want)
 	})
 }
