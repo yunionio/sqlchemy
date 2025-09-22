@@ -401,3 +401,123 @@ func TestConvertValueToTriState(t *testing.T) {
 		}
 	}
 }
+
+func TestEqualsGrossValue(t *testing.T) {
+	cases := []struct {
+		of   interface{}
+		nf   interface{}
+		want bool
+	}{
+		{
+			of:   1.0,
+			nf:   1.0,
+			want: true,
+		},
+		{
+			of:   1.0,
+			nf:   1.00001,
+			want: false,
+		},
+		{
+			of:   1.0,
+			nf:   0.99999,
+			want: false,
+		},
+		{
+			of:   1.0,
+			nf:   1.000002,
+			want: false,
+		},
+		{
+			of:   1.0,
+			nf:   0.999998,
+			want: false,
+		},
+		{
+			of:   1.0,
+			nf:   1.000001,
+			want: false,
+		},
+		{
+			of:   1.0,
+			nf:   1.0000011,
+			want: false,
+		},
+		{
+			of:   1.0,
+			nf:   1.0000009,
+			want: true,
+		},
+		{
+			of:   1.0,
+			nf:   0.999999,
+			want: false,
+		},
+		{
+			of:   1.0,
+			nf:   0.9999989,
+			want: false,
+		},
+		{
+			of:   1.0,
+			nf:   0.9999991,
+			want: true,
+		},
+		{
+			of:   1.0,
+			nf:   1.0000001,
+			want: true,
+		},
+		{
+			of:   1.0,
+			nf:   0.9999999,
+			want: true,
+		},
+		{
+			of:   "1.0",
+			nf:   "0.9999999",
+			want: true,
+		},
+		{
+			of:   1,
+			nf:   "0.9999999",
+			want: true,
+		},
+		{
+			of:   "2025-01-01T00:00:00.000000Z",
+			nf:   "2025-01-01T00:00:00.000001Z",
+			want: true,
+		},
+		{
+			of:   "2025-01-01T00:00:00.000000Z",
+			nf:   "2025-01-01T00:00:00.001001Z",
+			want: true,
+		},
+		{
+			of:   "2025-01-01T00:00:00.000000Z",
+			nf:   "2025-01-01T00:00:01.001000Z",
+			want: false,
+		},
+		{
+			of:   "2025-01-01T00:00:00.999999Z",
+			nf:   "2025-01-01T00:00:01.000000Z",
+			want: true,
+		},
+		{
+			of:   "2025-01-01T00:00:00.999999Z",
+			nf:   "2025-01-01T00:00:01.999000Z",
+			want: true,
+		},
+		{
+			of:   "2025-01-01T00:00:00.999999Z",
+			nf:   "2025-01-01T00:00:01.999999Z",
+			want: false,
+		},
+	}
+	for _, c := range cases {
+		got := EqualsGrossValue(c.of, c.nf)
+		if got != c.want {
+			t.Errorf("want %v got %v for %v and %v", c.want, got, c.of, c.nf)
+		}
+	}
+}
