@@ -49,7 +49,7 @@ func TestQuery(t *testing.T) {
 	t.Run("query selected fields varchar ", func(t *testing.T) {
 		testReset()
 		q := testTable.Query(testTable.Field("col0")).Equals("col0", "abce")
-		want := `SELECT "t1"."col0" AS "col0" FROM "test" AS "t1" WHERE TEXT_EQUAL("t1"."col0" ,  ? )`
+		want := `SELECT "t1"."col0" AS "col0" FROM "test" AS "t1" WHERE "t1"."col0" =  ? `
 		testGotWant(t, q.String(), want)
 	})
 
