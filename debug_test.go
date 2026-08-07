@@ -34,7 +34,7 @@ func TestSqlDebug(t *testing.T) {
 				123,
 				tm,
 			},
-			want: `SET a = 'name', b = 123, c = '2021-11-01 12:00:00 +0000 UTC'`,
+			want: `SET a = 'name', b = 123, c = '2021-11-01 12:00:00'`,
 		},
 	}
 	for _, c := range cases {
