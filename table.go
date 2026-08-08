@@ -200,10 +200,11 @@ func (ts *STableSpec) SyncColumnIndexes() error {
 		removed := []string{}
 		for _, col := range cols {
 			if _, ok := colsName[col.Name()]; !ok {
+				ts._columns = append(ts._columns, col)
 				removed = append(removed, col.Name())
 			}
 		}
-		return errors.Wrapf(errors.ErrInvalidStatus, "ts %s col %d != actual col %d need remove columns %s", ts.Name(), len(ts._columns), len(cols), removed)
+		log.Warningf("ts %s col %d != actual col %d need remove columns %s", ts.Name(), len(ts._columns)-len(removed), len(cols), removed)
 	}
 	for i := range cols {
 		cols[i].SetColIndex(i)
