@@ -3,18 +3,18 @@ module yunion.io/x/sqlchemy
 go 1.17
 
 require (
+	gitee.com/chunanyong/dm v1.8.14
 	github.com/ClickHouse/clickhouse-go v1.5.4
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-plus/uuid v1.0.0
 	github.com/mattn/go-sqlite3 v1.14.19
 	golang.org/x/text v0.3.7
-	yunion.io/x/jsonutils v0.0.0-20220106020632-953b71a4c3a8
-	yunion.io/x/log v1.0.0
-	yunion.io/x/pkg v1.0.1-0.20230427104242-202edd119017
+	yunion.io/x/jsonutils v1.0.1-0.20260917025845-3108cd9a32ea
+	yunion.io/x/log v1.0.1-0.20240305175729-7cf2d6cd5a91
+	yunion.io/x/pkg v1.10.4-0.20260916163305-b7743fa5e758
 )
 
 require (
-	gitee.com/chunanyong/dm v1.8.14 // indirect
 	github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang-plus/errors v1.0.0 // indirect
